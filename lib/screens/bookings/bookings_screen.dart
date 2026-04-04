@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
+class BookingsScreen extends StatelessWidget {
+  const BookingsScreen({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: Text(
-          'THE BOX',
-          style: Theme.of(context).textTheme.displaySmall,
+          'BookingsScreen',
+          style: Theme.of(context).textTheme.headlineMedium,
         ),
       ),
     );

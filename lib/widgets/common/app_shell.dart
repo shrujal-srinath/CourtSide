@@ -88,7 +88,7 @@ class _BottomBar extends StatelessWidget {
                         curve: Curves.easeOut,
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: selected ? accent.withOpacity(0.12) : Colors.transparent,
+                          color: selected ? accent.withValues(alpha: 0.12) : Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(

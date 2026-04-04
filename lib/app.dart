@@ -4,7 +4,17 @@ import 'core/router.dart';
 import 'core/theme.dart';
 
 // ── Theme mode provider (persisted in SharedPreferences later) ──
-final themeModeProvider = StateProvider<ThemeMode>((_) => ThemeMode.dark);
+final themeModeProvider =
+    NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
+
+class ThemeModeNotifier extends Notifier<ThemeMode> {
+  @override
+  ThemeMode build() => ThemeMode.dark;
+
+  void setMode(ThemeMode mode) {
+    state = mode;
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  ROOT APP

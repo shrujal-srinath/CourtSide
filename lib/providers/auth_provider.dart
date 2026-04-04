@@ -14,8 +14,10 @@ final authStateProvider = StreamProvider<Session?>((ref) {
 });
 
 // ── Current user (convenience) ─────────────────────────────────
+// value is AsyncData<Session?> — use .when() or .asData?.value
 final currentUserProvider = Provider<User?>((ref) {
-  return ref.watch(authStateProvider).valueOrNull;
+  final asyncSession = ref.watch(authStateProvider);
+  return asyncSession.asData?.value?.user;
 });
 
 // ── Auth service ────────────────────────────────────────────────
@@ -50,6 +52,6 @@ class AuthService {
   Future<void> signInWithGoogle() =>
       _client.auth.signInWithOAuth(OAuthProvider.google);
 
-  User? get currentUser => _client.auth.currentUser;
-  bool  get isSignedIn  => currentUser != null;
+  User?  get currentUser => _client.auth.currentUser;
+  bool   get isSignedIn  => currentUser != null;
 }
