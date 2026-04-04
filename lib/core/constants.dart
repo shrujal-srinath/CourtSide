@@ -10,6 +10,7 @@ class AppConstants {
 
   static String get supabaseUrl     => dotenv.env['SUPABASE_URL']     ?? '';
   static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY']?? '';
+  static const String redirectUrl = 'com.courtside.app://login-callback';
 
   static const String sportBasketball = 'basketball';
   static const String sportCricket    = 'cricket';
@@ -39,6 +40,7 @@ class AppRoutes {
   static const String leaderboard = '/leaderboard';
 
   static String venueById(String id)  => '/venue/$id';
+  static String sportById(String id) => '/sport/$id';
   static String gameById(String id)   => '/game/$id';
   static String playerById(String id) => '/player/$id';
 }

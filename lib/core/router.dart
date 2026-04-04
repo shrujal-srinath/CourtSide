@@ -9,6 +9,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/phone_auth_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/sport/sport_screen.dart';
 import '../screens/explore/explore_screen.dart';
 import '../screens/stats/stats_screen.dart';
 import '../screens/bookings/bookings_screen.dart';
@@ -62,6 +63,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.onboarding,
         builder: (context, _) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/sport/:sportId',
+        builder: (context, state) {
+          final sportId = state.pathParameters['sportId'] ?? 'basketball';
+          return SportScreen(sportId: sportId);
+        },
       ),
 
       ShellRoute(

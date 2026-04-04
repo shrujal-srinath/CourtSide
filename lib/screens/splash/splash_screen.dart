@@ -33,12 +33,13 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _run() async {
     await Future.delayed(const Duration(milliseconds: 80));
+    if (!mounted) return;
     await _ctrl.forward();
     await Future.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     // GoRouter redirect handles where to send: login if not authed, home if authed
-    if (mounted) context.go('/login');
+    context.go('/login');
   }
 
   @override

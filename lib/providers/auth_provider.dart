@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/constants.dart';
+
 // ── Supabase client singleton ───────────────────────────────────
 final supabaseProvider = Provider<SupabaseClient>(
   (_) => Supabase.instance.client,
@@ -50,7 +52,10 @@ class AuthService {
   Future<void> signOut() => _client.auth.signOut();
 
   Future<void> signInWithGoogle() =>
-      _client.auth.signInWithOAuth(OAuthProvider.google);
+      _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: AppConstants.redirectUrl,
+      );
 
   User?  get currentUser => _client.auth.currentUser;
   bool   get isSignedIn  => currentUser != null;
