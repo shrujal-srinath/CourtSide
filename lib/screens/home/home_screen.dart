@@ -1,5 +1,6 @@
 // lib/screens/home/home_screen.dart
 
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -45,10 +46,17 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with SingleTickerProviderStateMixin {
   GoogleMapController? _mapController;
+  GoogleMapController? _expandedMapController;
   LatLng? _userLocation;
   String? _activeSport;
   Set<Marker> _markers = {};
   bool _locationLoading = true;
+  bool _mapExpanded = false;
+  String _mapFilter = 'all';
+  double _radiusKm = 2.0;
+  String? _mapStyle;
+  Venue? _selectedVenue;
+  Venue? _displayedVenue; // cached for slide-out animation
   late AnimationController _pulseController;
 
   static const _bengaluru = LatLng(12.9716, 77.5946);
@@ -60,12 +68,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..repeat(reverse: true);
+    _loadMapStyle();
     _initLocation();
   }
 
   @override
   void dispose() {
     _mapController?.dispose();
+    _expandedMapController?.dispose();
     _pulseController.dispose();
     super.dispose();
   }
@@ -86,13 +96,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
       if (!mounted) return;
+      final rawPos = LatLng(pos.latitude, pos.longitude);
+      final cameraTarget = _isInIndia(rawPos) ? rawPos : _bengaluru;
       setState(() {
-        _userLocation = LatLng(pos.latitude, pos.longitude);
+        _userLocation = cameraTarget;
         _locationLoading = false;
       });
-      _buildMarkers();
+      _buildMarkersFiltered(_mapFilter);
       _mapController?.animateCamera(
-        CameraUpdate.newLatLngZoom(_userLocation!, 13),
+        CameraUpdate.newLatLngZoom(cameraTarget, 13),
       );
     } catch (e) {
       _useFallback();
@@ -105,39 +117,130 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _userLocation = _bengaluru;
       _locationLoading = false;
     });
-    _buildMarkers();
+    _buildMarkersFiltered(_mapFilter);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+
+  bool _isInIndia(LatLng pos) {
+    return pos.latitude >= 8.0 &&
+        pos.latitude <= 37.0 &&
+        pos.longitude >= 68.0 &&
+        pos.longitude <= 97.0;
+  }
+
+  double _toRad(double deg) => deg * math.pi / 180.0;
+
+  double _haversineKm(LatLng a, LatLng b) {
+    const earthR = 6371.0;
+    final dLat = _toRad(b.latitude - a.latitude);
+    final dLng = _toRad(b.longitude - a.longitude);
+    final h = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_toRad(a.latitude)) *
+            math.cos(_toRad(b.latitude)) *
+            math.sin(dLng / 2) *
+            math.sin(dLng / 2);
+    return earthR * 2 * math.asin(math.sqrt(h));
   }
 
   // ── Markers ──────────────────────────────────────────────────
 
-  void _buildMarkers() {
-    final venues = _activeSport == null
-        ? FakeData.venues
-        : FakeData.venuesBySport(_activeSport!);
+  void _buildMarkersFiltered(String filter) {
+    final markers = <Marker>[];
+    final loc = _userLocation;
+    final hasRadius = loc != null && _radiusKm != double.infinity;
 
-    setState(() {
-      _markers = venues.map((v) => Marker(
-        markerId: MarkerId(v.id),
-        position: LatLng(v.lat, v.lng),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-        infoWindow: InfoWindow(title: v.name, snippet: v.area),
-        onTap: () => _showVenueSheet(v),
-      )).toSet();
-    });
+    // ── Candidate venues ─────────────────────────────────────
+    List<Venue> candidates;
+    if (filter == 'pickup' || filter == 'community') {
+      candidates = FakeData.pickupGames
+          .map((g) => FakeData.venues.firstWhere((v) => v.id == g.venueId))
+          .toSet()
+          .toList();
+    } else {
+      candidates = filter == 'all'
+          ? FakeData.venues
+          : FakeData.venuesBySport(filter);
+    }
+
+    // ── Apply radius filter ───────────────────────────────────
+    final inRadius = hasRadius
+        ? candidates
+            .where((v) =>
+                _haversineKm(loc, LatLng(v.lat, v.lng)) <= _radiusKm)
+            .toSet()
+        : candidates.toSet();
+
+    // ── Build markers ─────────────────────────────────────────
+    if (filter == 'pickup' || filter == 'community') {
+      for (final g in FakeData.pickupGames) {
+        final venue =
+            inRadius.where((v) => v.id == g.venueId).firstOrNull;
+        if (venue == null) continue;
+        markers.add(Marker(
+          markerId: MarkerId('pickup_${g.id}'),
+          position: LatLng(venue.lat, venue.lng),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+              filter == 'pickup'
+                  ? BitmapDescriptor.hueAzure
+                  : BitmapDescriptor.hueCyan),
+          onTap: () {
+            if (_displayedVenue != venue) _displayedVenue = venue;
+            setState(() => _selectedVenue = venue);
+          },
+        ));
+      }
+    } else {
+      for (final v in inRadius) {
+        // Use sport-specific hue: primary sport when filter is 'all'
+        final hue = filter == 'all'
+            ? _markerHue(v.sports.isNotEmpty ? v.sports.first : 'all')
+            : _markerHue(filter);
+        markers.add(Marker(
+          markerId: MarkerId(v.id),
+          position: LatLng(v.lat, v.lng),
+          icon: BitmapDescriptor.defaultMarkerWithHue(hue),
+          onTap: () {
+            if (_displayedVenue != v) _displayedVenue = v;
+            setState(() => _selectedVenue = v);
+          },
+        ));
+      }
+    }
+
+    setState(() => _markers = markers.toSet());
+  }
+
+  double _markerHue(String sport) {
+    switch (sport) {
+      case 'basketball': return BitmapDescriptor.hueOrange;
+      case 'cricket':    return 180.0;
+      case 'badminton':  return BitmapDescriptor.hueYellow;
+      case 'football':   return BitmapDescriptor.hueGreen;
+      default:           return BitmapDescriptor.hueRed;
+    }
   }
 
   // ── Map style ────────────────────────────────────────────────
 
-  Future<void> _onMapCreated(GoogleMapController c) async {
-    _mapController = c;
+  Future<void> _loadMapStyle() async {
     try {
       final style = await rootBundle.loadString('assets/map_style_dark.json');
-      c.setMapStyle(style);
-    } catch (e) {
-      // fallback to default style
-    }
+      if (mounted) setState(() => _mapStyle = style);
+    } catch (_) {}
+  }
+
+  void _onMapCreated(GoogleMapController c) {
+    _mapController = c;
     if (_userLocation != null) {
       c.animateCamera(CameraUpdate.newLatLngZoom(_userLocation!, 13));
+    }
+  }
+
+  void _onExpandedMapCreated(GoogleMapController c) {
+    _expandedMapController = c;
+    if (_userLocation != null) {
+      c.animateCamera(CameraUpdate.newLatLngZoom(_userLocation!, 14));
     }
   }
 
@@ -145,17 +248,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   void _selectSport(String sport) {
     context.push(AppRoutes.sportById(sport));
-  }
-
-  // ── Venue bottom sheet ────────────────────────────────────────
-
-  void _showVenueSheet(Venue venue) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (c) => _MapVenueSheet(venue: venue),
-    );
   }
 
   // ── Greeting ─────────────────────────────────────────────────
@@ -178,89 +270,140 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     return Scaffold(
       backgroundColor: AppColors.black,
-      body: Column(
+      body: Stack(
         children: [
-          // ── Header ──────────────────────────────────────────
-          _Header(
-            firstName: firstName,
-            topPad: topPad,
-            greeting: _greeting(),
+          // ── Normal scrollable home ───────────────────────────
+          Column(
+            children: [
+              _Header(
+                firstName: firstName,
+                topPad: topPad,
+                greeting: _greeting(),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+
+                      // ── Live Now Strip ───────────────────────
+                      _LiveNowStrip(pulseController: _pulseController),
+
+                      const SizedBox(height: 16),
+
+                      // ── Collapsed map preview ────────────────
+                      _CollapsedMapPreview(
+                        userLocation: _userLocation,
+                        markers: _markers,
+                        loading: _locationLoading,
+                        mapStyle: _mapStyle,
+                        onMapCreated: _onMapCreated,
+                        onTap: () {
+                          setState(() {
+                            _mapExpanded = true;
+                            _selectedVenue = null;
+                          });
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // ── Sport chips ──────────────────────────
+                      _SportChipRow(
+                        activeSport: _activeSport,
+                        onSelect: _selectSport,
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      // ── Courts near you ──────────────────────
+                      _SectionHeader(
+                        title: 'Courts Near You',
+                        onSeeAll: () => context.push('/explore'),
+                      ),
+                      _CourtsNearYou(
+                        venues: FakeData.venues,
+                        onVenueTap: (v) =>
+                            context.push(AppRoutes.venueById(v.id)),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // ── Community Feed ───────────────────────
+                      _SectionHeader(
+                        title: 'Activity',
+                        onSeeAll: () {},
+                      ),
+                      _CommunityFeed(
+                        bookings: FakeData.bookingHistory
+                            .where((b) => b.hasStats)
+                            .toList(),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // ── Promo tiles ──────────────────────────
+                      _PromoTiles(),
+
+                      const SizedBox(height: 100),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
 
-          // Scrollable body
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 12),
-
-                  // ── Live Now Strip ───────────────────────────
-                  _LiveNowStrip(pulseController: _pulseController),
-
-                  const SizedBox(height: 16),
-
-                  // ── Map ──────────────────────────────────────
-                  _MapSection(
-                    userLocation: _userLocation,
-                    markers: _markers,
-                    loading: _locationLoading,
-                    onMapCreated: _onMapCreated,
-                    onExpand: () {},
-                    onRecenter: () {
-                      if (_userLocation != null) {
-                        _mapController?.animateCamera(
-                          CameraUpdate.newLatLngZoom(_userLocation!, 14),
-                        );
-                      }
-                    },
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // ── Sport chips ──────────────────────────────
-                  _SportChipRow(
-                    activeSport: _activeSport,
-                    onSelect: _selectSport,
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // ── Courts near you ──────────────────────────
-                  _SectionHeader(
-                    title: 'Courts Near You',
-                    onSeeAll: () => context.push('/explore'),
-                  ),
-                  _CourtsNearYou(
-                    venues: FakeData.venues,
-                    onVenueTap: (v) =>
-                        context.push(AppRoutes.venueById(v.id)),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // ── Community Feed ───────────────────────────
-                  _SectionHeader(
-                    title: 'Activity',
-                    onSeeAll: () {},
-                  ),
-                  _CommunityFeed(
-                    bookings: FakeData.bookingHistory
-                        .where((b) => b.hasStats)
-                        .toList(),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // ── Promo tiles ──────────────────────────────
-                  _PromoTiles(),
-
-                  const SizedBox(height: 100),
-                ],
+          // ── Expanded map overlay ────────────────────────────
+          if (_mapExpanded)
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOutCubic,
+              builder: (ctx, v, child) => Opacity(
+                opacity: v,
+                child: Transform.translate(
+                  offset: Offset(0, 24 * (1 - v)),
+                  child: child,
+                ),
+              ),
+              child: _ExpandedMapOverlay(
+                userLocation: _userLocation,
+                markers: _markers,
+                loading: _locationLoading,
+                mapStyle: _mapStyle,
+                onMapCreated: _onExpandedMapCreated,
+                activeFilter: _mapFilter,
+                radiusKm: _radiusKm,
+                selectedVenue: _selectedVenue,
+                displayedVenue: _displayedVenue,
+                onFilterChange: (f) {
+                  setState(() {
+                    _mapFilter = f;
+                    _selectedVenue = null;
+                  });
+                  _buildMarkersFiltered(f);
+                },
+                onRadiusChange: (r) {
+                  setState(() => _radiusKm = r);
+                  _buildMarkersFiltered(_mapFilter);
+                },
+                onVenueDismissed: () =>
+                    setState(() => _selectedVenue = null),
+                onClose: () => setState(() {
+                  _mapExpanded = false;
+                  _selectedVenue = null;
+                }),
+                onRecenter: () {
+                  if (_userLocation != null) {
+                    _expandedMapController?.animateCamera(
+                      CameraUpdate.newLatLngZoom(_userLocation!, 14),
+                    );
+                  }
+                },
               ),
             ),
-          ),
         ],
       ),
     );
@@ -508,118 +651,148 @@ class _LiveNowStrip extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  MAP SECTION
+//  COLLAPSED MAP PREVIEW
 // ═══════════════════════════════════════════════════════════════
 
-class _MapSection extends StatelessWidget {
-  const _MapSection({
+class _CollapsedMapPreview extends StatelessWidget {
+  const _CollapsedMapPreview({
     required this.userLocation,
     required this.markers,
     required this.loading,
+    required this.mapStyle,
     required this.onMapCreated,
-    required this.onExpand,
-    required this.onRecenter,
+    required this.onTap,
   });
 
   final LatLng? userLocation;
   final Set<Marker> markers;
   final bool loading;
+  final String? mapStyle;
   final Function(GoogleMapController) onMapCreated;
-  final VoidCallback onExpand;
-  final VoidCallback onRecenter;
+  final VoidCallback onTap;
 
   static const _bengaluru = LatLng(12.9716, 77.5946);
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        child: SizedBox(
-          height: 200,
-          child: Stack(
-            children: [
-              // Map
-              AbsorbPointer(
-                absorbing: true,
-                child: GoogleMap(
-                  onMapCreated: onMapCreated,
-                  initialCameraPosition: CameraPosition(
-                    target: userLocation ?? _bengaluru,
-                    zoom: 13,
-                  ),
-                  markers: markers,
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: false,
-                  zoomControlsEnabled: false,
-                  mapToolbarEnabled: false,
-                  compassEnabled: false,
-                ),
-              ),
-
-              // Loading overlay
-              if (loading)
-                Container(
-                  color: AppColors.black.withValues(alpha: 0.6),
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                        color: AppColors.red, strokeWidth: 2),
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+          child: SizedBox(
+            height: 160,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Static non-interactive map
+                AbsorbPointer(
+                  absorbing: true,
+                  child: GoogleMap(
+                    onMapCreated: onMapCreated,
+                    initialCameraPosition: CameraPosition(
+                      target: userLocation ?? _bengaluru,
+                      zoom: 13,
+                    ),
+                    markers: markers,
+                    style: mapStyle,
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                    mapToolbarEnabled: false,
+                    compassEnabled: false,
+                    scrollGesturesEnabled: false,
+                    zoomGesturesEnabled: false,
+                    rotateGesturesEnabled: false,
+                    tiltGesturesEnabled: false,
                   ),
                 ),
 
-              // Expand button — glassmorphic
-              Positioned(
-                bottom: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: onExpand,
+                // Loading overlay
+                if (loading)
+                  Container(
+                    color: AppColors.black.withValues(alpha: 0.55),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                          color: AppColors.red, strokeWidth: 2),
+                    ),
+                  ),
+
+                // Bottom gradient overlay
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 80,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.black.withValues(alpha: 0.0),
+                          AppColors.black.withValues(alpha: 0.72),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Bottom-left label
+                Positioned(
+                  bottom: 12,
+                  left: 14,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🗺', style: TextStyle(fontSize: 13)),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Courts Near You',
+                        style: AppTextStyles.labelM(AppColors.white),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Bottom-right pill
+                Positioned(
+                  bottom: 10,
+                  right: 12,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        color: AppColors.black.withValues(alpha: 0.5),
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.black.withValues(alpha: 0.45),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.pill),
+                          border: Border.all(
+                              color: AppColors.white.withValues(alpha: 0.15),
+                              width: 0.5),
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.open_in_full_rounded,
-                                color: AppColors.white, size: 12),
-                            const SizedBox(width: 5),
-                            Text('Expand',
-                                style: AppTextStyles.labelS(AppColors.white)),
+                                color: AppColors.white, size: 10),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Tap to explore',
+                              style: AppTextStyles.labelS(AppColors.white),
+                            ),
                           ],
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-
-              // Recenter button — glassmorphic
-              Positioned(
-                bottom: 12,
-                left: 12,
-                child: GestureDetector(
-                  onTap: onRecenter,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        color: AppColors.black.withValues(alpha: 0.5),
-                        child: const Icon(Icons.my_location_rounded,
-                            color: AppColors.white, size: 16),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -1153,22 +1326,568 @@ class _SectionHeader extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  MAP VENUE SHEET
+//  EXPANDED MAP OVERLAY
 // ═══════════════════════════════════════════════════════════════
 
-class _MapVenueSheet extends StatelessWidget {
-  const _MapVenueSheet({required this.venue});
-  final Venue venue;
+class _ExpandedMapOverlay extends StatelessWidget {
+  const _ExpandedMapOverlay({
+    required this.userLocation,
+    required this.markers,
+    required this.loading,
+    required this.mapStyle,
+    required this.onMapCreated,
+    required this.activeFilter,
+    required this.radiusKm,
+    required this.selectedVenue,
+    required this.displayedVenue,
+    required this.onFilterChange,
+    required this.onRadiusChange,
+    required this.onVenueDismissed,
+    required this.onClose,
+    required this.onRecenter,
+  });
 
-  static const _sportLabels = {
+  final LatLng? userLocation;
+  final Set<Marker> markers;
+  final bool loading;
+  final String? mapStyle;
+  final Function(GoogleMapController) onMapCreated;
+  final String activeFilter;
+  final double radiusKm;
+  final Venue? selectedVenue;
+  final Venue? displayedVenue;
+  final ValueChanged<String> onFilterChange;
+  final ValueChanged<double> onRadiusChange;
+  final VoidCallback onVenueDismissed;
+  final VoidCallback onClose;
+  final VoidCallback onRecenter;
+
+  static const _bengaluru = LatLng(12.9716, 77.5946);
+
+  @override
+  Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+    final venueVisible = selectedVenue != null;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Interactive full-screen map
+        GoogleMap(
+          onMapCreated: onMapCreated,
+          initialCameraPosition: CameraPosition(
+            target: userLocation ?? _bengaluru,
+            zoom: 14,
+          ),
+          markers: markers,
+          style: mapStyle,
+          myLocationEnabled: true,
+          myLocationButtonEnabled: false,
+          zoomControlsEnabled: false,
+          mapToolbarEnabled: false,
+          compassEnabled: false,
+          onTap: (_) => onVenueDismissed(),
+        ),
+
+        // Loading overlay
+        if (loading)
+          Container(
+            color: AppColors.black.withValues(alpha: 0.5),
+            child: const Center(
+              child: CircularProgressIndicator(
+                  color: AppColors.red, strokeWidth: 2),
+            ),
+          ),
+
+        // Top filter bar (safe area)
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: EdgeInsets.only(top: topPad + 10, bottom: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.black.withValues(alpha: 0.88),
+                  AppColors.black.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _MapFilterBar(
+                  activeFilter: activeFilter,
+                  onSelect: onFilterChange,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _RadiusSelectorRow(
+                  radiusKm: radiusKm,
+                  onSelect: onRadiusChange,
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Close + recenter buttons (top right)
+        Positioned(
+          top: topPad + 10,
+          right: 14,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _GlassButton(
+                onTap: onClose,
+                child: const Icon(Icons.close_rounded,
+                    color: AppColors.white, size: 18),
+              ),
+              const SizedBox(height: 8),
+              _GlassButton(
+                onTap: onRecenter,
+                child: const Icon(Icons.my_location_rounded,
+                    color: AppColors.white, size: 16),
+              ),
+            ],
+          ),
+        ),
+
+        // Court count badge (top left) — animates on change
+        if (!loading)
+          Positioned(
+            top: topPad + 88,
+            left: 14,
+            child: AnimatedSwitcher(
+              duration: AppDuration.fast,
+              child: markers.isEmpty
+                  ? const _NoCourtsChip(key: ValueKey('none'))
+                  : _CourtCountChip(
+                      count: markers.length,
+                      key: ValueKey(markers.length),
+                    ),
+            ),
+          ),
+
+        // Empty state — when no courts match filter
+        if (!loading && markers.isEmpty)
+          Positioned.fill(
+            top: topPad + 130,
+            bottom: 120,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xxl, vertical: AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: AppColors.overlay,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: AppColors.border, width: 0.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.black.withValues(alpha: 0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('No courts here',
+                        style: AppTextStyles.headingS(
+                            AppColors.textPrimaryDark)),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Try a wider radius or All sports',
+                      style: AppTextStyles.bodyS(
+                          AppColors.textSecondaryDark),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+        // Venue quick card — slides up from bottom
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: IgnorePointer(
+            ignoring: !venueVisible,
+            child: AnimatedSlide(
+              offset: venueVisible ? Offset.zero : const Offset(0, 1),
+              duration: AppDuration.normal,
+              curve: Curves.easeOutCubic,
+              child: AnimatedOpacity(
+                opacity: venueVisible ? 1.0 : 0.0,
+                duration: AppDuration.normal,
+                child: displayedVenue == null
+                    ? const SizedBox.shrink()
+                    : _VenueQuickCard(
+                        venue: displayedVenue!,
+                        bottomPad: bottomPad,
+                        userLocation: userLocation,
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Glassmorphic icon button ──────────────────────────────────
+
+class _GlassButton extends StatelessWidget {
+  const _GlassButton({required this.onTap, required this.child});
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.black.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(
+                  color: AppColors.white.withValues(alpha: 0.1), width: 0.5),
+            ),
+            child: Center(child: child),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MAP FILTER BAR
+// ═══════════════════════════════════════════════════════════════
+
+class _MapFilterBar extends StatelessWidget {
+  const _MapFilterBar({
+    required this.activeFilter,
+    required this.onSelect,
+  });
+
+  final String activeFilter;
+  final ValueChanged<String> onSelect;
+
+  static const _filters = [
+    ('all',        'All',        ''),
+    ('basketball', 'Basketball', '🏀'),
+    ('cricket',    'Cricket',    '🏏'),
+    ('badminton',  'Badminton',  '🏸'),
+    ('football',   'Football',   '⚽'),
+    ('pickup',     'Pickup',     '🤝'),
+    ('community',  'Community',  '👥'),
+  ];
+
+  Color _chipColor(String id) {
+    switch (id) {
+      case 'basketball': return AppColors.basketball;
+      case 'cricket':    return AppColors.cricket;
+      case 'badminton':  return AppColors.badminton;
+      case 'football':   return AppColors.football;
+      default:           return AppColors.red;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 36,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        itemCount: _filters.length,
+        separatorBuilder: (c, i) => const SizedBox(width: AppSpacing.xs + 2),
+        itemBuilder: (context, i) {
+          final (id, label, emoji) = _filters[i];
+          final active = activeFilter == id;
+          final chipColor = _chipColor(id);
+          return GestureDetector(
+            onTap: () => onSelect(id),
+            child: AnimatedContainer(
+              duration: AppDuration.fast,
+              padding: const EdgeInsets.symmetric(horizontal: 13),
+              decoration: BoxDecoration(
+                color: active
+                    ? chipColor.withValues(alpha: 0.14)
+                    : AppColors.black.withValues(alpha: 0.58),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(
+                  color: active
+                      ? chipColor.withValues(alpha: 0.75)
+                      : AppColors.white.withValues(alpha: 0.18),
+                  width: active ? 1.0 : 0.5,
+                ),
+                boxShadow: active
+                    ? [
+                        BoxShadow(
+                          color: chipColor.withValues(alpha: 0.22),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (emoji.isNotEmpty) ...[
+                          Text(emoji, style: const TextStyle(fontSize: 12)),
+                          const SizedBox(width: 5),
+                        ],
+                        Text(
+                          label,
+                          style: AppTextStyles.labelM(
+                            active
+                                ? chipColor
+                                : AppColors.white.withValues(alpha: 0.75),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RADIUS SELECTOR ROW
+// ═══════════════════════════════════════════════════════════════
+
+class _RadiusSelectorRow extends StatelessWidget {
+  const _RadiusSelectorRow({
+    required this.radiusKm,
+    required this.onSelect,
+  });
+
+  final double radiusKm;
+  final ValueChanged<double> onSelect;
+
+  static const _options = [
+    (1.0,            '1 km'),
+    (2.0,            '2 km'),
+    (5.0,            '5 km'),
+    (double.infinity, 'All'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 14, right: AppSpacing.sm),
+          child: Text(
+            'RADIUS',
+            style: AppTextStyles.overline(AppColors.textTertiaryDark),
+          ),
+        ),
+        Expanded(
+          child: SizedBox(
+            height: 26,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.zero,
+              itemCount: _options.length,
+              separatorBuilder: (c, i) => const SizedBox(width: AppSpacing.xs),
+              itemBuilder: (context, i) {
+                final (value, label) = _options[i];
+                final active = radiusKm == value;
+                return GestureDetector(
+                  onTap: () => onSelect(value),
+                  child: AnimatedContainer(
+                    duration: AppDuration.fast,
+                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                    decoration: BoxDecoration(
+                      color: active
+                          ? AppColors.red.withValues(alpha: 0.15)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(
+                        color: active
+                            ? AppColors.red.withValues(alpha: 0.7)
+                            : AppColors.white.withValues(alpha: 0.12),
+                        width: active ? 1.0 : 0.5,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        label,
+                        style: AppTextStyles.labelS(
+                          active
+                              ? AppColors.white
+                              : AppColors.white.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  COURT COUNT CHIPS
+// ═══════════════════════════════════════════════════════════════
+
+class _CourtCountChip extends StatelessWidget {
+  const _CourtCountChip({required this.count, super.key});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.black.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            border: Border.all(
+                color: AppColors.white.withValues(alpha: 0.12), width: 0.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.success,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '$count ${count == 1 ? 'court' : 'courts'}',
+                style: AppTextStyles.labelS(AppColors.textPrimaryDark),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NoCourtsChip extends StatelessWidget {
+  const _NoCourtsChip({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.red.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            border: Border.all(
+                color: AppColors.red.withValues(alpha: 0.3), width: 0.5),
+          ),
+          child: Text(
+            'No courts — try wider radius',
+            style: AppTextStyles.labelS(AppColors.textSecondaryDark),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  VENUE QUICK CARD
+// ═══════════════════════════════════════════════════════════════
+
+class _VenueQuickCard extends StatelessWidget {
+  const _VenueQuickCard({
+    required this.venue,
+    required this.bottomPad,
+    this.userLocation,
+  });
+
+  final Venue venue;
+  final double bottomPad;
+  final LatLng? userLocation;
+
+  static const _sportEmoji = {
     'basketball': '🏀',
     'cricket': '🏏',
     'badminton': '🏸',
     'football': '⚽',
   };
 
+  static double _km(LatLng a, LatLng b) {
+    const r = 6371.0;
+    final dLat = (b.latitude - a.latitude) * math.pi / 180.0;
+    final dLng = (b.longitude - a.longitude) * math.pi / 180.0;
+    final x = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(a.latitude * math.pi / 180.0) *
+            math.cos(b.latitude * math.pi / 180.0) *
+            math.sin(dLng / 2) *
+            math.sin(dLng / 2);
+    return r * 2 * math.asin(math.sqrt(x));
+  }
+
+  String _distanceLabel(LatLng from, Venue v) {
+    final d = _km(from, LatLng(v.lat, v.lng));
+    return d < 1.0
+        ? '${(d * 1000).round()} m away'
+        : '${d.toStringAsFixed(1)} km away';
+  }
+
+  Color _sportColor(String sport) {
+    switch (sport) {
+      case 'basketball': return AppColors.basketball;
+      case 'cricket':    return AppColors.cricket;
+      case 'badminton':  return AppColors.badminton;
+      default:           return AppColors.football;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final courts = FakeData.courtsByVenue(venue.id);
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.overlay,
@@ -1176,105 +1895,231 @@ class _MapVenueSheet extends StatelessWidget {
             top: Radius.circular(AppRadius.xxl)),
         border: const Border(
             top: BorderSide(color: AppColors.border, width: 0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.black.withValues(alpha: 0.6),
+            blurRadius: 32,
+            offset: const Offset(0, -8),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
+          // Drag handle
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 6),
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
             ),
           ),
+
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header row
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Photo placeholder
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceHigh,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        border: Border.all(
+                            color: AppColors.border, width: 0.5),
+                      ),
+                      child: Center(
+                        child: Text(
+                          venue.name[0],
+                          style: AppTextStyles.displayL(AppColors.border),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            venue.name,
-                            style: AppTextStyles.displayS(AppColors.textPrimaryDark),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  venue.name,
+                                  style: AppTextStyles.headingM(
+                                      AppColors.textPrimaryDark),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (venue.hasTheBox)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 7, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.red.withValues(alpha: 0.12),
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadius.sm),
+                                    border: Border.all(
+                                        color: AppColors.red
+                                            .withValues(alpha: 0.3),
+                                        width: 0.5),
+                                  ),
+                                  child: Text('THE BOX',
+                                      style: AppTextStyles.overline(
+                                          AppColors.red)),
+                                ),
+                            ],
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            '${venue.area}  ·  Open till ${venue.closingTime}  ·  ${venue.rating} ★',
-                            style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.star_rounded,
+                                  color: AppColors.warning, size: 13),
+                              const SizedBox(width: 3),
+                              Text(
+                                '${venue.rating}',
+                                style: AppTextStyles.labelM(
+                                    AppColors.textPrimaryDark),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                width: 3,
+                                height: 3,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.textTertiaryDark,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                venue.area,
+                                style: AppTextStyles.bodyS(
+                                    AppColors.textSecondaryDark),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time_rounded,
+                                  color: AppColors.textTertiaryDark,
+                                  size: 12),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Open till ${venue.closingTime}',
+                                style: AppTextStyles.bodyS(
+                                    AppColors.textSecondaryDark),
+                              ),
+                              if (userLocation != null) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  width: 3,
+                                  height: 3,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppColors.textTertiaryDark,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _distanceLabel(userLocation!, venue),
+                                  style: AppTextStyles.bodyS(
+                                      AppColors.textSecondaryDark),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    if (venue.hasTheBox)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.red.withValues(alpha: 0.12),
-                          borderRadius:
-                              BorderRadius.circular(AppRadius.sm),
-                          border: Border.all(
-                              color: AppColors.red.withValues(alpha: 0.3),
-                              width: 0.5),
-                        ),
-                        child: Text('THE BOX',
-                            style: AppTextStyles.overline(AppColors.red)),
-                      ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 8,
-                  children: venue.sports.map((s) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                        context.push(AppRoutes.sportById(s));
+
+                // Court pricing chips
+                if (courts.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 34,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: courts.length,
+                      separatorBuilder: (c, i) =>
+                          const SizedBox(width: AppSpacing.sm),
+                      itemBuilder: (_, i) {
+                        final c = courts[i];
+                        final color = _sportColor(c.sport);
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 0),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.1),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.pill),
+                            border: Border.all(
+                                color: color.withValues(alpha: 0.3),
+                                width: 0.5),
+                          ),
+                          child: Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _sportEmoji[c.sport] ?? '',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  '${c.slotDurationMin}min  ·  ₹${c.pricePerSlot}',
+                                  style: AppTextStyles.labelM(color),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
                       },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius:
-                              BorderRadius.circular(AppRadius.pill),
-                          border: Border.all(
-                              color: AppColors.border, width: 0.5),
-                        ),
-                        child: Text(
-                          '${_sportLabels[s] ?? ''} $s',
-                          style: AppTextStyles.labelM(AppColors.textPrimaryDark),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 14),
+
+                // Action buttons
                 Row(
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                          context.push(AppRoutes.venueById(venue.id));
-                        },
+                        onTap: () =>
+                            context.push(AppRoutes.venueById(venue.id)),
                         child: Container(
-                          height: 50,
+                          height: 48,
                           decoration: BoxDecoration(
                             color: AppColors.red,
                             borderRadius:
                                 BorderRadius.circular(AppRadius.md),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.red.withValues(alpha: 0.35),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
                           child: Center(
                             child: Text(
-                              'Book a slot',
+                              'Book a Slot',
                               style: AppTextStyles.headingS(AppColors.white),
                             ),
                           ),
@@ -1283,13 +2128,11 @@ class _MapVenueSheet extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                        context.push(AppRoutes.venueById(venue.id));
-                      },
+                      onTap: () =>
+                          context.push(AppRoutes.venueById(venue.id)),
                       child: Container(
-                        height: 50,
-                        width: 50,
+                        height: 48,
+                        width: 48,
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           borderRadius:
@@ -1306,7 +2149,7 @@ class _MapVenueSheet extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+          SizedBox(height: bottomPad + 16),
         ],
       ),
     );
