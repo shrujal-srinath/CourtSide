@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/constants.dart';
 
@@ -55,6 +56,7 @@ class AuthService {
       _client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: AppConstants.redirectUrl,
+        authScreenLaunchMode: LaunchMode.externalApplication,
       );
 
   User?  get currentUser => _client.auth.currentUser;

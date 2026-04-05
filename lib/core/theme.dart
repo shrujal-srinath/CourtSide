@@ -9,28 +9,49 @@ import 'package:google_fonts/google_fonts.dart';
 class AppColors {
   AppColors._();
 
-  static const Color black         = Color(0xFF0D0D0D);
-  static const Color surface       = Color(0xFF1A1A1A);
-  static const Color surfaceHigh   = Color(0xFF242424);
-  static const Color border        = Color(0xFF2A2A2A);
-  static const Color white         = Color(0xFFFAFAFA);
-  static const Color surfaceLight  = Color(0xFFF2F2F2);
-  static const Color borderLight   = Color(0xFFE8E8E8);
+  // Backgrounds (dark, 4-level hierarchy)
+  static const Color black        = Color(0xFF080A0F); // primary bg
+  static const Color surface      = Color(0xFF0F1117); // card bg
+  static const Color surfaceHigh  = Color(0xFF161B24); // elevated card
+  static const Color overlay      = Color(0xFF1E2535); // modals / bottom sheets
 
-  static const Color red           = Color(0xFFE8112D);
-  static const Color redDark       = Color(0xFFC0001F);
-  static const Color redMuted      = Color(0xFF4A0010);
+  // Light mode surfaces
+  static const Color white        = Color(0xFFF8F9FA);
+  static const Color surfaceLight = Color(0xFFF2F2F2);
 
-  static const Color basketball    = Color(0xFFFF6B35);
-  static const Color cricket       = Color(0xFF2DD4BF);
+  // Borders
+  static const Color border       = Color(0xFF1A2030);
+  static const Color borderMuted  = Color(0xFF111520);
+  static const Color borderLight  = Color(0xFFE8E8E8);
 
-  static const Color textPrimaryDark    = Color(0xFFFFFFFF);
-  static const Color textSecondaryDark  = Color(0xFF8A8A8A);
-  static const Color textTertiaryDark   = Color(0xFF555555);
-  static const Color textPrimaryLight   = Color(0xFF0D0D0D);
+  // Brand
+  static const Color red          = Color(0xFFE8112D);
+  static const Color redGlow      = Color(0xFFFF1F3D);
+  static const Color redDark      = Color(0xFFB50022);
+  static const Color redMuted     = Color(0xFF3D000A);
+
+  // Semantic aliases
+  static const Color statAccent   = Color(0xFFE8112D); // same as red — semantic
+  static const Color teamBlue     = Color(0xFF3B82F6);
+  static const Color teamRed      = Color(0xFFE8112D);
+
+  // Sport colors
+  static const Color basketball   = Color(0xFFFF6B35);
+  static const Color cricket      = Color(0xFF00C9A7);
+  static const Color badminton    = Color(0xFFFFC107);
+  static const Color football     = Color(0xFF4CAF50);
+
+  // Text — dark theme
+  static const Color textPrimaryDark    = Color(0xFFF8F9FA);
+  static const Color textSecondaryDark  = Color(0xFF6B7280);
+  static const Color textTertiaryDark   = Color(0xFF374151);
+
+  // Text — light theme
+  static const Color textPrimaryLight   = Color(0xFF080A0F);
   static const Color textSecondaryLight = Color(0xFF666666);
   static const Color textTertiaryLight  = Color(0xFFAAAAAA);
 
+  // Semantic
   static const Color success = Color(0xFF22C55E);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error   = Color(0xFFEF4444);
@@ -43,6 +64,8 @@ class AppColors {
 
 class AppTextStyles {
   AppTextStyles._();
+
+  // ── Display (Space Grotesk) ───────────────────────────────────
 
   static TextStyle displayXL(Color color) => GoogleFonts.spaceGrotesk(
     fontSize: 48, fontWeight: FontWeight.w700,
@@ -64,6 +87,8 @@ class AppTextStyles {
     letterSpacing: -0.2, color: color, height: 1.2,
   );
 
+  // ── Heading (Space Grotesk) ──────────────────────────────────
+
   static TextStyle headingL(Color color) => GoogleFonts.spaceGrotesk(
     fontSize: 18, fontWeight: FontWeight.w600,
     letterSpacing: -0.2, color: color, height: 1.3,
@@ -73,6 +98,13 @@ class AppTextStyles {
     fontSize: 16, fontWeight: FontWeight.w600,
     color: color, height: 1.3,
   );
+
+  static TextStyle headingS(Color color) => GoogleFonts.spaceGrotesk(
+    fontSize: 14, fontWeight: FontWeight.w600,
+    letterSpacing: -0.1, color: color, height: 1.3,
+  );
+
+  // ── Body (Inter) ─────────────────────────────────────────────
 
   static TextStyle bodyL(Color color) => GoogleFonts.inter(
     fontSize: 16, fontWeight: FontWeight.w400,
@@ -89,6 +121,8 @@ class AppTextStyles {
     color: color, height: 1.4,
   );
 
+  // ── Labels (Inter) ───────────────────────────────────────────
+
   static TextStyle labelM(Color color) => GoogleFonts.inter(
     fontSize: 11, fontWeight: FontWeight.w600,
     letterSpacing: 1.1, color: color,
@@ -99,15 +133,34 @@ class AppTextStyles {
     letterSpacing: 1.0, color: color,
   );
 
+  static TextStyle overline(Color color) => GoogleFonts.inter(
+    fontSize: 10, fontWeight: FontWeight.w700,
+    letterSpacing: 1.4, color: color,
+  );
+
+  // ── Stats (Space Grotesk, tabular) ───────────────────────────
+
+  static TextStyle scoreXXL(Color color) => GoogleFonts.spaceGrotesk(
+    fontSize: 72, fontWeight: FontWeight.w800,
+    letterSpacing: -3, color: color, height: 1.0,
+    fontFeatures: [const FontFeature.tabularFigures()],
+  );
+
   static TextStyle statXL(Color color) => GoogleFonts.spaceGrotesk(
-    fontSize: 42, fontWeight: FontWeight.w700,
+    fontSize: 42, fontWeight: FontWeight.w800,
     letterSpacing: -1.7, color: color,
     fontFeatures: [const FontFeature.tabularFigures()],
   );
 
   static TextStyle statL(Color color) => GoogleFonts.spaceGrotesk(
-    fontSize: 32, fontWeight: FontWeight.w700,
+    fontSize: 32, fontWeight: FontWeight.w800,
     letterSpacing: -1.0, color: color,
+    fontFeatures: [const FontFeature.tabularFigures()],
+  );
+
+  static TextStyle statM(Color color) => GoogleFonts.spaceGrotesk(
+    fontSize: 24, fontWeight: FontWeight.w800,
+    letterSpacing: -0.8, color: color,
     fontFeatures: [const FontFeature.tabularFigures()],
   );
 }
@@ -136,28 +189,21 @@ class AppTheme {
     ),
     textTheme: _buildTextTheme(isDark: true),
     appBarTheme: const AppBarTheme(
-      backgroundColor:     AppColors.black,
-      foregroundColor:     AppColors.white,
-      elevation:           0,
-      scrolledUnderElevation: 0,
-      centerTitle:         false,
-      systemOverlayStyle:  SystemUiOverlayStyle(
-        statusBarColor:           Colors.transparent,
-        statusBarIconBrightness:  Brightness.light,
+      backgroundColor:         AppColors.black,
+      foregroundColor:         AppColors.white,
+      elevation:               0,
+      scrolledUnderElevation:  0,
+      centerTitle:             false,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor:          Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
       ),
-    ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor:    AppColors.surface,
-      selectedItemColor:  AppColors.red,
-      unselectedItemColor:AppColors.textTertiaryDark,
-      type:               BottomNavigationBarType.fixed,
-      elevation:          0,
     ),
     cardTheme: CardThemeData(
       color:     AppColors.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         side: const BorderSide(color: AppColors.border, width: 0.5),
       ),
     ),
@@ -166,8 +212,8 @@ class AppTheme {
         backgroundColor: AppColors.red,
         foregroundColor: AppColors.white,
         elevation:       0,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
       ),
     ),
@@ -175,8 +221,8 @@ class AppTheme {
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.white,
         side: const BorderSide(color: AppColors.border),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -198,7 +244,7 @@ class AppTheme {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     ),
     dividerTheme: const DividerThemeData(
-      color: AppColors.border, thickness: 0.5, space: 0,
+      color: AppColors.borderMuted, thickness: 0.5, space: 0,
     ),
     pageTransitionsTheme: _pageTransitions,
   );
@@ -220,28 +266,21 @@ class AppTheme {
     ),
     textTheme: _buildTextTheme(isDark: false),
     appBarTheme: const AppBarTheme(
-      backgroundColor:     AppColors.white,
-      foregroundColor:     AppColors.black,
-      elevation:           0,
-      scrolledUnderElevation: 0,
-      centerTitle:         false,
-      systemOverlayStyle:  SystemUiOverlayStyle(
-        statusBarColor:           Colors.transparent,
-        statusBarIconBrightness:  Brightness.dark,
+      backgroundColor:         AppColors.white,
+      foregroundColor:         AppColors.black,
+      elevation:               0,
+      scrolledUnderElevation:  0,
+      centerTitle:             false,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor:          Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
       ),
-    ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor:    AppColors.white,
-      selectedItemColor:  AppColors.redDark,
-      unselectedItemColor:AppColors.textTertiaryLight,
-      type:               BottomNavigationBarType.fixed,
-      elevation:          0,
     ),
     cardTheme: CardThemeData(
       color:     AppColors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         side: const BorderSide(color: AppColors.borderLight, width: 0.5),
       ),
     ),
@@ -250,8 +289,8 @@ class AppTheme {
         backgroundColor: AppColors.redDark,
         foregroundColor: AppColors.white,
         elevation:       0,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
       ),
     ),
@@ -259,8 +298,8 @@ class AppTheme {
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.black,
         side: const BorderSide(color: AppColors.borderLight),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(

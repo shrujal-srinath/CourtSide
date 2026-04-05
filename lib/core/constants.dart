@@ -38,9 +38,12 @@ class AppRoutes {
   static const String wallet      = '/wallet';
   static const String settings    = '/settings';
   static const String leaderboard = '/leaderboard';
+  static const String scoreBasketball = '/score/basketball';
+  static const String scoreCricket = '/score/cricket';
 
-  static String venueById(String id)  => '/venue/$id';
+  static String venueById(String id) => '/venue/$id';
   static String sportById(String id) => '/sport/$id';
-  static String gameById(String id)   => '/game/$id';
+  static String bookCourt(String id) => '/book/$id';
+  static String gameById(String id) => '/game/$id';
   static String playerById(String id) => '/player/$id';
 }
