@@ -71,7 +71,11 @@ class AppShell extends StatelessWidget {
       builder: (_) => _SportPickerSheet(
         onSelectSport: (sport) {
           Navigator.pop(context);
-          context.push('/score/$sport');
+          if (sport == 'basketball') {
+            context.push(AppRoutes.bballMode);
+          } else {
+            context.push('/score/$sport');
+          }
         },
       ),
     );

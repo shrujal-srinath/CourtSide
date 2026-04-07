@@ -17,6 +17,9 @@ import '../screens/explore/explore_screen.dart';
 import '../screens/stats/stats_screen.dart';
 import '../screens/bookings/my_bookings_screen.dart';
 import '../screens/scoring/basketball/basketball_scorer.dart';
+import '../screens/scoring/basketball/basketball_mode_screen.dart';
+import '../screens/scoring/basketball/basketball_setup_screen.dart';
+import '../screens/scoring/basketball/basketball_players_screen.dart';
 import '../screens/scoring/cricket/cricket_scorer.dart';
 import '../widgets/common/app_shell.dart';
 import '../widgets/stat_share/stat_share_preview_screen.dart';
@@ -121,13 +124,44 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Scoring ──────────────────────────────────────────────
+
+      // Basketball flow (4 screens)
       GoRoute(
-        path: '/score/basketball',
-        pageBuilder: (_, state) => fadeScalePage(
+        path: AppRoutes.bballMode,
+        pageBuilder: (_, state) => slideUpPage(
           key: state.pageKey,
-          child: const BasketballScorerScreen(),
+          child: const BasketballModeScreen(),
         ),
       ),
+      GoRoute(
+        path: AppRoutes.bballSetup,
+        pageBuilder: (_, state) => slideUpPage(
+          key: state.pageKey,
+          child: BasketballSetupScreen(mode: state.extra as BballMode),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.bballPlayers,
+        pageBuilder: (_, state) => slideUpPage(
+          key: state.pageKey,
+          child: BasketballPlayersScreen(
+              config: state.extra as BballGameConfig),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.bballScorer,
+        pageBuilder: (_, state) => fadeScalePage(
+          key: state.pageKey,
+          child: BasketballScorerScreen(
+              config: state.extra as BballGameConfig),
+        ),
+      ),
+      // Legacy redirect
+      GoRoute(
+        path: AppRoutes.scoreBasketball,
+        redirect: (context, state) => AppRoutes.bballMode,
+      ),
+
       GoRoute(
         path: '/score/cricket',
         pageBuilder: (_, state) => fadeScalePage(

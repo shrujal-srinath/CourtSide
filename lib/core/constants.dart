@@ -41,6 +41,12 @@ class AppRoutes {
   static const String scoreBasketball = '/score/basketball';
   static const String scoreCricket = '/score/cricket';
 
+  // Basketball flow
+  static const String bballMode    = '/score/basketball/mode';
+  static const String bballSetup   = '/score/basketball/setup';
+  static const String bballPlayers = '/score/basketball/players';
+  static const String bballScorer  = '/score/basketball/game';
+
   static String venueById(String id) => '/venue/$id';
   static String sportById(String id) => '/sport/$id';
   static String bookCourt(String id) => '/book/$id';
