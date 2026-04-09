@@ -37,6 +37,8 @@ class AppDuration {
 class AppShadow {
   AppShadow._();
 
+  // ── Dark-mode shadows ─────────────────────────────────────────
+
   static List<BoxShadow> get cardElevated => [
     const BoxShadow(
       color: Color(0xFF000000),
@@ -67,4 +69,42 @@ class AppShadow {
       spreadRadius: -4,
     ),
   ];
+
+  // ── Light-mode shadows (warm Oat Latte tones) ─────────────────
+
+  /// Warm brown-tinted shadow for cards on cream backgrounds.
+  static List<BoxShadow> get cardElevatedLight => [
+    const BoxShadow(
+      color: Color(0x14A0826D), // warm brown, very subtle
+      blurRadius: 20,
+      offset: Offset(0, 8),
+      spreadRadius: -4,
+    ),
+    const BoxShadow(
+      color: Color(0x0AE8112D), // red micro-glow
+      blurRadius: 12,
+      offset: Offset(0, 4),
+    ),
+  ];
+
+  /// Warm taupe shadow for the floating nav bar in light mode.
+  static List<BoxShadow> get navBarLight => [
+    const BoxShadow(
+      color: Color(0x29A0826D), // warm taupe
+      blurRadius: 24,
+      offset: Offset(0, -2),
+    ),
+  ];
+
+  // ── Context-aware helpers ─────────────────────────────────────
+
+  static List<BoxShadow> cardFor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? cardElevated
+          : cardElevatedLight;
+
+  static List<BoxShadow> navFor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? navBar
+          : navBarLight;
 }

@@ -5,6 +5,7 @@ import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../core/app_spacing.dart';
 
+
 // ═══════════════════════════════════════════════════════════════
 //  APP SHELL — Floating nav + center FAB
 // ═══════════════════════════════════════════════════════════════
@@ -15,7 +16,7 @@ class AppShell extends StatelessWidget {
 
   static const _tabs = [
     _TabItem(icon: Icons.home_rounded,          label: 'Feed',     path: AppRoutes.home),
-    _TabItem(icon: Icons.explore_rounded,        label: 'Explore',  path: AppRoutes.explore),
+    _TabItem(icon: Icons.stadium_outlined,         label: 'Venues',   path: AppRoutes.explore),
     _TabItem(icon: Icons.bar_chart_rounded,      label: 'Stats',    path: AppRoutes.stats),
     _TabItem(icon: Icons.calendar_today_rounded, label: 'Bookings', path: AppRoutes.bookings),
   ];
@@ -31,7 +32,7 @@ class AppShell extends StatelessWidget {
     final currentIdx = _currentIndex(context);
 
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: context.col.bg,
       extendBody: true,
       body: child,
       bottomNavigationBar: _FloatingNavBar(
@@ -50,7 +51,7 @@ class AppShell extends StatelessWidget {
       builder: (_) => _QuickActionSheet(
         onBookCourt: () {
           Navigator.pop(context);
-          context.push(AppRoutes.explore);
+          context.go(AppRoutes.explore);
         },
         onStartScoring: () {
           Navigator.pop(context);
@@ -112,7 +113,7 @@ class _FloatingNavBar extends StatelessWidget {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                   child: Container(
-                    color: AppColors.black.withValues(alpha: 0.6),
+                    color: context.col.bg.withValues(alpha: 0.6),
                   ),
                 ),
               ),
@@ -126,16 +127,10 @@ class _FloatingNavBar extends StatelessWidget {
               child: Container(
                 height: 56,
                 decoration: BoxDecoration(
-                  color: AppColors.overlay.withValues(alpha: 0.95),
+                  color: context.col.overlay.withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(color: AppColors.border, width: 0.5),
-                  boxShadow: [
-                    const BoxShadow(
-                      color: Color(0xCC000000),
-                      blurRadius: 32,
-                      offset: Offset(0, -4),
-                    ),
-                  ],
+                  border: Border.all(color: context.col.border, width: 0.5),
+                  boxShadow: AppShadow.navFor(context),
                 ),
                 child: Row(
                   children: [
@@ -194,7 +189,7 @@ class _FloatingNavBar extends StatelessWidget {
     final selected = index == currentIndex;
     final tab = tabs[index];
     const accent = AppColors.red;
-    const inactive = AppColors.textTertiaryDark;
+    final inactive = context.col.textTer;
 
     return Expanded(
       child: GestureDetector(
@@ -263,9 +258,9 @@ class _QuickActionSheet extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       decoration: BoxDecoration(
-        color: AppColors.overlay,
+        color: context.col.overlay,
         borderRadius: BorderRadius.circular(AppRadius.xxl),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: context.col.border, width: 0.5),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -275,7 +270,7 @@ class _QuickActionSheet extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: context.col.border,
               borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
           ),
@@ -351,7 +346,7 @@ class _ActionTile extends StatelessWidget {
                       fontFamily: 'Inter',
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimaryDark,
+                      color: context.col.text,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -360,7 +355,7 @@ class _ActionTile extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 12,
-                      color: AppColors.textSecondaryDark,
+                      color: context.col.textSec,
                     ),
                   ),
                 ],
@@ -369,7 +364,7 @@ class _ActionTile extends StatelessWidget {
             Icon(
               Icons.arrow_forward_ios_rounded,
               size: 14,
-              color: AppColors.textTertiaryDark,
+              color: context.col.textTer,
             ),
           ],
         ),
@@ -389,9 +384,9 @@ class _SportPickerSheet extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       decoration: BoxDecoration(
-        color: AppColors.overlay,
+        color: context.col.overlay,
         borderRadius: BorderRadius.circular(AppRadius.xxl),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: context.col.border, width: 0.5),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -401,7 +396,7 @@ class _SportPickerSheet extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: context.col.border,
               borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
           ),
@@ -415,7 +410,7 @@ class _SportPickerSheet extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.4,
-                color: AppColors.textSecondaryDark,
+                color: context.col.textSec,
               ),
             ),
           ),
@@ -447,18 +442,18 @@ class _SportTile extends StatelessWidget {
             const SizedBox(width: 16),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimaryDark,
+                color: context.col.text,
               ),
             ),
             const Spacer(),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios_rounded,
               size: 14,
-              color: AppColors.textTertiaryDark,
+              color: context.col.textTer,
             ),
           ],
         ),

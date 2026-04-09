@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
 import '../../core/app_spacing.dart';
-import '../../core/app_gradients.dart';
 import '../../models/fake_data.dart';
 
 class MyBookingsScreen extends StatefulWidget {
@@ -39,10 +38,11 @@ class _BookingsScreenState extends State<MyBookingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: c.bg,
       body: Column(
         children: [
           SizedBox(height: topPad),
@@ -50,9 +50,9 @@ class _BookingsScreenState extends State<MyBookingsScreen>
           // ── Header ────────────────────────────────────────────
           Container(
             decoration: BoxDecoration(
-              gradient: AppGradients.brand,
-              border: const Border(
-                bottom: BorderSide(color: AppColors.border, width: 0.5),
+              gradient: c.gradBrand,
+              border: Border(
+                bottom: BorderSide(color: c.border, width: 0.5),
               ),
             ),
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
@@ -61,7 +61,7 @@ class _BookingsScreenState extends State<MyBookingsScreen>
               children: [
                 Text(
                   'Bookings',
-                  style: AppTextStyles.displayS(AppColors.textPrimaryDark),
+                  style: AppTextStyles.displayS(c.text),
                 ),
                 const SizedBox(height: 16),
 
@@ -69,9 +69,9 @@ class _BookingsScreenState extends State<MyBookingsScreen>
                 Container(
                   height: 42,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: c.surface,
                     borderRadius: BorderRadius.circular(AppRadius.xl),
-                    border: Border.all(color: AppColors.border, width: 0.5),
+                    border: Border.all(color: c.border, width: 0.5),
                   ),
                   child: Stack(
                     children: [
@@ -106,7 +106,7 @@ class _BookingsScreenState extends State<MyBookingsScreen>
                                   style: AppTextStyles.labelM(
                                     _tab.index == 0
                                         ? AppColors.white
-                                        : AppColors.textSecondaryDark,
+                                        : c.textSec,
                                   ),
                                 ),
                               ),
@@ -122,7 +122,7 @@ class _BookingsScreenState extends State<MyBookingsScreen>
                                   style: AppTextStyles.labelM(
                                     _tab.index == 1
                                         ? AppColors.white
-                                        : AppColors.textSecondaryDark,
+                                        : c.textSec,
                                   ),
                                 ),
                               ),
@@ -178,6 +178,7 @@ class _BookingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     if (bookings.isEmpty) {
       return Center(
         child: Padding(
@@ -189,9 +190,9 @@ class _BookingList extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  gradient: AppGradients.brand,
+                  color: c.surfaceHigh,
                   borderRadius: BorderRadius.circular(AppRadius.xl),
-                  border: Border.all(color: AppColors.border, width: 0.5),
+                  border: Border.all(color: c.border, width: 0.5),
                 ),
                 child: const Center(
                   child: Text('📋', style: TextStyle(fontSize: 36)),
@@ -200,12 +201,12 @@ class _BookingList extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 emptyTitle,
-                style: AppTextStyles.displayS(AppColors.textPrimaryDark),
+                style: AppTextStyles.displayS(c.text),
               ),
               const SizedBox(height: 8),
               Text(
                 emptySubtitle,
-                style: AppTextStyles.bodyM(AppColors.textSecondaryDark),
+                style: AppTextStyles.bodyM(c.textSec),
                 textAlign: TextAlign.center,
               ),
               if (onBookNow != null) ...[
@@ -249,9 +250,9 @@ class _BookingCard extends StatelessWidget {
   };
 
   static const _statusColors = {
-    BookingStatus.upcoming:  Color(0xFF3B82F6),
-    BookingStatus.completed: Color(0xFF22C55E),
-    BookingStatus.cancelled: Color(0xFFEF4444),
+    BookingStatus.upcoming:  AppColors.info,
+    BookingStatus.completed: AppColors.success,
+    BookingStatus.cancelled: AppColors.error,
   };
 
   static const _statusLabels = {
@@ -270,14 +271,16 @@ class _BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     final statusColor = _statusColors[booking.status]!;
     final sportColor = _sportColor(booking.sport);
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: c.border, width: 0.5),
+        boxShadow: AppShadow.cardFor(context),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -324,14 +327,14 @@ class _BookingCard extends StatelessWidget {
                             children: [
                               Text(
                                 booking.venueName,
-                                style: AppTextStyles.headingS(AppColors.textPrimaryDark),
+                                style: AppTextStyles.headingS(c.text),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 '${booking.date}  ·  ${booking.timeSlot}',
-                                style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+                                style: AppTextStyles.bodyS(c.textSec),
                               ),
                             ],
                           ),
@@ -353,7 +356,7 @@ class _BookingCard extends StatelessWidget {
                     ),
 
                     const SizedBox(height: 12),
-                    Container(height: 0.5, color: AppColors.borderMuted),
+                    Container(height: 0.5, color: c.borderMuted),
                     const SizedBox(height: 10),
 
                     Row(
@@ -361,7 +364,7 @@ class _BookingCard extends StatelessWidget {
                         // Amount
                         Text(
                           '₹${booking.amount}',
-                          style: AppTextStyles.statM(AppColors.textPrimaryDark),
+                          style: AppTextStyles.statM(c.text),
                         ),
                         const Spacer(),
 
@@ -371,20 +374,18 @@ class _BookingCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: AppColors.surfaceHigh,
+                              color: c.surfaceHigh,
                               borderRadius: BorderRadius.circular(AppRadius.sm),
-                              border: Border.all(
-                                  color: AppColors.border, width: 0.5),
+                              border: Border.all(color: c.border, width: 0.5),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.qr_code_rounded,
-                                    size: 12, color: AppColors.textSecondaryDark),
+                                Icon(Icons.qr_code_rounded,
+                                    size: 12, color: c.textSec),
                                 const SizedBox(width: 4),
                                 Text('QR',
-                                    style: AppTextStyles.labelS(
-                                        AppColors.textSecondaryDark)),
+                                    style: AppTextStyles.labelS(c.textSec)),
                               ],
                             ),
                           ),

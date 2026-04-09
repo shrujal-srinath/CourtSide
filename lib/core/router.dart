@@ -13,11 +13,12 @@ import '../screens/home/home_screen.dart';
 import '../screens/sport/sport_screen.dart';
 import '../screens/venue/venue_detail_screen.dart';
 import '../screens/booking/booking_screen.dart';
-import '../screens/explore/explore_screen.dart';
+import '../screens/venue/venue_screen.dart';
 import '../screens/stats/stats_screen.dart';
 import '../screens/bookings/my_bookings_screen.dart';
 import '../screens/scoring/basketball/basketball_scorer.dart';
 import '../screens/scoring/basketball/basketball_mode_screen.dart';
+import '../screens/profile/profile_screen.dart';
 import '../screens/scoring/basketball/basketball_setup_screen.dart';
 import '../screens/scoring/basketball/basketball_players_screen.dart';
 import '../screens/scoring/cricket/cricket_scorer.dart';
@@ -182,7 +183,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.explore,
             pageBuilder: (context, _) =>
-                const NoTransitionPage(child: ExploreScreen()),
+                const NoTransitionPage(child: VenueScreen()),
           ),
           GoRoute(
             path: AppRoutes.stats,
@@ -200,7 +201,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── Stub routes ──────────────────────────────────────────
       GoRoute(
         path: AppRoutes.profile,
-        builder: (context, s) => const _Soon('Profile'),
+        pageBuilder: (context, s) =>
+            slideUpPage(child: const ProfileScreen(), key: s.pageKey),
       ),
       GoRoute(
         path: AppRoutes.wallet,

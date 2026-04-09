@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme.dart';
+import '../../core/app_spacing.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  MODELS — temporary until Supabase is wired
@@ -242,7 +243,7 @@ class _SportScreenState extends ConsumerState<SportScreen> {
         _filter == SportFilter.games;
 
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: context.col.bg,
       body: Column(
         children: [
           SizedBox(height: topPad),
@@ -336,8 +337,9 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     return Container(
-      color: AppColors.black,
+      color: c.bg,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -353,12 +355,12 @@ class _Header extends StatelessWidget {
                     width: 36, height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.surface,
-                      border: Border.all(color: AppColors.border, width: 0.5),
+                      color: c.surface,
+                      border: Border.all(color: c.border, width: 0.5),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.arrow_back_ios_new_rounded,
-                      color: AppColors.white,
+                      color: c.text,
                       size: 16,
                     ),
                   ),
@@ -374,7 +376,7 @@ class _Header extends StatelessWidget {
                     style: GoogleFonts.syne(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.white,
+                      color: c.text,
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -387,10 +389,9 @@ class _Header extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: c.surface,
                       borderRadius: BorderRadius.circular(20),
-                      border:
-                          Border.all(color: AppColors.border, width: 0.5),
+                      border: Border.all(color: c.border, width: 0.5),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -400,13 +401,13 @@ class _Header extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.white,
+                            color: c.text,
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(
+                        Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color: AppColors.textSecondaryDark,
+                          color: c.textSec,
                           size: 16,
                         ),
                       ],
@@ -422,14 +423,13 @@ class _Header extends StatelessWidget {
                   child: Container(
                     width: 36, height: 36,
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: c.surface,
                       borderRadius: BorderRadius.circular(10),
-                      border:
-                          Border.all(color: AppColors.border, width: 0.5),
+                      border: Border.all(color: c.border, width: 0.5),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.tune_rounded,
-                      color: AppColors.white,
+                      color: c.text,
                       size: 18,
                     ),
                   ),
@@ -444,26 +444,26 @@ class _Header extends StatelessWidget {
             child: Container(
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: c.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border, width: 0.5),
+                border: Border.all(color: c.border, width: 0.5),
               ),
               child: TextField(
                 controller: searchCtrl,
                 onChanged: onSearchChanged,
                 style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: AppColors.white,
+                  color: c.text,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Search ${sport.label} courts...',
                   hintStyle: GoogleFonts.inter(
                     fontSize: 14,
-                    color: AppColors.textSecondaryDark,
+                    color: c.textSec,
                   ),
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.search_rounded,
-                    color: AppColors.textSecondaryDark,
+                    color: c.textSec,
                     size: 20,
                   ),
                   border: InputBorder.none,
@@ -494,12 +494,12 @@ class _Header extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: active
                           ? AppColors.red.withValues(alpha: 0.15)
-                          : AppColors.surface,
+                          : c.surface,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: active
                             ? AppColors.red.withValues(alpha: 0.5)
-                            : AppColors.border,
+                            : c.border,
                         width: 0.5,
                       ),
                     ),
@@ -509,8 +509,8 @@ class _Header extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: active
-                            ? AppColors.white
-                            : AppColors.textSecondaryDark,
+                            ? AppColors.red
+                            : c.textSec,
                       ),
                     ),
                   ),
@@ -521,7 +521,7 @@ class _Header extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          Container(height: 0.5, color: AppColors.border),
+          Container(height: 0.5, color: c.border),
         ],
       ),
     );
@@ -590,14 +590,14 @@ class _PickupGameRow extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.white,
+                    color: context.col.text,
                   ),
                 ),
                 Text(
                   game.venue,
                   style: GoogleFonts.inter(
                     fontSize: 11,
-                    color: AppColors.textSecondaryDark,
+                    color: context.col.textSec,
                   ),
                 ),
               ],
@@ -668,7 +668,7 @@ class _SectionHeader extends StatelessWidget {
             style: GoogleFonts.syne(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppColors.white,
+              color: context.col.text,
             ),
           ),
           if (trailing != null)
@@ -709,9 +709,10 @@ class _VenueCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.fromLTRB(14, 0, 14, 10),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.col.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border, width: 0.5),
+          border: Border.all(color: context.col.border, width: 0.5),
+          boxShadow: AppShadow.cardFor(context),
         ),
         child: Row(
           children: [
@@ -726,7 +727,7 @@ class _VenueCard extends StatelessWidget {
                   Container(
                     width: 90,
                     height: 90,
-                    color: AppColors.surfaceHigh,
+                    color: context.col.surfaceHigh,
                     child: venue.photoUrl != null
                         ? Image.network(
                             venue.photoUrl!,
@@ -776,7 +777,7 @@ class _VenueCard extends StatelessWidget {
                       style: GoogleFonts.syne(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.white,
+                        color: context.col.text,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -788,7 +789,7 @@ class _VenueCard extends StatelessWidget {
                       '${venue.distanceKm.toStringAsFixed(1)} km  ·  ${venue.rating} ★  ·  ${venue.surface} ${venue.isIndoor ? 'indoor' : 'outdoor'}',
                       style: GoogleFonts.inter(
                         fontSize: 11,
-                        color: AppColors.textSecondaryDark,
+                        color: context.col.textSec,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -808,7 +809,7 @@ class _VenueCard extends StatelessWidget {
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.white,
+                                color: context.col.text,
                               ),
                             ),
                             Text(
@@ -822,9 +823,9 @@ class _VenueCard extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                                 color: available
                                     ? scarce
-                                        ? const Color(0xFFF59E0B)
-                                        : const Color(0xFF4ADE80)
-                                    : AppColors.textSecondaryDark,
+                                        ? AppColors.warning
+                                        : AppColors.success
+                                    : context.col.textSec,
                               ),
                             ),
                           ],
@@ -846,7 +847,7 @@ class _VenueCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: available
                                   ? AppColors.red
-                                  : AppColors.surfaceHigh,
+                                  : context.col.surfaceHigh,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -856,7 +857,7 @@ class _VenueCard extends StatelessWidget {
                                 fontWeight: FontWeight.w700,
                                 color: available
                                     ? AppColors.white
-                                    : AppColors.textSecondaryDark,
+                                    : context.col.textSec,
                               ),
                             ),
                           ),
@@ -883,14 +884,14 @@ class _PlaceholderImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.surfaceHigh,
+      color: context.col.surfaceHigh,
       child: Center(
         child: Text(
           venue.name[0],
           style: GoogleFonts.syne(
             fontSize: 28,
             fontWeight: FontWeight.w800,
-            color: AppColors.border,
+            color: context.col.border,
           ),
         ),
       ),
@@ -926,7 +927,7 @@ class _EmptyState extends StatelessWidget {
             style: GoogleFonts.syne(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: AppColors.white,
+              color: context.col.text,
             ),
             textAlign: TextAlign.center,
           ),
@@ -935,7 +936,7 @@ class _EmptyState extends StatelessWidget {
             subtitle,
             style: GoogleFonts.inter(
               fontSize: 13,
-              color: AppColors.textSecondaryDark,
+              color: context.col.textSec,
             ),
             textAlign: TextAlign.center,
           ),
@@ -956,10 +957,11 @@ class _DateSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -970,7 +972,7 @@ class _DateSheet extends StatelessWidget {
             width: 36,
             height: 3,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: c.border,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -981,7 +983,7 @@ class _DateSheet extends StatelessWidget {
               style: GoogleFonts.syne(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.white,
+                color: c.text,
               ),
             ),
           ),
@@ -995,8 +997,7 @@ class _DateSheet extends StatelessWidget {
                     horizontal: 18, vertical: 14),
                 decoration: BoxDecoration(
                   border: Border(
-                    bottom: BorderSide(
-                        color: AppColors.border, width: 0.5),
+                    bottom: BorderSide(color: c.border, width: 0.5),
                   ),
                   color: active
                       ? AppColors.red.withValues(alpha: 0.08)
@@ -1012,9 +1013,7 @@ class _DateSheet extends StatelessWidget {
                           fontWeight: active
                               ? FontWeight.w600
                               : FontWeight.w400,
-                          color: active
-                              ? AppColors.white
-                              : AppColors.textSecondaryDark,
+                          color: active ? AppColors.red : c.textSec,
                         ),
                       ),
                     ),
@@ -1053,10 +1052,11 @@ class _FilterSheetState extends State<_FilterSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1069,7 +1069,7 @@ class _FilterSheetState extends State<_FilterSheet> {
               width: 36,
               height: 3,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: c.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1081,7 +1081,7 @@ class _FilterSheetState extends State<_FilterSheet> {
               style: GoogleFonts.syne(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.white,
+                color: c.text,
               ),
             ),
           ),
@@ -1128,7 +1128,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.white,
+                    color: c.text,
                   ),
                 ),
                 Text(
@@ -1147,7 +1147,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 activeTrackColor: AppColors.red,
-                inactiveTrackColor: AppColors.border,
+                inactiveTrackColor: context.col.border,
                 thumbColor: AppColors.red,
                 overlayColor: AppColors.red.withValues(alpha: 0.1),
               ),
@@ -1215,7 +1215,7 @@ class _FilterToggle extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: AppColors.border, width: 0.5),
+            bottom: BorderSide(color: context.col.border, width: 0.5),
           ),
         ),
         child: Row(
@@ -1229,14 +1229,14 @@ class _FilterToggle extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.white,
+                      color: context.col.text,
                     ),
                   ),
                   Text(
                     subtitle,
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: AppColors.textSecondaryDark,
+                      color: context.col.textSec,
                     ),
                   ),
                 ],
@@ -1245,9 +1245,9 @@ class _FilterToggle extends StatelessWidget {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: AppColors.red,
-              inactiveThumbColor: AppColors.textSecondaryDark,
-              inactiveTrackColor: AppColors.border,
+              activeThumbColor: AppColors.red,
+              inactiveThumbColor: context.col.textSec,
+              inactiveTrackColor: context.col.border,
             ),
           ],
         ),

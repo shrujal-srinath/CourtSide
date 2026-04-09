@@ -31,13 +31,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark  = Theme.of(context).brightness == Brightness.dark;
-    final bg      = isDark ? AppColors.black : AppColors.white;
-    final accent  = isDark ? AppColors.red   : AppColors.redDark;
-    final primary = isDark ? AppColors.textPrimaryDark  : AppColors.textPrimaryLight;
-    final muted   = isDark ? AppColors.textSecondaryDark: AppColors.textSecondaryLight;
-    final surf    = isDark ? AppColors.surface : AppColors.surfaceLight;
-    final border  = isDark ? AppColors.border  : AppColors.borderLight;
+    final c       = context.col;
+    final bg      = c.bg;
+    final accent  = AppColors.red;
+    final primary = c.text;
+    final muted   = c.textSec;
+    final surf    = c.surface;
+    final border  = c.border;
 
     return Scaffold(
       backgroundColor: bg,

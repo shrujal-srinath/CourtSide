@@ -68,8 +68,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..repeat(reverse: true);
-    _loadMapStyle();
     _initLocation();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadMapStyle();
   }
 
   @override
@@ -118,6 +123,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _locationLoading = false;
     });
     _buildMarkersFiltered(_mapFilter);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Using Bengaluru as default — enable GPS for your actual location',
+          ),
+          backgroundColor: context.col.overlay,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+        ),
+      );
+    });
   }
 
   // ── Helpers ───────────────────────────────────────────────────
@@ -225,7 +246,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   Future<void> _loadMapStyle() async {
     try {
-      final style = await rootBundle.loadString('assets/map_style_dark.json');
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final path = isDark
+          ? 'assets/map_style_dark.json'
+          : 'assets/map_style_light.json';
+      final style = await rootBundle.loadString(path);
       if (mounted) setState(() => _mapStyle = style);
     } catch (_) {}
   }
@@ -269,7 +294,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final firstName = name.split(' ').first;
 
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: context.col.bg,
       body: Stack(
         children: [
           // ── Normal scrollable home ───────────────────────────
@@ -321,7 +346,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       // ── Courts near you ──────────────────────
                       _SectionHeader(
                         title: 'Courts Near You',
-                        onSeeAll: () => context.push('/explore'),
+                        onSeeAll: () => context.go(AppRoutes.explore),
                       ),
                       _CourtsNearYou(
                         venues: FakeData.venues,
@@ -410,6 +435,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 }
 
+// ── Top-level sheet: live games are demo data ─────────────────
+void _showLiveGamesSheet(BuildContext ctx) {
+  showModalBottomSheet(
+    context: ctx,
+    backgroundColor: ctx.col.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+    ),
+    builder: (_) => Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: ctx.col.border,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+              border: Border.all(
+                  color: AppColors.warning.withValues(alpha: 0.3), width: 1),
+            ),
+            child: const Center(
+              child: Text('🔴', style: TextStyle(fontSize: 22)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Live Games Coming Soon',
+            style: AppTextStyles.headingM(ctx.col.text),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'This is sample data. Real live pickup games will appear here once the app goes live — including open spots, venues, and live scores.',
+            style: AppTextStyles.bodyM(ctx.col.textSec),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(
+                backgroundColor: ctx.col.surfaceHigh,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+              ),
+              child: Text(
+                'Got it',
+                style: AppTextStyles.labelM(ctx.col.text),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  HEADER
 // ═══════════════════════════════════════════════════════════════
@@ -429,9 +524,9 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.brand,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 0.5),
+        gradient: context.col.gradBrand,
+        border: Border(
+          bottom: BorderSide(color: context.col.border, width: 0.5),
         ),
       ),
       padding: EdgeInsets.fromLTRB(18, topPad + 8, 18, 14),
@@ -442,18 +537,25 @@ class _Header extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Avatar
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.red.withValues(alpha: 0.15),
-                  border: Border.all(color: AppColors.white.withValues(alpha: 0.2), width: 1.5),
-                ),
-                child: Center(
-                  child: Text(
-                    firstName.isNotEmpty ? firstName[0].toUpperCase() : 'P',
-                    style: AppTextStyles.headingM(AppColors.white),
+              GestureDetector(
+                onTap: () => context.push('/profile'),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.red.withValues(alpha: 0.15),
+                    border: Border.all(
+                        color: context.col.isDark
+                            ? AppColors.white.withValues(alpha: 0.2)
+                            : AppColors.red.withValues(alpha: 0.3),
+                        width: 1.5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      firstName.isNotEmpty ? firstName[0].toUpperCase() : 'P',
+                      style: AppTextStyles.headingM(AppColors.red),
+                    ),
                   ),
                 ),
               ),
@@ -464,11 +566,11 @@ class _Header extends StatelessWidget {
                   children: [
                     Text(
                       greeting,
-                      style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+                      style: AppTextStyles.bodyS(context.col.textSec),
                     ),
                     Text(
                       firstName,
-                      style: AppTextStyles.headingL(AppColors.textPrimaryDark),
+                      style: AppTextStyles.headingL(context.col.text),
                     ),
                   ],
                 ),
@@ -498,39 +600,39 @@ class _Header extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.surface,
-                  border: Border.all(color: AppColors.border, width: 0.5),
+                  color: context.col.surface,
+                  border: Border.all(color: context.col.border, width: 0.5),
                 ),
-                child: const Icon(Icons.notifications_none_rounded,
-                    color: AppColors.white, size: 18),
+                child: Icon(Icons.notifications_none_rounded,
+                    color: context.col.text, size: 18),
               ),
             ],
           ),
           const SizedBox(height: 14),
           // Search bar
           GestureDetector(
-            onTap: () => context.push('/explore'),
+            onTap: () => context.go(AppRoutes.explore),
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.col.surface,
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.border, width: 0.5),
+                border: Border.all(color: context.col.border, width: 0.5),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: Row(
                 children: [
-                  const Icon(Icons.search_rounded,
-                      color: AppColors.textSecondaryDark, size: 20),
+                  Icon(Icons.search_rounded,
+                      color: context.col.textSec, size: 20),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Search venues, courts, areas...',
-                      style: AppTextStyles.bodyM(AppColors.textSecondaryDark),
+                      style: AppTextStyles.bodyM(context.col.textSec),
                     ),
                   ),
-                  const Icon(Icons.mic_none_rounded,
-                      color: AppColors.textTertiaryDark, size: 18),
+                  Icon(Icons.mic_none_rounded,
+                      color: context.col.textTer, size: 18),
                 ],
               ),
             ),
@@ -582,6 +684,7 @@ class _LiveNowStrip extends StatelessWidget {
           height: 90,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 18),
             itemCount: games.length,
             separatorBuilder: (c, i) => const SizedBox(width: 10),
@@ -593,53 +696,73 @@ class _LiveNowStrip extends StatelessWidget {
                       ? '🏏'
                       : '🏸';
               final gradient = AppGradients.forSport(g.sport);
-              return Container(
-                width: 200,
-                decoration: BoxDecoration(
-                  gradient: gradient,
-                  borderRadius: BorderRadius.circular(AppRadius.card),
-                  border: Border.all(color: AppColors.border, width: 0.5),
-                ),
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(sportEmoji,
-                            style: const TextStyle(fontSize: 16)),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            g.venueName,
-                            style: AppTextStyles.headingS(AppColors.textPrimaryDark),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+              return GestureDetector(
+                onTap: () => _showLiveGamesSheet(c),
+                child: Container(
+                  width: 200,
+                  decoration: BoxDecoration(
+                    gradient: gradient,
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                    border: Border.all(color: c.col.border, width: 0.5),
+                  ),
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(sportEmoji,
+                              style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              g.venueName,
+                              style: AppTextStyles.headingS(c.col.text),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          // TEST DATA badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.warning.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(AppRadius.pill),
+                              border: Border.all(
+                                color: AppColors.warning.withValues(alpha: 0.4),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Text(
+                              'DEMO',
+                              style: AppTextStyles.overline(AppColors.warning),
+                            ),
                           ),
-                          child: Text(
-                            '${g.spotsTotal - g.spotsFilled} spots left',
-                            style: AppTextStyles.overline(AppColors.success),
+                        ],
+                      ),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(AppRadius.pill),
+                            ),
+                            child: Text(
+                              '${g.spotsTotal - g.spotsFilled} spots left',
+                              style: AppTextStyles.overline(AppColors.success),
+                            ),
                           ),
-                        ),
-                        const Spacer(),
-                        Text(g.time,
-                            style: AppTextStyles.bodyS(AppColors.textSecondaryDark)),
-                      ],
-                    ),
-                  ],
+                          const Spacer(),
+                          Text(g.time,
+                              style: AppTextStyles.bodyS(c.col.textSec)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -712,7 +835,7 @@ class _CollapsedMapPreview extends StatelessWidget {
                 // Loading overlay
                 if (loading)
                   Container(
-                    color: AppColors.black.withValues(alpha: 0.55),
+                    color: context.col.bg.withValues(alpha: 0.55),
                     child: const Center(
                       child: CircularProgressIndicator(
                           color: AppColors.red, strokeWidth: 2),
@@ -731,8 +854,8 @@ class _CollapsedMapPreview extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          AppColors.black.withValues(alpha: 0.0),
-                          AppColors.black.withValues(alpha: 0.72),
+                          context.col.bg.withValues(alpha: 0.0),
+                          context.col.bg.withValues(alpha: 0.72),
                         ],
                       ),
                     ),
@@ -768,11 +891,11 @@ class _CollapsedMapPreview extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: AppColors.black.withValues(alpha: 0.45),
+                          color: context.col.overlay.withValues(alpha: 0.75),
                           borderRadius:
                               BorderRadius.circular(AppRadius.pill),
                           border: Border.all(
-                              color: AppColors.white.withValues(alpha: 0.15),
+                              color: context.col.border.withValues(alpha: 0.5),
                               width: 0.5),
                         ),
                         child: Row(
@@ -822,13 +945,14 @@ class _SportChipRow extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
           child: Text(
             'PICK A SPORT',
-            style: AppTextStyles.overline(AppColors.textSecondaryDark),
+            style: AppTextStyles.overline(context.col.textSec),
           ),
         ),
         SizedBox(
           height: 40,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 18),
             itemCount: _sports.length,
             separatorBuilder: (c, i) => const SizedBox(width: 8),
@@ -842,10 +966,10 @@ class _SportChipRow extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: active ? AppColors.red : AppColors.surface,
+                    color: active ? AppColors.red : context.col.surface,
                     borderRadius: BorderRadius.circular(AppRadius.pill),
                     border: Border.all(
-                      color: active ? AppColors.red : AppColors.border,
+                      color: active ? AppColors.red : context.col.border,
                       width: 0.5,
                     ),
                     boxShadow: active
@@ -867,9 +991,7 @@ class _SportChipRow extends StatelessWidget {
                       Text(
                         sport.label,
                         style: AppTextStyles.labelM(
-                          active
-                              ? AppColors.white
-                              : AppColors.textSecondaryDark,
+                          active ? AppColors.white : context.col.textSec,
                         ),
                       ),
                     ],
@@ -904,6 +1026,7 @@ class _CourtsNearYou extends StatelessWidget {
       height: 178,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 18),
         itemCount: venues.length,
         separatorBuilder: (c, i) => const SizedBox(width: 12),
@@ -934,22 +1057,29 @@ class _CourtCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: Builder(builder: (ctx) => Container(
         width: 160,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: ctx.col.surface,
           borderRadius: BorderRadius.circular(AppRadius.card),
-          boxShadow: [
-            const BoxShadow(
+          border: Border.all(color: ctx.col.border, width: 0.5),
+          boxShadow: ctx.col.isDark ? const [
+            BoxShadow(
               color: Color(0xFF000000),
               blurRadius: 20,
               offset: Offset(0, 8),
               spreadRadius: -4,
             ),
-            const BoxShadow(
+            BoxShadow(
               color: Color(0x1AE8112D),
               blurRadius: 12,
               offset: Offset(0, 4),
+            ),
+          ] : [
+            BoxShadow(
+              color: AppColors.creamBorder.withValues(alpha: 0.8),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -963,24 +1093,23 @@ class _CourtCard extends StatelessWidget {
               child: Stack(
                 children: [
                   Shimmer.fromColors(
-                    baseColor: AppColors.surfaceHigh,
-                    highlightColor: AppColors.overlay,
+                    baseColor: ctx.col.surfaceHigh,
+                    highlightColor: ctx.col.overlay,
                     child: Container(
                       height: 96,
                       width: double.infinity,
-                      color: AppColors.surfaceHigh,
+                      color: ctx.col.surfaceHigh,
                     ),
                   ),
                   // Letter placeholder over shimmer
                   Container(
                     height: 96,
                     width: double.infinity,
-                    color: AppColors.surfaceHigh.withValues(alpha: 0.8),
+                    color: ctx.col.surfaceHigh.withValues(alpha: 0.8),
                     child: Center(
                       child: Text(
                         venue.name[0],
-                        style: AppTextStyles.displayL(
-                            AppColors.border),
+                        style: AppTextStyles.displayL(ctx.col.border),
                       ),
                     ),
                   ),
@@ -1013,14 +1142,14 @@ class _CourtCard extends StatelessWidget {
                 children: [
                   Text(
                     venue.name,
-                    style: AppTextStyles.headingS(AppColors.textPrimaryDark),
+                    style: AppTextStyles.headingS(ctx.col.text),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 3),
                   Text(
                     '${venue.area}  ·  ${venue.rating} ★',
-                    style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+                    style: AppTextStyles.bodyS(ctx.col.textSec),
                   ),
                   const SizedBox(height: 8),
                   // Sport colored dots
@@ -1038,7 +1167,7 @@ class _CourtCard extends StatelessWidget {
                       const Spacer(),
                       Text(
                         'Tap to book',
-                        style: AppTextStyles.overline(AppColors.textTertiaryDark),
+                        style: AppTextStyles.overline(ctx.col.textTer),
                       ),
                     ],
                   ),
@@ -1047,7 +1176,7 @@ class _CourtCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
+      )),
     );
   }
 }
@@ -1078,13 +1207,13 @@ class _CommunityFeed extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Column(
         children: bookings.take(3).map((b) {
-          return Container(
+          return Builder(builder: (ctx) => Container(
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: ctx.col.surface,
               borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(color: AppColors.border, width: 0.5),
+              border: Border.all(color: ctx.col.border, width: 0.5),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1115,17 +1244,17 @@ class _CommunityFeed extends StatelessWidget {
                         children: [
                           Text(
                             'You',
-                            style: AppTextStyles.headingS(AppColors.textPrimaryDark),
+                            style: AppTextStyles.headingS(ctx.col.text),
                           ),
                           Text(
                             ' played ${b.sport} at',
-                            style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+                            style: AppTextStyles.bodyS(ctx.col.textSec),
                           ),
                         ],
                       ),
                       Text(
                         b.venueName,
-                        style: AppTextStyles.bodyS(AppColors.textPrimaryDark),
+                        style: AppTextStyles.bodyS(ctx.col.text),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1159,7 +1288,7 @@ class _CommunityFeed extends StatelessWidget {
                   children: [
                     Text(
                       _timeAgo(b.date),
-                      style: AppTextStyles.bodyS(AppColors.textTertiaryDark),
+                      style: AppTextStyles.bodyS(ctx.col.textTer),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -1170,7 +1299,7 @@ class _CommunityFeed extends StatelessWidget {
                 ),
               ],
             ),
-          );
+          ));
         }).toList(),
       ),
     );
@@ -1187,8 +1316,8 @@ class _MiniStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: AppTextStyles.headingS(AppColors.textPrimaryDark)),
-        Text(label, style: AppTextStyles.overline(AppColors.textTertiaryDark)),
+        Text(value, style: AppTextStyles.headingS(context.col.text)),
+        Text(label, style: AppTextStyles.overline(context.col.textTer)),
       ],
     );
   }
@@ -1252,9 +1381,9 @@ class _PromoTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          gradient: AppGradients.forSport(sport),
+          gradient: context.col.gradSport(sport),
           borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(color: AppColors.border, width: 0.5),
+          border: Border.all(color: context.col.border, width: 0.5),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1265,7 +1394,7 @@ class _PromoTile extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceHigh,
+                    color: context.col.surfaceHigh,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Center(
@@ -1274,19 +1403,19 @@ class _PromoTile extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.arrow_forward_ios_rounded,
-                    color: AppColors.textTertiaryDark, size: 12),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    color: context.col.textTer, size: 12),
               ],
             ),
             const SizedBox(height: 10),
             Text(
               title,
-              style: AppTextStyles.headingS(AppColors.textPrimaryDark),
+              style: AppTextStyles.headingS(context.col.text),
             ),
             const SizedBox(height: 3),
             Text(
               subtitle,
-              style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+              style: AppTextStyles.bodyS(context.col.textSec),
             ),
           ],
         ),
@@ -1311,7 +1440,7 @@ class _SectionHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: AppTextStyles.headingM(AppColors.textPrimaryDark)),
+          Text(title, style: AppTextStyles.headingM(context.col.text)),
           GestureDetector(
             onTap: onSeeAll,
             child: Text(
@@ -1393,7 +1522,7 @@ class _ExpandedMapOverlay extends StatelessWidget {
         // Loading overlay
         if (loading)
           Container(
-            color: AppColors.black.withValues(alpha: 0.5),
+            color: context.col.overlay.withValues(alpha: 0.7),
             child: const Center(
               child: CircularProgressIndicator(
                   color: AppColors.red, strokeWidth: 2),
@@ -1412,8 +1541,8 @@ class _ExpandedMapOverlay extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  AppColors.black.withValues(alpha: 0.88),
-                  AppColors.black.withValues(alpha: 0.0),
+                  context.col.overlay.withValues(alpha: 0.88),
+                  context.col.overlay.withValues(alpha: 0.0),
                 ],
               ),
             ),
@@ -1444,14 +1573,14 @@ class _ExpandedMapOverlay extends StatelessWidget {
             children: [
               _GlassButton(
                 onTap: onClose,
-                child: const Icon(Icons.close_rounded,
-                    color: AppColors.white, size: 18),
+                child: Icon(Icons.close_rounded,
+                    color: context.col.text, size: 18),
               ),
               const SizedBox(height: 8),
               _GlassButton(
                 onTap: onRecenter,
-                child: const Icon(Icons.my_location_rounded,
-                    color: AppColors.white, size: 16),
+                child: Icon(Icons.my_location_rounded,
+                    color: context.col.text, size: 16),
               ),
             ],
           ),
@@ -1483,12 +1612,12 @@ class _ExpandedMapOverlay extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.xxl, vertical: AppSpacing.lg),
                 decoration: BoxDecoration(
-                  color: AppColors.overlay,
+                  color: context.col.overlay,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(color: AppColors.border, width: 0.5),
+                  border: Border.all(color: context.col.border, width: 0.5),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.black.withValues(alpha: 0.4),
+                      color: context.col.overlay.withValues(alpha: 0.5),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -1498,13 +1627,11 @@ class _ExpandedMapOverlay extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text('No courts here',
-                        style: AppTextStyles.headingS(
-                            AppColors.textPrimaryDark)),
+                        style: AppTextStyles.headingS(context.col.text)),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       'Try a wider radius or All sports',
-                      style: AppTextStyles.bodyS(
-                          AppColors.textSecondaryDark),
+                      style: AppTextStyles.bodyS(context.col.textSec),
                     ),
                   ],
                 ),
@@ -1561,10 +1688,10 @@ class _GlassButton extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: AppColors.black.withValues(alpha: 0.55),
+              color: context.col.overlay.withValues(alpha: 0.75),
               borderRadius: BorderRadius.circular(AppRadius.md),
               border: Border.all(
-                  color: AppColors.white.withValues(alpha: 0.1), width: 0.5),
+                  color: context.col.border.withValues(alpha: 0.5), width: 0.5),
             ),
             child: Center(child: child),
           ),
@@ -1613,6 +1740,7 @@ class _MapFilterBar extends StatelessWidget {
       height: 36,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         itemCount: _filters.length,
         separatorBuilder: (c, i) => const SizedBox(width: AppSpacing.xs + 2),
@@ -1628,12 +1756,12 @@ class _MapFilterBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: active
                     ? chipColor.withValues(alpha: 0.14)
-                    : AppColors.black.withValues(alpha: 0.58),
+                    : context.col.overlay.withValues(alpha: 0.75),
                 borderRadius: BorderRadius.circular(AppRadius.pill),
                 border: Border.all(
                   color: active
                       ? chipColor.withValues(alpha: 0.75)
-                      : AppColors.white.withValues(alpha: 0.18),
+                      : context.col.border.withValues(alpha: 0.6),
                   width: active ? 1.0 : 0.5,
                 ),
                 boxShadow: active
@@ -1663,7 +1791,7 @@ class _MapFilterBar extends StatelessWidget {
                           style: AppTextStyles.labelM(
                             active
                                 ? chipColor
-                                : AppColors.white.withValues(alpha: 0.75),
+                                : context.col.textSec,
                           ),
                         ),
                       ],
@@ -1708,7 +1836,7 @@ class _RadiusSelectorRow extends StatelessWidget {
           padding: const EdgeInsets.only(left: 14, right: AppSpacing.sm),
           child: Text(
             'RADIUS',
-            style: AppTextStyles.overline(AppColors.textTertiaryDark),
+            style: AppTextStyles.overline(context.col.textTer),
           ),
         ),
         Expanded(
@@ -1735,7 +1863,7 @@ class _RadiusSelectorRow extends StatelessWidget {
                       border: Border.all(
                         color: active
                             ? AppColors.red.withValues(alpha: 0.7)
-                            : AppColors.white.withValues(alpha: 0.12),
+                            : context.col.border.withValues(alpha: 0.5),
                         width: active ? 1.0 : 0.5,
                       ),
                     ),
@@ -1744,8 +1872,8 @@ class _RadiusSelectorRow extends StatelessWidget {
                         label,
                         style: AppTextStyles.labelS(
                           active
-                              ? AppColors.white
-                              : AppColors.white.withValues(alpha: 0.5),
+                              ? context.col.text
+                              : context.col.textTer,
                         ),
                       ),
                     ),
@@ -1778,10 +1906,10 @@ class _CourtCountChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.black.withValues(alpha: 0.55),
+            color: context.col.overlay.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(AppRadius.pill),
             border: Border.all(
-                color: AppColors.white.withValues(alpha: 0.12), width: 0.5),
+                color: context.col.border, width: 0.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1797,7 +1925,7 @@ class _CourtCountChip extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 '$count ${count == 1 ? 'court' : 'courts'}',
-                style: AppTextStyles.labelS(AppColors.textPrimaryDark),
+                style: AppTextStyles.labelS(context.col.text),
               ),
             ],
           ),
@@ -1826,7 +1954,7 @@ class _NoCourtsChip extends StatelessWidget {
           ),
           child: Text(
             'No courts — try wider radius',
-            style: AppTextStyles.labelS(AppColors.textSecondaryDark),
+            style: AppTextStyles.labelS(context.col.textSec),
           ),
         ),
       ),
@@ -1890,18 +2018,12 @@ class _VenueQuickCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.overlay,
+        color: context.col.overlay,
         borderRadius: const BorderRadius.vertical(
             top: Radius.circular(AppRadius.xxl)),
-        border: const Border(
-            top: BorderSide(color: AppColors.border, width: 0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.6),
-            blurRadius: 32,
-            offset: const Offset(0, -8),
-          ),
-        ],
+        border: Border(
+            top: BorderSide(color: context.col.border, width: 0.5)),
+        boxShadow: AppShadow.navFor(context),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1915,7 +2037,7 @@ class _VenueQuickCard extends StatelessWidget {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.col.border,
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
               ),
@@ -1936,15 +2058,15 @@ class _VenueQuickCard extends StatelessWidget {
                       width: 72,
                       height: 72,
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceHigh,
+                        color: context.col.surfaceHigh,
                         borderRadius: BorderRadius.circular(AppRadius.md),
                         border: Border.all(
-                            color: AppColors.border, width: 0.5),
+                            color: context.col.border, width: 0.5),
                       ),
                       child: Center(
                         child: Text(
                           venue.name[0],
-                          style: AppTextStyles.displayL(AppColors.border),
+                          style: AppTextStyles.displayL(context.col.border),
                         ),
                       ),
                     ),
@@ -1959,7 +2081,7 @@ class _VenueQuickCard extends StatelessWidget {
                                 child: Text(
                                   venue.name,
                                   style: AppTextStyles.headingM(
-                                      AppColors.textPrimaryDark),
+                                      context.col.text),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -1991,53 +2113,49 @@ class _VenueQuickCard extends StatelessWidget {
                               const SizedBox(width: 3),
                               Text(
                                 '${venue.rating}',
-                                style: AppTextStyles.labelM(
-                                    AppColors.textPrimaryDark),
+                                style: AppTextStyles.labelM(context.col.text),
                               ),
                               const SizedBox(width: 8),
                               Container(
                                 width: 3,
                                 height: 3,
-                                decoration: const BoxDecoration(
+                                decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.textTertiaryDark,
+                                  color: context.col.textTer,
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 venue.area,
-                                style: AppTextStyles.bodyS(
-                                    AppColors.textSecondaryDark),
+                                style: AppTextStyles.bodyS(context.col.textSec),
                               ),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(Icons.access_time_rounded,
-                                  color: AppColors.textTertiaryDark,
+                              Icon(Icons.access_time_rounded,
+                                  color: context.col.textTer,
                                   size: 12),
                               const SizedBox(width: 4),
                               Text(
                                 'Open till ${venue.closingTime}',
-                                style: AppTextStyles.bodyS(
-                                    AppColors.textSecondaryDark),
+                                style: AppTextStyles.bodyS(context.col.textSec),
                               ),
                               if (userLocation != null) ...[
                                 const SizedBox(width: 8),
                                 Container(
                                   width: 3,
                                   height: 3,
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: AppColors.textTertiaryDark,
+                                    color: context.col.textTer,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   _distanceLabel(userLocation!, venue),
-                                  style: AppTextStyles.bodyS(
-                                      AppColors.textSecondaryDark),
+                                  style: AppTextStyles.bodyS(context.col.textSec),
                                 ),
                               ],
                             ],
@@ -2134,14 +2252,14 @@ class _VenueQuickCard extends StatelessWidget {
                         height: 48,
                         width: 48,
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: context.col.surface,
                           borderRadius:
                               BorderRadius.circular(AppRadius.md),
                           border: Border.all(
-                              color: AppColors.border, width: 0.5),
+                              color: context.col.border, width: 0.5),
                         ),
-                        child: const Icon(Icons.arrow_forward_rounded,
-                            color: AppColors.white, size: 18),
+                        child: Icon(Icons.arrow_forward_rounded,
+                            color: context.col.text, size: 18),
                       ),
                     ),
                   ],

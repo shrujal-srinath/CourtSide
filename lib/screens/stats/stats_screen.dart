@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
 import '../../core/app_spacing.dart';
-import '../../core/app_gradients.dart';
 import '../../models/fake_data.dart';
 import '../../providers/auth_provider.dart';
 
@@ -52,13 +51,14 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     final topPad = MediaQuery.of(context).padding.top;
     final user = ref.watch(currentUserProvider);
     final name = user?.userMetadata?['full_name'] as String? ?? 'Player';
     final activeStat = _sportStats[_activeSportIdx];
 
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: c.bg,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/stats/share', extra: activeStat),
         backgroundColor: AppColors.red,
@@ -84,6 +84,11 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
               child: _WinRateRing(
                 winRate: activeStat.winRate,
                 animation: _ringAnimation,
+                trackColor: c.surfaceHigh,
+                surfaceColor: c.surface,
+                borderColor: c.border,
+                textColor: c.text,
+                textSecColor: c.textSec,
               ),
             ),
           ),
@@ -100,7 +105,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             ),
           ),
 
-          SliverToBoxAdapter(child: const SizedBox(height: 20)),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
           // ── Stat Grid ────────────────────────────────────────
           SliverToBoxAdapter(
@@ -110,7 +115,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             ),
           ),
 
-          SliverToBoxAdapter(child: const SizedBox(height: 20)),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
           // ── Performance section header ───────────────────────
           SliverToBoxAdapter(
@@ -118,7 +123,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
               child: Text(
                 'PERFORMANCE',
-                style: AppTextStyles.overline(AppColors.textSecondaryDark),
+                style: AppTextStyles.overline(c.textSec),
               ),
             ),
           ),
@@ -131,7 +136,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             ),
           ),
 
-          SliverToBoxAdapter(child: const SizedBox(height: 20)),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
           // ── Career Timeline ──────────────────────────────────
           SliverToBoxAdapter(
@@ -142,7 +147,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                   padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
                   child: Text(
                     'CAREER TIMELINE',
-                    style: AppTextStyles.overline(AppColors.textSecondaryDark),
+                    style: AppTextStyles.overline(c.textSec),
                   ),
                 ),
                 _CareerTimeline(
@@ -153,7 +158,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             ),
           ),
 
-          SliverToBoxAdapter(child: const SizedBox(height: 20)),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
           // ── Streak Card ──────────────────────────────────────
           SliverToBoxAdapter(
@@ -163,7 +168,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             ),
           ),
 
-          SliverToBoxAdapter(child: const SizedBox(height: 20)),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
           // ── Recent Games header ──────────────────────────────
           SliverToBoxAdapter(
@@ -171,7 +176,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
               child: Text(
                 'RECENT GAMES',
-                style: AppTextStyles.overline(AppColors.textSecondaryDark),
+                style: AppTextStyles.overline(c.textSec),
               ),
             ),
           ),
@@ -223,17 +228,18 @@ class _ProfileHeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 18),
       height: 200,
       decoration: BoxDecoration(
-        gradient: AppGradients.profileBanner,
+        gradient: c.gradProfile,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: c.border, width: 0.5),
       ),
       child: Stack(
         children: [
-          // Subtle red glow at bottom
+          // Subtle red glow at bottom-left
           Positioned(
             bottom: -30,
             left: -30,
@@ -281,7 +287,7 @@ class _ProfileHeroBanner extends StatelessWidget {
                           const SizedBox(height: 6),
                           Text(
                             name,
-                            style: AppTextStyles.displayS(AppColors.white).copyWith(
+                            style: AppTextStyles.displayS(c.text).copyWith(
                               letterSpacing: -0.5,
                             ),
                           ),
@@ -365,9 +371,22 @@ class _ProfileHeroBanner extends StatelessWidget {
 // ── Win Rate Ring ──────────────────────────────────────────────
 
 class _WinRateRing extends StatelessWidget {
-  const _WinRateRing({required this.winRate, required this.animation});
+  const _WinRateRing({
+    required this.winRate,
+    required this.animation,
+    required this.trackColor,
+    required this.surfaceColor,
+    required this.borderColor,
+    required this.textColor,
+    required this.textSecColor,
+  });
   final double winRate;
   final Animation<double> animation;
+  final Color trackColor;
+  final Color surfaceColor;
+  final Color borderColor;
+  final Color textColor;
+  final Color textSecColor;
 
   @override
   Widget build(BuildContext context) {
@@ -375,9 +394,10 @@ class _WinRateRing extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: borderColor, width: 0.5),
+        boxShadow: AppShadow.cardFor(context),
       ),
       child: Row(
         children: [
@@ -390,7 +410,7 @@ class _WinRateRing extends StatelessWidget {
                 child: CustomPaint(
                   painter: _RingPainter(
                     progress: animation.value * winRate,
-                    trackColor: AppColors.surfaceHigh,
+                    trackColor: trackColor,
                     arcColor: AppColors.red,
                   ),
                   child: Center(
@@ -399,11 +419,11 @@ class _WinRateRing extends StatelessWidget {
                       children: [
                         Text(
                           '$pct%',
-                          style: AppTextStyles.statL(AppColors.white),
+                          style: AppTextStyles.statL(textColor),
                         ),
                         Text(
                           'WIN RATE',
-                          style: AppTextStyles.overline(AppColors.textSecondaryDark),
+                          style: AppTextStyles.overline(textSecColor),
                         ),
                       ],
                     ),
@@ -417,18 +437,18 @@ class _WinRateRing extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Overall Rating', style: AppTextStyles.headingS(AppColors.textSecondaryDark)),
+                Text('Overall Rating', style: AppTextStyles.headingS(textSecColor)),
                 const SizedBox(height: 8),
                 Text(
                   winRate >= 0.7 ? 'Elite' : winRate >= 0.5 ? 'Good' : 'Developing',
-                  style: AppTextStyles.displayS(AppColors.white),
+                  style: AppTextStyles.displayS(textColor),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   winRate >= 0.7
                       ? 'Top tier performance. Keep dominating.'
                       : 'Keep playing to improve your record.',
-                  style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+                  style: AppTextStyles.bodyS(textSecColor),
                 ),
               ],
             ),
@@ -468,10 +488,8 @@ class _RingPainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
-    // Track
     canvas.drawCircle(center, radius, trackPaint);
 
-    // Arc
     final rect = Rect.fromCircle(center: center, radius: radius);
     canvas.drawArc(
       rect,
@@ -509,12 +527,13 @@ class _SportSegmentedControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: c.border, width: 0.5),
       ),
       child: Stack(
         children: [
@@ -548,7 +567,7 @@ class _SportSegmentedControl extends StatelessWidget {
                     child: Text(
                       '${_icons[s.sport] ?? ''} ${_capitalize(s.sport)}',
                       style: AppTextStyles.labelM(
-                        active ? AppColors.white : AppColors.textSecondaryDark,
+                        active ? AppColors.white : c.textSec,
                       ),
                     ),
                   ),
@@ -614,19 +633,21 @@ class _StatCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: accent
             ? AppColors.red.withValues(alpha: 0.1)
-            : AppColors.surface,
+            : c.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(
           color: accent
               ? AppColors.red.withValues(alpha: 0.3)
-              : AppColors.border,
+              : c.border,
           width: 0.5,
         ),
+        boxShadow: accent ? [] : AppShadow.cardFor(context),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -634,13 +655,13 @@ class _StatCell extends StatelessWidget {
           Text(
             value,
             style: AppTextStyles.statL(
-              accent ? AppColors.red : AppColors.white,
+              accent ? AppColors.red : c.text,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: AppTextStyles.overline(AppColors.textSecondaryDark),
+            style: AppTextStyles.overline(c.textSec),
           ),
         ],
       ),
@@ -656,6 +677,7 @@ class _PerformanceStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     final rows = _buildRows(stat);
     return GridView.builder(
       shrinkWrap: true,
@@ -672,9 +694,10 @@ class _PerformanceStatsCard extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: c.surface,
             borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: AppColors.border, width: 0.5),
+            border: Border.all(color: c.border, width: 0.5),
+            boxShadow: AppShadow.cardFor(context),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -682,12 +705,12 @@ class _PerformanceStatsCard extends StatelessWidget {
             children: [
               Text(
                 row.value,
-                style: AppTextStyles.statM(AppColors.white),
+                style: AppTextStyles.statM(c.text),
               ),
               const SizedBox(height: 4),
               Text(
                 row.key.toUpperCase(),
-                style: AppTextStyles.overline(AppColors.textSecondaryDark),
+                style: AppTextStyles.overline(c.textSec),
               ),
             ],
           ),
@@ -728,11 +751,12 @@ class _CareerTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     if (games.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18),
         child: Text('No games yet',
-            style: AppTextStyles.bodyM(AppColors.textSecondaryDark)),
+            style: AppTextStyles.bodyM(c.textSec)),
       );
     }
     return SizedBox(
@@ -744,11 +768,11 @@ class _CareerTimeline extends StatelessWidget {
         separatorBuilder: (_, i) => const SizedBox(width: 10),
         itemBuilder: (_, i) {
           final b = games[i];
-          final isWin = i % 2 == 0; // fake win/loss from index
+          final isWin = i % 2 == 0;
           return Container(
             width: 80,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: c.surface,
               borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(
                 color: isWin
@@ -776,7 +800,7 @@ class _CareerTimeline extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   b.date.split(' ').take(2).join(' '),
-                  style: AppTextStyles.overline(AppColors.textSecondaryDark),
+                  style: AppTextStyles.overline(c.textSec),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -795,7 +819,7 @@ class _StreakCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Fake activity data for mini bar chart
+    final c = context.col;
     const heights = [0.4, 0.7, 0.5, 1.0, 0.8, 0.6, 0.9];
 
     return Container(
@@ -816,15 +840,14 @@ class _StreakCard extends StatelessWidget {
               children: [
                 Text(
                   '7 Week Streak',
-                  style: AppTextStyles.displayS(AppColors.white),
+                  style: AppTextStyles.displayS(c.text),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Played every week for 7 weeks.',
-                  style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+                  style: AppTextStyles.bodyS(c.textSec),
                 ),
                 const SizedBox(height: 12),
-                // Mini bar chart
                 Row(
                   children: List.generate(7, (i) {
                     return Expanded(
@@ -866,13 +889,15 @@ class _RecentGameCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     final color = _sportColor(booking.sport);
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: c.border, width: 0.5),
+        boxShadow: AppShadow.cardFor(context),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -915,14 +940,14 @@ class _RecentGameCard extends StatelessWidget {
                   children: [
                     Text(
                       booking.venueName,
-                      style: AppTextStyles.headingS(AppColors.textPrimaryDark),
+                      style: AppTextStyles.headingS(c.text),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
                     Text(
                       booking.date,
-                      style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+                      style: AppTextStyles.bodyS(c.textSec),
                     ),
                   ],
                 ),

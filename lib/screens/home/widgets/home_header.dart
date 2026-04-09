@@ -14,7 +14,7 @@ class HomeHeader extends ConsumerWidget {
     final firstName = name.split(' ').first;
 
     return Container(
-      color: AppColors.black,
+      color: context.col.bg,
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,7 +35,7 @@ class HomeHeader extends ConsumerWidget {
                       style: GoogleFonts.syne(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.white,
+                        color: context.col.text,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -43,7 +43,7 @@ class HomeHeader extends ConsumerWidget {
                       'Find your next game',
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: AppColors.textSecondaryDark,
+                        color: context.col.textSec,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -128,10 +128,10 @@ class _IconBtn extends StatelessWidget {
         height: 40,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: AppColors.surface,
-          border: Border.all(color: AppColors.border, width: 1),
+          color: context.col.surface,
+          border: Border.all(color: context.col.border, width: 1),
         ),
-        child: Icon(icon, color: AppColors.white, size: 20),
+        child: Icon(icon, color: context.col.text, size: 20),
       ),
     );
   }
@@ -149,16 +149,16 @@ class _SearchBar extends StatelessWidget {
       child: Container(
         height: 46,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.col.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border, width: 1),
+          border: Border.all(color: context.col.border, width: 1),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Row(
           children: [
             Icon(
               Icons.search_rounded,
-              color: AppColors.textSecondaryDark,
+              color: context.col.textSec,
               size: 20,
             ),
             const SizedBox(width: 10),
@@ -166,7 +166,7 @@ class _SearchBar extends StatelessWidget {
               'Search venues, courts...',
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: AppColors.textSecondaryDark,
+                color: context.col.textSec,
                 fontWeight: FontWeight.w400,
               ),
             ),

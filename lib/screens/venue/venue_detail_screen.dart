@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme.dart';
+import '../../core/app_spacing.dart';
 import '../../models/fake_data.dart';
 
 class VenueDetailScreen extends StatefulWidget {
@@ -33,11 +34,12 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     final topPad = MediaQuery.of(context).padding.top;
     final court = _activeCourt;
 
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: c.bg,
       body: Column(
         children: [
           // ── Header image + back ──────────────────────────────
@@ -46,7 +48,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
               Container(
                 height: 220 + topPad,
                 width: double.infinity,
-                color: AppColors.surfaceHigh,
+                color: c.surfaceHigh,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -54,7 +56,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                     Text(_venue.name[0],
                       style: GoogleFonts.syne(
                         fontSize: 80, fontWeight: FontWeight.w800,
-                        color: AppColors.border,
+                        color: c.border,
                       ),
                     ),
                   ],
@@ -67,11 +69,12 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                   child: Container(
                     width: 38, height: 38,
                     decoration: BoxDecoration(
-                      color: AppColors.black.withValues(alpha: 0.7),
+                      color: c.overlay.withValues(alpha: 0.85),
                       shape: BoxShape.circle,
+                      border: Border.all(color: c.border, width: 0.5),
                     ),
-                    child: const Icon(Icons.arrow_back_ios_new_rounded,
-                      color: AppColors.white, size: 16),
+                    child: Icon(Icons.arrow_back_ios_new_rounded,
+                      color: c.text, size: 16),
                   ),
                 ),
               ),
@@ -111,21 +114,21 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                         Text(_venue.name,
                           style: GoogleFonts.syne(
                             fontSize: 22, fontWeight: FontWeight.w700,
-                            color: AppColors.white, letterSpacing: -0.3,
+                            color: c.text, letterSpacing: -0.3,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
                             Icon(Icons.location_on_rounded,
-                              color: AppColors.textSecondaryDark, size: 13),
+                              color: c.textSec, size: 13),
                             const SizedBox(width: 3),
                             Expanded(
                               child: Text(
                                 '${_venue.address}  ·  Open till ${_venue.closingTime}',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  color: AppColors.textSecondaryDark,
+                                  color: c.textSec,
                                 ),
                               ),
                             ),
@@ -152,7 +155,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                   ),
 
                   const SizedBox(height: 16),
-                  Container(height: 0.5, color: AppColors.border),
+                  Container(height: 0.5, color: c.border),
 
                   // Sport tabs
                   Padding(
@@ -160,7 +163,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                     child: Text('Select sport',
                       style: GoogleFonts.inter(
                         fontSize: 11, fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondaryDark,
+                        color: c.textSec,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -170,9 +173,10 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                     height: 38,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
                       padding: const EdgeInsets.symmetric(horizontal: 18),
                       itemCount: _venue.sports.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (_, i) {
                         const icons = {
                           'basketball': '🏀', 'cricket': '🏏',
@@ -193,12 +197,12 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                             decoration: BoxDecoration(
                               color: active
                                   ? AppColors.red.withValues(alpha: 0.15)
-                                  : AppColors.surface,
+                                  : c.surface,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: active
                                     ? AppColors.red.withValues(alpha: 0.5)
-                                    : AppColors.border,
+                                    : c.border,
                                 width: 0.5,
                               ),
                             ),
@@ -207,8 +211,8 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 13, fontWeight: FontWeight.w600,
                                 color: active
-                                    ? AppColors.white
-                                    : AppColors.textSecondaryDark,
+                                    ? AppColors.red
+                                    : c.textSec,
                               ),
                             ),
                           ),
@@ -220,7 +224,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
 
                   // Court info
                   if (court != null) ...[
-                    Container(height: 0.5, color: AppColors.border),
+                    Container(height: 0.5, color: c.border),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
                       child: Column(
@@ -237,7 +241,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                                 : 'Not equipped',
                             valueColor: court.hasTheBox
                                 ? AppColors.red
-                                : AppColors.textSecondaryDark,
+                                : c.textSec,
                           ),
                           _InfoRow(
                             label: 'Available today',
@@ -253,7 +257,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                     ),
                   ],
 
-                  Container(height: 0.5, color: AppColors.border),
+                  Container(height: 0.5, color: c.border),
 
                   // Amenities
                   Padding(
@@ -264,7 +268,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                         Text('Amenities',
                           style: GoogleFonts.syne(
                             fontSize: 14, fontWeight: FontWeight.w700,
-                            color: AppColors.white,
+                            color: c.text,
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -275,15 +279,15 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: AppColors.surface,
+                                color: c.surface,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: AppColors.border, width: 0.5),
+                                  color: c.border, width: 0.5),
                               ),
                               child: Text(a,
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  color: AppColors.textSecondaryDark,
+                                  color: c.textSec,
                                 ),
                               ),
                             ),
@@ -293,7 +297,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 100), // space for FAB
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -336,24 +340,26 @@ class _StatPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: c.border, width: 0.5),
+        boxShadow: AppShadow.cardFor(context),
       ),
       child: Column(
         children: [
           Text(value,
             style: GoogleFonts.syne(
               fontSize: 16, fontWeight: FontWeight.w700,
-              color: AppColors.white,
+              color: c.text,
             ),
           ),
           Text(label,
             style: GoogleFonts.inter(
-              fontSize: 10, color: AppColors.textSecondaryDark),
+              fontSize: 10, color: c.textSec),
           ),
         ],
       ),
@@ -373,6 +379,7 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -380,12 +387,12 @@ class _InfoRow extends StatelessWidget {
         children: [
           Text(label,
             style: GoogleFonts.inter(
-              fontSize: 13, color: AppColors.textSecondaryDark),
+              fontSize: 13, color: c.textSec),
           ),
           Text(value,
             style: GoogleFonts.inter(
               fontSize: 13, fontWeight: FontWeight.w500,
-              color: valueColor ?? AppColors.white,
+              color: valueColor ?? c.text,
             ),
           ),
         ],
