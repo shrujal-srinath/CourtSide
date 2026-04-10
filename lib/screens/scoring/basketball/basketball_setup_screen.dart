@@ -86,13 +86,13 @@ class _BasketballSetupScreenState
         name: _teamACtrl.text.trim().isEmpty
             ? 'Team A'
             : _teamACtrl.text.trim(),
-        color: AppColors.teamBlue,
+        color: AppColors.info,
       ),
       teamB: BballTeamConfig(
         name: _teamBCtrl.text.trim().isEmpty
             ? 'Team B'
             : _teamBCtrl.text.trim(),
-        color: AppColors.teamRed,
+        color: AppColors.red,
       ),
     );
 
@@ -111,7 +111,7 @@ class _BasketballSetupScreenState
     final is3v3 = _format == BballFormat.threeVsThree;
 
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: context.colors.colorBackgroundPrimary,
       body: Column(
         children: [
           SizedBox(height: topPad),
@@ -129,9 +129,9 @@ class _BasketballSetupScreenState
                     height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.surface,
+                      color: context.colors.colorSurfacePrimary,
                       border:
-                          Border.all(color: AppColors.border, width: 0.5),
+                          Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
                     ),
                     child: const Icon(
                       Icons.arrow_back_ios_new_rounded,
@@ -156,7 +156,7 @@ class _BasketballSetupScreenState
                     Text(
                       'GAME SETUP',
                       style: AppTextStyles.headingL(
-                          AppColors.textPrimaryDark),
+                          context.colors.colorTextPrimary),
                     ),
                   ],
                 ),
@@ -194,7 +194,7 @@ class _BasketballSetupScreenState
                           ? 'FIBA 3x3: Full game (10 min) · First to 21 wins · 12s shot clock · 7-foul bonus · 1 timeout · +1 inside arc / +2 outside'
                           : 'FIBA 5v5: 4 quarters · 24s shot clock · 5-foul bonus per quarter · 2 timeouts',
                       style: AppTextStyles.bodyS(
-                          AppColors.textSecondaryDark),
+                          context.colors.colorTextSecondary),
                     ),
                   ),
 
@@ -207,7 +207,7 @@ class _BasketballSetupScreenState
                       Expanded(
                         child: _TeamNameField(
                           controller: _teamACtrl,
-                          accentColor: AppColors.teamBlue,
+                          accentColor: AppColors.info,
                           hint: 'Team A',
                         ),
                       ),
@@ -215,7 +215,7 @@ class _BasketballSetupScreenState
                       Expanded(
                         child: _TeamNameField(
                           controller: _teamBCtrl,
-                          accentColor: AppColors.teamRed,
+                          accentColor: AppColors.red,
                           hint: 'Team B',
                         ),
                       ),
@@ -294,7 +294,7 @@ class _BasketballSetupScreenState
                     padding: const EdgeInsets.only(top: AppSpacing.sm),
                     child: Text(
                       'Resets shot clock automatically when a basket is scored. FIBA 3x3 default: on.',
-                      style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+                      style: AppTextStyles.bodyS(context.colors.colorTextSecondary),
                     ),
                   ),
 
@@ -312,7 +312,7 @@ class _BasketballSetupScreenState
                     child: Text(
                       'Adds extra stat buttons to the scorer. Best for detailed tracking.',
                       style: AppTextStyles.bodyS(
-                          AppColors.textSecondaryDark),
+                          context.colors.colorTextSecondary),
                     ),
                   ),
 
@@ -363,7 +363,7 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Text(
         text,
-        style: AppTextStyles.overline(AppColors.textSecondaryDark),
+        style: AppTextStyles.overline(context.colors.colorTextSecondary),
       ),
     );
   }
@@ -389,9 +389,9 @@ class _SegmentedPicker extends StatelessWidget {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.colorSurfacePrimary,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
       ),
       child: Row(
         children: options.asMap().entries.map((entry) {
@@ -415,7 +415,7 @@ class _SegmentedPicker extends StatelessWidget {
                     style: AppTextStyles.headingS(
                       active
                           ? AppColors.white
-                          : AppColors.textSecondaryDark,
+                          : context.colors.colorTextSecondary,
                     ),
                   ),
                 ),
@@ -448,7 +448,7 @@ class _TeamNameField extends StatelessWidget {
     return Container(
       height: 52,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.colorSurfacePrimary,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: accentColor.withValues(alpha: 0.4),
@@ -471,11 +471,11 @@ class _TeamNameField extends StatelessWidget {
             child: TextField(
               controller: controller,
               style:
-                  AppTextStyles.headingS(AppColors.textPrimaryDark),
+                  AppTextStyles.headingS(context.colors.colorTextPrimary),
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle:
-                    AppTextStyles.headingS(AppColors.textSecondaryDark),
+                    AppTextStyles.headingS(context.colors.colorTextSecondary),
                 border: InputBorder.none,
                 isDense: true,
               ),
@@ -515,12 +515,12 @@ class _TimePicker extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: active
                         ? AppColors.red.withValues(alpha: 0.15)
-                        : AppColors.surface,
+                        : context.colors.colorSurfacePrimary,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                     border: Border.all(
                       color: active
                           ? AppColors.red.withValues(alpha: 0.5)
-                          : AppColors.border,
+                          : context.colors.colorBorderSubtle,
                       width: active ? 1.5 : 0.5,
                     ),
                   ),
@@ -530,7 +530,7 @@ class _TimePicker extends StatelessWidget {
                       style: AppTextStyles.headingS(
                         active
                             ? AppColors.white
-                            : AppColors.textSecondaryDark,
+                            : context.colors.colorTextSecondary,
                       ),
                     ),
                   ),
@@ -548,12 +548,12 @@ class _TimePicker extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected == -1
                     ? AppColors.red.withValues(alpha: 0.15)
-                    : AppColors.surface,
+                    : context.colors.colorSurfacePrimary,
                 borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
                   color: selected == -1
                       ? AppColors.red.withValues(alpha: 0.5)
-                      : AppColors.border,
+                      : context.colors.colorBorderSubtle,
                   width: selected == -1 ? 1.5 : 0.5,
                 ),
               ),
@@ -563,7 +563,7 @@ class _TimePicker extends StatelessWidget {
                   style: AppTextStyles.headingS(
                     selected == -1
                         ? AppColors.white
-                        : AppColors.textSecondaryDark,
+                        : context.colors.colorTextSecondary,
                   ),
                 ),
               ),
@@ -588,7 +588,7 @@ class _CustomTimeField extends StatelessWidget {
     return Container(
       height: 52,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.colorSurfacePrimary,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border:
             Border.all(color: AppColors.red.withValues(alpha: 0.4)),
@@ -601,7 +601,7 @@ class _CustomTimeField extends StatelessWidget {
               controller: controller,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: AppTextStyles.headingS(AppColors.textPrimaryDark),
+              style: AppTextStyles.headingS(context.colors.colorTextPrimary),
               decoration: const InputDecoration(
                 hintText: '10',
                 border: InputBorder.none,
@@ -612,7 +612,7 @@ class _CustomTimeField extends StatelessWidget {
           Text(
             'minutes',
             style:
-                AppTextStyles.bodyS(AppColors.textSecondaryDark),
+                AppTextStyles.bodyS(context.colors.colorTextSecondary),
           ),
         ],
       ),
@@ -643,12 +643,12 @@ class _ToggleRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg, vertical: AppSpacing.md),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.colorSurfacePrimary,
           borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
             color: value
                 ? AppColors.red.withValues(alpha: 0.35)
-                : AppColors.border,
+                : context.colors.colorBorderSubtle,
             width: 0.5,
           ),
         ),
@@ -657,7 +657,7 @@ class _ToggleRow extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: AppTextStyles.headingS(AppColors.textPrimaryDark),
+                style: AppTextStyles.headingS(context.colors.colorTextPrimary),
               ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -668,12 +668,12 @@ class _ToggleRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: value
                     ? AppColors.red
-                    : AppColors.surfaceHigh,
+                    : context.colors.colorSurfaceElevated,
                 borderRadius: BorderRadius.circular(AppRadius.pill),
                 border: Border.all(
                   color: value
                       ? AppColors.red
-                      : AppColors.border,
+                      : context.colors.colorBorderSubtle,
                   width: 0.5,
                 ),
               ),

@@ -492,8 +492,7 @@ class _Header extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(
                   AppSpacing.md, 0, AppSpacing.md, 0),
               itemCount: SportFilter.values.length,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(width: AppSpacing.sm),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (_, i) {
                 final f      = SportFilter.values[i];
                 final active = f == filter;

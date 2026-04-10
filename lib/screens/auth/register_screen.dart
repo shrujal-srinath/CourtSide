@@ -61,11 +61,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg     = isDark ? AppColors.black : AppColors.white;
-    final surf   = isDark ? AppColors.surface : AppColors.surfaceLight;
+    final surf   = isDark ? AppColors.surface : AppColors.lightCard;
     final accent = isDark ? AppColors.red : AppColors.redDark;
     final primary= isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
     final muted  = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
-    final border = isDark ? AppColors.border : AppColors.borderLight;
+    final border = isDark ? AppColors.border : AppColors.lightBorder;
 
     return Scaffold(
       backgroundColor: bg,

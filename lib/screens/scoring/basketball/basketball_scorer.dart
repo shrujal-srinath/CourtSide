@@ -552,7 +552,7 @@ class _BasketballScorerScreenState
     });
 
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: context.colors.colorBackgroundPrimary,
       body: SafeArea(
         child: state.isGameOver
             ? _GameOverPanel(state: state, onBack: () => context.go(AppRoutes.home))
@@ -569,7 +569,7 @@ class _BasketballScorerScreenState
                       onTimeout: () => notifier.callTimeout('A'),
                     ),
                   ),
-                  Container(width: 0.5, color: AppColors.border),
+                  Container(width: 0.5, color: context.colors.colorBorderSubtle),
                   // Center control panel
                   Expanded(
                     flex: 3,
@@ -585,7 +585,7 @@ class _BasketballScorerScreenState
                       onSettings: _showInGameSettings,
                     ),
                   ),
-                  Container(width: 0.5, color: AppColors.border),
+                  Container(width: 0.5, color: context.colors.colorBorderSubtle),
                   // Team B panel
                   Expanded(
                     flex: 2,
@@ -677,7 +677,7 @@ class _TeamPanel extends StatelessWidget {
                 Flexible(
                   child: Text(
                     teamName.toUpperCase(),
-                    style: AppTextStyles.headingS(AppColors.textPrimaryDark),
+                    style: AppTextStyles.headingS(context.colors.colorTextPrimary),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -819,11 +819,11 @@ class _FoulDots extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: filled
                     ? (isBonus ? AppColors.warning : teamColor)
-                    : AppColors.surfaceHigh,
+                    : context.colors.colorSurfaceElevated,
                 border: Border.all(
                   color: filled
                       ? (isBonus ? AppColors.warning : teamColor)
-                      : AppColors.border,
+                      : context.colors.colorBorderSubtle,
                   width: 0.5,
                 ),
               ),
@@ -982,7 +982,7 @@ class _CenterPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.surface,
+      color: context.colors.colorSurfacePrimary,
       child: Column(
         children: [
           // Top bar
@@ -995,9 +995,13 @@ class _CenterPanel extends StatelessWidget {
                     icon: Icons.arrow_back_ios_new_rounded,
                     onTap: onBack),
                 const Spacer(),
-                Text(
-                  '🏀  BASKETBALL',
-                  style: AppTextStyles.overline(AppColors.textSecondaryDark),
+                Flexible(
+                  child: Text(
+                    '🏀  BASKETBALL',
+                    style: AppTextStyles.overline(context.colors.colorTextSecondary),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                 ),
                 const Spacer(),
                 // Settings — small, unobtrusive
@@ -1007,7 +1011,7 @@ class _CenterPanel extends StatelessWidget {
                     padding: const EdgeInsets.only(right: AppSpacing.sm),
                     child: Icon(
                       Icons.tune_rounded,
-                      color: AppColors.textTertiaryDark,
+                      color: context.colors.colorTextTertiary,
                       size: 16,
                     ),
                   ),
@@ -1023,10 +1027,10 @@ class _CenterPanel extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md, vertical: AppSpacing.xs),
             decoration: BoxDecoration(
-              color: AppColors.surfaceHigh,
+              color: context.colors.colorSurfaceElevated,
               borderRadius: BorderRadius.circular(AppRadius.pill),
               border:
-                  Border.all(color: AppColors.border, width: 0.5),
+                  Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
             ),
             child: Text(
               state.periodFullLabel,
@@ -1047,12 +1051,12 @@ class _CenterPanel extends StatelessWidget {
               decoration: BoxDecoration(
                 color: state.isClockRunning
                     ? AppColors.red.withValues(alpha: 0.08)
-                    : AppColors.surfaceHigh,
+                    : context.colors.colorSurfaceElevated,
                 borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
                   color: state.isClockRunning
                       ? AppColors.red.withValues(alpha: 0.5)
-                      : AppColors.border,
+                      : context.colors.colorBorderSubtle,
                   width: state.isClockRunning ? 1.5 : 0.5,
                 ),
               ),
@@ -1065,7 +1069,7 @@ class _CenterPanel extends StatelessWidget {
                         : Icons.play_arrow_rounded,
                     color: state.isClockRunning
                         ? AppColors.white
-                        : AppColors.textSecondaryDark,
+                        : context.colors.colorTextSecondary,
                     size: 18,
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -1074,7 +1078,7 @@ class _CenterPanel extends StatelessWidget {
                     style: AppTextStyles.statL(
                       state.isClockRunning
                           ? AppColors.white
-                          : AppColors.textSecondaryDark,
+                          : context.colors.colorTextSecondary,
                     ),
                   ),
                 ],
@@ -1090,7 +1094,7 @@ class _CenterPanel extends StatelessWidget {
               children: [
                 Text(
                   'SHOT',
-                  style: AppTextStyles.overline(AppColors.textSecondaryDark),
+                  style: AppTextStyles.overline(context.colors.colorTextSecondary),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 GestureDetector(
@@ -1136,16 +1140,16 @@ class _CenterPanel extends StatelessWidget {
                               horizontal: AppSpacing.md,
                               vertical: AppSpacing.sm),
                           decoration: BoxDecoration(
-                            color: AppColors.surfaceHigh,
+                            color: context.colors.colorSurfaceElevated,
                             borderRadius:
                                 BorderRadius.circular(AppRadius.sm),
                             border: Border.all(
-                                color: AppColors.border, width: 0.5),
+                                color: context.colors.colorBorderSubtle, width: 0.5),
                           ),
                           child: Text(
                             e.label,
                             style: AppTextStyles.headingS(
-                                AppColors.textSecondaryDark),
+                                context.colors.colorTextSecondary),
                           ),
                         ),
                       ),
@@ -1171,13 +1175,13 @@ class _CenterPanel extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: state.isLastPeriod
                       ? AppColors.red.withValues(alpha: 0.12)
-                      : AppColors.surfaceHigh,
+                      : context.colors.colorSurfaceElevated,
                   borderRadius:
                       BorderRadius.circular(AppRadius.pill),
                   border: Border.all(
                     color: state.isLastPeriod
                         ? AppColors.red.withValues(alpha: 0.4)
-                        : AppColors.border,
+                        : context.colors.colorBorderSubtle,
                     width: 0.5,
                   ),
                 ),
@@ -1187,7 +1191,7 @@ class _CenterPanel extends StatelessWidget {
                     style: AppTextStyles.overline(
                       state.isLastPeriod
                           ? AppColors.red
-                          : AppColors.textSecondaryDark,
+                          : context.colors.colorTextSecondary,
                     ),
                   ),
                 ),
@@ -1223,7 +1227,7 @@ class _ShotClockDisplay extends StatelessWidget {
             ? AppColors.warning.withValues(alpha: 0.6)
             : isRunning
                 ? AppColors.info.withValues(alpha: 0.5)
-                : AppColors.border;
+                : context.colors.colorBorderSubtle;
 
     final bgColor = isExpired
         ? AppColors.red.withValues(alpha: 0.12)
@@ -1231,7 +1235,7 @@ class _ShotClockDisplay extends StatelessWidget {
             ? AppColors.warning.withValues(alpha: 0.08)
             : isRunning
                 ? AppColors.info.withValues(alpha: 0.06)
-                : AppColors.surfaceHigh;
+                : context.colors.colorSurfaceElevated;
 
     final textColor = isExpired
         ? AppColors.red
@@ -1239,7 +1243,7 @@ class _ShotClockDisplay extends StatelessWidget {
             ? AppColors.warning
             : isRunning
                 ? AppColors.white
-                : AppColors.textSecondaryDark;
+                : context.colors.colorTextSecondary;
 
     return AnimatedContainer(
       duration: AppDuration.fast,
@@ -1281,13 +1285,13 @@ class _ClockResetBtn extends StatelessWidget {
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
-          color: AppColors.surfaceHigh,
+          color: context.colors.colorSurfaceElevated,
           borderRadius: BorderRadius.circular(AppRadius.sm),
-          border: Border.all(color: AppColors.border, width: 0.5),
+          border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
         ),
         child: Center(
           child: Text(label,
-              style: AppTextStyles.labelM(AppColors.textSecondaryDark)),
+              style: AppTextStyles.labelM(context.colors.colorTextSecondary)),
         ),
       ),
     );
@@ -1308,7 +1312,7 @@ class _CompactEventLog extends StatelessWidget {
       return Center(
         child: Text(
           'Tap to score',
-          style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+          style: AppTextStyles.bodyS(context.colors.colorTextSecondary),
         ),
       );
     }
@@ -1319,9 +1323,9 @@ class _CompactEventLog extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.surfaceHigh,
+        color: context.colors.colorSurfaceElevated,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
       ),
       child: ListView.builder(
         reverse: true,
@@ -1345,9 +1349,9 @@ class _CompactEventLog extends StatelessWidget {
                   ? color.withValues(alpha: 0.06)
                   : Colors.transparent,
               border: i < count - 1
-                  ? const Border(
+                  ? Border(
                       bottom: BorderSide(
-                          color: AppColors.borderMuted, width: 0.5))
+                          color: context.colors.colorBorderSubtle, width: 0.5))
                   : null,
             ),
             child: Row(
@@ -1364,8 +1368,8 @@ class _CompactEventLog extends StatelessWidget {
                     '${e.displayLabel}  $teamName',
                     style: AppTextStyles.bodyS(
                       isFirst
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textSecondaryDark,
+                          ? context.colors.colorTextPrimary
+                          : context.colors.colorTextSecondary,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1401,7 +1405,7 @@ class _GameOverPanel extends StatelessWidget {
         ? 'TIE'
         : (aWon ? state.config.teamA.name : state.config.teamB.name);
     final winnerColor = tied
-        ? AppColors.textSecondaryDark
+        ? context.colors.colorTextSecondary
         : (aWon ? state.config.teamA.color : state.config.teamB.color);
 
     return Center(
@@ -1412,7 +1416,7 @@ class _GameOverPanel extends StatelessWidget {
           children: [
             Text(
               'GAME OVER',
-              style: AppTextStyles.overline(AppColors.textSecondaryDark),
+              style: AppTextStyles.overline(context.colors.colorTextSecondary),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
@@ -1433,7 +1437,7 @@ class _GameOverPanel extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
                   child: Text('—',
-                      style: AppTextStyles.displayM(AppColors.textSecondaryDark)),
+                      style: AppTextStyles.displayM(context.colors.colorTextSecondary)),
                 ),
                 Column(children: [
                   Text(state.config.teamB.name,
@@ -1491,7 +1495,7 @@ class _AttributionDialog extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.overlay,
           borderRadius: BorderRadius.circular(AppRadius.xl),
-          border: Border.all(color: AppColors.border, width: 0.5),
+          border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1503,13 +1507,13 @@ class _AttributionDialog extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-                  decoration: const BoxDecoration(
-                    color: AppColors.surfaceHigh,
-                    borderRadius: BorderRadius.vertical(
+                  decoration: BoxDecoration(
+                    color: context.colors.colorSurfaceElevated,
+                    borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(AppRadius.xl)),
                     border: Border(
                       bottom: BorderSide(
-                          color: AppColors.borderMuted, width: 0.5),
+                          color: context.colors.colorBorderSubtle, width: 0.5),
                     ),
                   ),
                   child: Row(
@@ -1522,13 +1526,13 @@ class _AttributionDialog extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: s.isClockRunning
                               ? AppColors.red.withValues(alpha: 0.12)
-                              : AppColors.surface,
+                              : context.colors.colorSurfacePrimary,
                           borderRadius:
                               BorderRadius.circular(AppRadius.sm),
                           border: Border.all(
                             color: s.isClockRunning
                                 ? AppColors.red.withValues(alpha: 0.4)
-                                : AppColors.border,
+                                : context.colors.colorBorderSubtle,
                             width: 0.5,
                           ),
                         ),
@@ -1537,11 +1541,11 @@ class _AttributionDialog extends StatelessWidget {
                           children: [
                             Text(s.periodLabel,
                                 style: AppTextStyles.overline(
-                                    AppColors.textSecondaryDark)),
+                                    context.colors.colorTextSecondary)),
                             const SizedBox(width: AppSpacing.xs),
                             Text(s.clockDisplay,
                                 style: AppTextStyles.labelM(
-                                    AppColors.textPrimaryDark)),
+                                    context.colors.colorTextPrimary)),
                           ],
                         ),
                       ),
@@ -1554,13 +1558,13 @@ class _AttributionDialog extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: s.shotClockSeconds <= 5
                                 ? AppColors.warning.withValues(alpha: 0.12)
-                                : AppColors.surface,
+                                : context.colors.colorSurfacePrimary,
                             borderRadius:
                                 BorderRadius.circular(AppRadius.sm),
                             border: Border.all(
                               color: s.shotClockSeconds <= 5
                                   ? AppColors.warning.withValues(alpha: 0.4)
-                                  : AppColors.border,
+                                  : context.colors.colorBorderSubtle,
                               width: 0.5,
                             ),
                           ),
@@ -1569,13 +1573,13 @@ class _AttributionDialog extends StatelessWidget {
                             children: [
                               Text('SHOT',
                                   style: AppTextStyles.overline(
-                                      AppColors.textSecondaryDark)),
+                                      context.colors.colorTextSecondary)),
                               const SizedBox(width: AppSpacing.xs),
                               Text('${s.shotClockSeconds}',
                                   style: AppTextStyles.labelM(
                                     s.shotClockSeconds <= 5
                                         ? AppColors.warning
-                                        : AppColors.textPrimaryDark,
+                                        : context.colors.colorTextPrimary,
                                   )),
                             ],
                           ),
@@ -1591,7 +1595,7 @@ class _AttributionDialog extends StatelessWidget {
 
             Text(
               'WHO GOT THE ${event.label}?',
-              style: AppTextStyles.overline(AppColors.textSecondaryDark),
+              style: AppTextStyles.overline(context.colors.colorTextSecondary),
             ),
 
             const SizedBox(height: AppSpacing.lg),
@@ -1615,7 +1619,7 @@ class _AttributionDialog extends StatelessWidget {
                   _JerseyBox(
                     number: '?',
                     name: 'Unknown',
-                    color: AppColors.textSecondaryDark,
+                    color: context.colors.colorTextSecondary,
                     onTap: () => Navigator.pop(context, null),
                   ),
                 ],
@@ -1668,7 +1672,7 @@ class _JerseyBox extends StatelessWidget {
             Text(
               name,
               style: AppTextStyles.labelS(
-                  AppColors.textSecondaryDark),
+                  context.colors.colorTextSecondary),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1709,7 +1713,7 @@ class _TeamPickerSheet extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.overlay,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1719,14 +1723,14 @@ class _TeamPickerSheet extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: context.colors.colorBorderSubtle,
               borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
             'WHICH TEAM — $eventLabel?',
-            style: AppTextStyles.overline(AppColors.textSecondaryDark),
+            style: AppTextStyles.overline(context.colors.colorTextSecondary),
           ),
           const SizedBox(height: AppSpacing.xl),
           Padding(
@@ -1796,7 +1800,7 @@ class _SubstitutionSheetState extends State<_SubstitutionSheet> {
       decoration: BoxDecoration(
         color: AppColors.overlay,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1806,14 +1810,14 @@ class _SubstitutionSheetState extends State<_SubstitutionSheet> {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: context.colors.colorBorderSubtle,
               borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
             'SUBSTITUTION',
-            style: AppTextStyles.headingS(AppColors.textPrimaryDark),
+            style: AppTextStyles.headingS(context.colors.colorTextPrimary),
           ),
           const SizedBox(height: AppSpacing.lg),
 
@@ -1826,12 +1830,12 @@ class _SubstitutionSheetState extends State<_SubstitutionSheet> {
               children: [
                 Text('BENCH — SELECT INCOMING',
                     style: AppTextStyles.overline(
-                        AppColors.textSecondaryDark)),
+                        context.colors.colorTextSecondary)),
                 const SizedBox(height: AppSpacing.sm),
                 if (widget.bench.isEmpty)
                   Text('No bench players',
                       style: AppTextStyles.bodyS(
-                          AppColors.textSecondaryDark))
+                          context.colors.colorTextSecondary))
                 else
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
@@ -1866,7 +1870,7 @@ class _SubstitutionSheetState extends State<_SubstitutionSheet> {
               children: [
                 Text('ON COURT — SELECT OUTGOING',
                     style: AppTextStyles.overline(
-                        AppColors.textSecondaryDark)),
+                        context.colors.colorTextSecondary)),
                 const SizedBox(height: AppSpacing.sm),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -2013,7 +2017,7 @@ class _SubPlayerChip extends StatelessWidget {
             ),
             Text(
               player.name,
-              style: AppTextStyles.bodyS(AppColors.textPrimaryDark),
+              style: AppTextStyles.bodyS(context.colors.colorTextPrimary),
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -2037,8 +2041,8 @@ class _IconCircleBtn extends StatelessWidget {
         height: 34,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: AppColors.surfaceHigh,
-          border: Border.all(color: AppColors.border, width: 0.5),
+          color: context.colors.colorSurfaceElevated,
+          border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
         ),
         child: Icon(icon, color: AppColors.white, size: 14),
       ),
@@ -2073,7 +2077,7 @@ class _TimeoutDots extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('T/O', style: AppTextStyles.overline(AppColors.textTertiaryDark)),
+          Text('T/O', style: AppTextStyles.overline(context.colors.colorTextTertiary)),
           const SizedBox(width: AppSpacing.xs),
           ...List.generate(total, (i) {
             final used = i >= timeoutsLeft;
@@ -2085,10 +2089,10 @@ class _TimeoutDots extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: used
-                      ? AppColors.surfaceHigh
+                      ? context.colors.colorSurfaceElevated
                       : teamColor.withValues(alpha: 0.7),
                   border: Border.all(
-                    color: used ? AppColors.border : teamColor.withValues(alpha: 0.5),
+                    color: used ? context.colors.colorBorderSubtle : teamColor.withValues(alpha: 0.5),
                     width: 0.5,
                   ),
                 ),
@@ -2147,13 +2151,13 @@ class _TwentyOneDialog extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             Text(
               '$teamName reached 21',
-              style: AppTextStyles.headingM(AppColors.textPrimaryDark),
+              style: AppTextStyles.headingM(context.colors.colorTextPrimary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'End the game and declare the winner, or keep playing.',
-              style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+              style: AppTextStyles.bodyS(context.colors.colorTextSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xl),
@@ -2176,12 +2180,12 @@ class _TwentyOneDialog extends StatelessWidget {
               child: Container(
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceHigh,
+                  color: context.colors.colorSurfaceElevated,
                   borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(color: AppColors.border, width: 0.5),
+                  border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
                 ),
                 child: Center(
-                  child: Text('KEEP PLAYING', style: AppTextStyles.headingS(AppColors.textSecondaryDark)),
+                  child: Text('KEEP PLAYING', style: AppTextStyles.headingS(context.colors.colorTextSecondary)),
                 ),
               ),
             ),
@@ -2209,17 +2213,17 @@ class _QuitGameDialog extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.overlay,
           borderRadius: BorderRadius.circular(AppRadius.xl),
-          border: Border.all(color: AppColors.border, width: 0.5),
+          border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
         ),
         padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Leave Game?', style: AppTextStyles.headingM(AppColors.textPrimaryDark)),
+            Text('Leave Game?', style: AppTextStyles.headingM(context.colors.colorTextPrimary)),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Your current game progress will be lost.',
-              style: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+              style: AppTextStyles.bodyS(context.colors.colorTextSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xl),
@@ -2243,12 +2247,12 @@ class _QuitGameDialog extends StatelessWidget {
               child: Container(
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceHigh,
+                  color: context.colors.colorSurfaceElevated,
                   borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(color: AppColors.border, width: 0.5),
+                  border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
                 ),
                 child: Center(
-                  child: Text('KEEP PLAYING', style: AppTextStyles.headingS(AppColors.textSecondaryDark)),
+                  child: Text('KEEP PLAYING', style: AppTextStyles.headingS(context.colors.colorTextSecondary)),
                 ),
               ),
             ),
@@ -2301,7 +2305,7 @@ class _GameSettingsSheetState extends State<_GameSettingsSheet> {
       decoration: BoxDecoration(
         color: AppColors.overlay,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -2315,7 +2319,7 @@ class _GameSettingsSheetState extends State<_GameSettingsSheet> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.colorBorderSubtle,
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
               ),
@@ -2325,15 +2329,15 @@ class _GameSettingsSheetState extends State<_GameSettingsSheet> {
             padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
             child: Row(
               children: [
-                const Icon(Icons.tune_rounded, color: AppColors.textSecondaryDark, size: 14),
+                Icon(Icons.tune_rounded, color: context.colors.colorTextSecondary, size: 14),
                 const SizedBox(width: AppSpacing.sm),
-                Text('GAME SETTINGS', style: AppTextStyles.overline(AppColors.textSecondaryDark)),
+                Text('GAME SETTINGS', style: AppTextStyles.overline(context.colors.colorTextSecondary)),
               ],
             ),
           ),
 
           const SizedBox(height: AppSpacing.md),
-          Container(height: 0.5, color: AppColors.borderMuted),
+          Container(height: 0.5, color: context.colors.colorBorderSubtle),
           const SizedBox(height: AppSpacing.md),
 
           // Shot clock auto-reset toggle
@@ -2347,10 +2351,10 @@ class _GameSettingsSheetState extends State<_GameSettingsSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Auto-reset shot clock on score',
-                            style: AppTextStyles.bodyS(AppColors.textPrimaryDark)),
+                            style: AppTextStyles.bodyS(context.colors.colorTextPrimary)),
                         const SizedBox(height: 2),
                         Text('Resets to ${widget.state.config.shotClockDuration}s on every basket',
-                            style: AppTextStyles.labelS(AppColors.textSecondaryDark)),
+                            style: AppTextStyles.labelS(context.colors.colorTextSecondary)),
                       ],
                     ),
                   ),
@@ -2362,8 +2366,8 @@ class _GameSettingsSheetState extends State<_GameSettingsSheet> {
                     },
                     activeThumbColor: AppColors.basketball,
                     activeTrackColor: AppColors.basketball.withValues(alpha: 0.3),
-                    inactiveTrackColor: AppColors.surfaceHigh,
-                    inactiveThumbColor: AppColors.textSecondaryDark,
+                    inactiveTrackColor: context.colors.colorSurfaceElevated,
+                    inactiveThumbColor: context.colors.colorTextSecondary,
                   ),
                 ],
               ),
@@ -2372,10 +2376,10 @@ class _GameSettingsSheetState extends State<_GameSettingsSheet> {
           // Player name editor (if detailed mode with players)
           if (hasPlayers) ...[
             const SizedBox(height: AppSpacing.md),
-            Container(height: 0.5, color: AppColors.borderMuted),
+            Container(height: 0.5, color: context.colors.colorBorderSubtle),
             Padding(
               padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
-              child: Text('EDIT PLAYERS', style: AppTextStyles.overline(AppColors.textSecondaryDark)),
+              child: Text('EDIT PLAYERS', style: AppTextStyles.overline(context.colors.colorTextSecondary)),
             ),
             const SizedBox(height: AppSpacing.sm),
             ConstrainedBox(
@@ -2464,17 +2468,17 @@ class _InlinePlayerEditorState extends State<_InlinePlayerEditor> {
               height: 36,
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               decoration: BoxDecoration(
-                color: AppColors.surfaceHigh,
+                color: context.colors.colorSurfaceElevated,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
-                border: Border.all(color: AppColors.border, width: 0.5),
+                border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
               ),
               child: TextField(
                 controller: _ctrl,
                 onChanged: widget.onNameChanged,
-                style: AppTextStyles.bodyS(AppColors.textPrimaryDark),
+                style: AppTextStyles.bodyS(context.colors.colorTextPrimary),
                 decoration: InputDecoration(
                   hintText: 'Player name',
-                  hintStyle: AppTextStyles.bodyS(AppColors.textSecondaryDark),
+                  hintStyle: AppTextStyles.bodyS(context.colors.colorTextSecondary),
                   border: InputBorder.none,
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),

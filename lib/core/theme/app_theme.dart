@@ -14,11 +14,10 @@ import 'void_fire_theme.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get dark  => _build(VoidFireTheme.scheme);
-  /// Light mode not yet designed — Void Fire dark is canonical.
-  static ThemeData get light => _build(VoidFireTheme.scheme);
+  static ThemeData get dark  => _build(VoidFireTheme.scheme, Brightness.dark);
+  static ThemeData get light => _build(VoidFireTheme.scheme, Brightness.light);
 
-  static ThemeData _build(AppColorScheme scheme) {
+  static ThemeData _build(AppColorScheme scheme, Brightness brightness) {
     final bg      = scheme.colorBackgroundPrimary;
     final surface = scheme.colorSurfacePrimary;
     final accent  = scheme.colorAccentPrimary;
@@ -28,20 +27,31 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: brightness,
       scaffoldBackgroundColor: bg,
       extensions: <ThemeExtension<dynamic>>[scheme],
 
-      colorScheme: ColorScheme.dark(
-        surface:                 bg,
-        primary:                 accent,
-        onPrimary:               scheme.colorTextOnAccent,
-        secondary:               surface,
-        onSecondary:             text,
-        error:                   scheme.colorError,
-        onSurface:               text,
-        surfaceContainerHighest: scheme.colorSurfaceElevated,
-      ),
+      colorScheme: brightness == Brightness.dark
+          ? ColorScheme.dark(
+              surface:                 bg,
+              primary:                 accent,
+              onPrimary:               scheme.colorTextOnAccent,
+              secondary:               surface,
+              onSecondary:             text,
+              error:                   scheme.colorError,
+              onSurface:               text,
+              surfaceContainerHighest: scheme.colorSurfaceElevated,
+            )
+          : ColorScheme.light(
+              surface:                 bg,
+              primary:                 accent,
+              onPrimary:               scheme.colorTextOnAccent,
+              secondary:               surface,
+              onSecondary:             text,
+              error:                   scheme.colorError,
+              onSurface:               text,
+              surfaceContainerHighest: scheme.colorSurfaceElevated,
+            ),
 
       appBarTheme: AppBarTheme(
         backgroundColor: bg,
@@ -49,9 +59,12 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        systemOverlayStyle: const SystemUiOverlayStyle(
+        systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
+          statusBarIconBrightness:
+              brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+          statusBarBrightness:
+              brightness == Brightness.dark ? Brightness.dark : Brightness.light,
         ),
       ),
 
@@ -73,7 +86,7 @@ class AppTheme {
               horizontal: AppSpacing.xxl, vertical: AppSpacing.lg),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.pill)),
-          textStyle: GoogleFonts.spaceGrotesk(
+          textStyle: GoogleFonts.inter(
               fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ),
@@ -126,12 +139,12 @@ class AppTheme {
 
   static TextTheme _buildTextTheme(Color primary, Color secondary) {
     return TextTheme(
-      displayLarge:   GoogleFonts.spaceGrotesk(fontSize: 48, fontWeight: FontWeight.w800, color: primary, letterSpacing: -2.0),
-      displayMedium:  GoogleFonts.spaceGrotesk(fontSize: 36, fontWeight: FontWeight.w800, color: primary, letterSpacing: -1.2),
-      displaySmall:   GoogleFonts.spaceGrotesk(fontSize: 28, fontWeight: FontWeight.w700, color: primary, letterSpacing: -0.6),
-      headlineLarge:  GoogleFonts.spaceGrotesk(fontSize: 20, fontWeight: FontWeight.w700, color: primary, letterSpacing: -0.3),
-      headlineMedium: GoogleFonts.spaceGrotesk(fontSize: 17, fontWeight: FontWeight.w700, color: primary, letterSpacing: -0.2),
-      headlineSmall:  GoogleFonts.spaceGrotesk(fontSize: 14, fontWeight: FontWeight.w600, color: primary, letterSpacing: -0.1),
+      displayLarge:   GoogleFonts.inter(fontSize: 48, fontWeight: FontWeight.w800, color: primary, letterSpacing: -1.5),
+      displayMedium:  GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.w800, color: primary, letterSpacing: -1.0),
+      displaySmall:   GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w700, color: primary, letterSpacing: -0.6),
+      headlineLarge:  GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: primary, letterSpacing: -0.2),
+      headlineMedium: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: primary),
+      headlineSmall:  GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: primary),
       bodyLarge:      GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w400, color: primary),
       bodyMedium:     GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w400, color: secondary),
       bodySmall:      GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w400, color: secondary),

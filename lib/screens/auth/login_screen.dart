@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../providers/auth_provider.dart';
@@ -30,10 +31,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: colors.colorBackgroundPrimary,
+      backgroundColor: c.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -46,27 +48,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               // ── Back ──────────────────────────────────────
               GestureDetector(
                 onTap: () => context.go(AppRoutes.landing),
-                child: Icon(Icons.arrow_back_rounded,
-                    color: colors.colorTextPrimary, size: 24),
+                child: Icon(Icons.arrow_back_rounded, color: c.text, size: 24),
               ),
 
               const SizedBox(height: AppSpacing.section),
 
               Text(
                 'COURTSIDE',
-                style: AppTextStyles.displayS(colors.colorAccentPrimary),
+                style: GoogleFonts.inter(
+                  fontSize: 22, fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5, color: AppColors.red,
+                ),
               ),
 
               const SizedBox(height: AppSpacing.xxxl),
 
               Text(
                 'Welcome back.',
-                style: AppTextStyles.displayM(colors.colorTextPrimary),
+                style: GoogleFonts.inter(
+                  fontSize: 34, fontWeight: FontWeight.w800,
+                  letterSpacing: -0.8, color: c.text, height: 1.1,
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Sign in to your player account.',
-                style: AppTextStyles.bodyL(colors.colorTextSecondary),
+                style: GoogleFonts.inter(fontSize: 15, color: c.textSec),
               ),
 
               const Spacer(),
@@ -76,9 +83,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 label: 'Continue with Google',
                 icon: _GoogleIcon(),
                 loading: _googleLoading,
-                bgColor: colors.colorSurfaceElevated,
-                borderColor: colors.colorBorderSubtle,
-                textColor: colors.colorTextPrimary,
+                bgColor: c.surface,
+                borderColor: c.border,
+                textColor: c.text,
                 onTap: _signInWithGoogle,
               ),
 
@@ -90,10 +97,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 icon: Icon(Icons.phone_rounded,
                     color: colors.colorTextOnAccent, size: 20),
                 loading: false,
-                bgColor: colors.colorAccentPrimary,
-                borderColor: colors.colorAccentPrimary,
-                textColor: colors.colorTextOnAccent,
+                bgColor: AppColors.red,
+                borderColor: AppColors.red,
+                textColor: Colors.white,
                 onTap: () => context.go(AppRoutes.phoneAuth),
+              ),
+
+              const SizedBox(height: 12),
+
+              // ── Dev Access ──────────────────────────────────────
+              _buildSocialButton(
+                label: 'Dev Access',
+                icon: Icon(Icons.developer_mode_rounded, color: c.text, size: 20),
+                loading: false,
+                bgColor: c.surface,
+                borderColor: c.border,
+                textColor: c.text,
+                onTap: () {
+                  ref.read(devAccessProvider.notifier).state = true;
+                  context.go(AppRoutes.home);
+                },
               ),
 
               if (_error != null) ...[
@@ -104,11 +127,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       horizontal: AppSpacing.md + 2,
                       vertical: AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: colors.colorError.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(
-                        color: colors.colorError.withValues(alpha: 0.3),
-                        width: 0.5),
+                    color: AppColors.error.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.2), width: 0.5),
                   ),
                   child: Text(
                     _error!,
@@ -125,7 +146,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onTap: () => context.go(AppRoutes.landing),
                   child: RichText(
                     text: TextSpan(
-                      style: AppTextStyles.bodyM(colors.colorTextSecondary),
+                      style: GoogleFonts.inter(fontSize: 14, color: c.textSec),
                       children: [
                         const TextSpan(text: "Don't have an account? "),
                         TextSpan(
@@ -134,8 +155,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   colors.colorAccentPrimary)
                               .copyWith(
                             fontWeight: FontWeight.w700,
+                            color: AppColors.red,
                             decoration: TextDecoration.underline,
-                            decorationColor: colors.colorAccentPrimary,
+                            decorationColor: AppColors.red,
                           ),
                         ),
                       ],

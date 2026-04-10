@@ -38,7 +38,7 @@ class ProfileScreen extends ConsumerWidget {
         : '';
 
     return Scaffold(
-      backgroundColor: context.col.bg,
+      backgroundColor: context.colors.colorBackgroundPrimary,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -119,17 +119,18 @@ class _ProfileBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final top = MediaQuery.of(context).padding.top;
 
     return Container(
       decoration: BoxDecoration(
-        gradient: context.col.gradBrand,
+        color: colors.colorSurfacePrimary,
         border: Border(
-          bottom: BorderSide(color: context.col.border, width: 0.5),
+          bottom: BorderSide(color: colors.colorBorderSubtle, width: 0.5),
         ),
       ),
       padding: EdgeInsets.fromLTRB(
-          AppSpacing.xl, top + AppSpacing.xl, AppSpacing.xl, AppSpacing.xxl),
+          AppSpacing.lg, top + AppSpacing.md, AppSpacing.lg, AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -137,46 +138,55 @@ class _ProfileBanner extends StatelessWidget {
           GestureDetector(
             onTap: () => context.pop(),
             child: Container(
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
-                color: context.col.surface.withValues(alpha: 0.6),
+                color: colors.colorBackgroundPrimary,
                 shape: BoxShape.circle,
-                border: Border.all(color: context.col.border, width: 0.5),
+                border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
               ),
               child: Icon(Icons.arrow_back_ios_new_rounded,
-                  color: context.col.text, size: 16),
+                  color: colors.colorTextPrimary, size: 16),
             ),
           ),
-          const SizedBox(height: AppSpacing.xxl),
+          const SizedBox(height: AppSpacing.xl),
 
-          // Avatar circle
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.red.withValues(alpha: 0.12),
-              border: Border.all(color: AppColors.red, width: 1.5),
-            ),
-            child: Center(
-              child: Text(
-                initials,
-                style: AppTextStyles.displayXL(AppColors.red),
+          // Avatar & Name Row
+          Row(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.colorAccentPrimary.withValues(alpha: 0.1),
+                  border: Border.all(color: colors.colorAccentPrimary, width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
+                    initials,
+                    style: AppTextStyles.displayL(colors.colorAccentPrimary),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name, style: AppTextStyles.displayS(colors.colorTextPrimary)),
+                    if (joinDate.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Member since $joinDate',
+                        style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.md),
-
-          // Name
-          Text(name, style: AppTextStyles.headingL(context.col.text)),
-          if (joinDate.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Member since $joinDate',
-              style: AppTextStyles.bodyS(context.col.textSec),
-            ),
-          ],
         ],
       ),
     );
@@ -208,25 +218,23 @@ class _StatPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(
             vertical: AppSpacing.md, horizontal: AppSpacing.sm),
         decoration: BoxDecoration(
-          color: context.col.surface,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: context.col.border, width: 0.5),
+          color: colors.colorSurfacePrimary,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colors.colorBorderSubtle, width: 1),
+          boxShadow: AppShadow.card,
         ),
         child: Column(
           children: [
-            Text(value,
-                style: AppTextStyles.statL(
-                    context.col.isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight)),
+            Text(value, style: AppTextStyles.headingM(colors.colorTextPrimary)),
             const SizedBox(height: 2),
             Text(label,
-                style: AppTextStyles.labelS(context.col.textSec),
+                style: AppTextStyles.overline(colors.colorTextTertiary).copyWith(fontSize: 10),
                 textAlign: TextAlign.center),
           ],
         ),
@@ -242,28 +250,28 @@ class _SportBadges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Placeholder until real data — show empty state prompt
+    final colors = context.colors;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'YOUR SPORTS',
-            style: AppTextStyles.overline(context.col.textSec),
+            style: AppTextStyles.overline(colors.colorTextTertiary),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: context.col.surface,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: context.col.border, width: 0.5),
+              color: colors.colorSurfacePrimary,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colors.colorBorderSubtle, width: 1),
             ),
             child: Text(
               'Sports you play will appear here after your first booking.',
-              style: AppTextStyles.bodyS(context.col.textSec),
+              style: AppTextStyles.bodyS(colors.colorTextSecondary),
               textAlign: TextAlign.center,
             ),
           ),
@@ -281,61 +289,60 @@ class _SettingsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('SETTINGS', style: AppTextStyles.overline(context.col.textSec)),
-        const SizedBox(height: AppSpacing.sm),
+        Text('SETTINGS', style: AppTextStyles.overline(colors.colorTextTertiary)),
+        const SizedBox(height: AppSpacing.md),
         Container(
           decoration: BoxDecoration(
-            color: context.col.surface,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: context.col.border, width: 0.5),
+            color: colors.colorSurfacePrimary,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colors.colorBorderSubtle, width: 1),
           ),
           child: Column(
             children: [
               // Theme row
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Row(
                   children: [
                     Container(
-                      width: 36,
-                      height: 36,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.12),
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.sm),
+                        color: Colors.amber.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(Icons.wb_sunny_rounded,
-                          color: AppColors.warning, size: 18),
+                          color: Colors.amber, size: 18),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Text('Appearance',
-                        style: AppTextStyles.bodyM(context.col.text)),
+                        style: AppTextStyles.bodyM(colors.colorTextPrimary)),
                     const Spacer(),
                     _ThemeSegment(currentMode: currentThemeMode),
                   ],
                 ),
               ),
 
-              Divider(height: 0.5, color: context.col.border),
+              Divider(height: 1, color: colors.colorBorderSubtle),
 
               // Notifications row (placeholder)
               _SettingsRow(
-                icon: Icons.notifications_outlined,
-                iconColor: AppColors.info,
+                icon: Icons.notifications_none_rounded,
+                iconColor: colors.colorInfo,
                 label: 'Notifications',
                 onTap: () {},
               ),
 
-              Divider(height: 0.5, color: context.col.border),
+              Divider(height: 1, color: colors.colorBorderSubtle),
 
               // Edit profile row (placeholder)
               _SettingsRow(
                 icon: Icons.person_outline_rounded,
-                iconColor: AppColors.cricket,
+                iconColor: colors.colorSportCricket,
                 label: 'Edit Profile',
                 onTap: () {},
                 isLast: true,
@@ -365,28 +372,28 @@ class _SettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: iconColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: iconColor, size: 18),
             ),
             const SizedBox(width: AppSpacing.md),
-            Text(label, style: AppTextStyles.bodyM(context.col.text)),
+            Text(label, style: AppTextStyles.bodyM(colors.colorTextPrimary)),
             const Spacer(),
             Icon(Icons.arrow_forward_ios_rounded,
-                size: 14, color: context.col.textTer),
+                size: 14, color: colors.colorTextTertiary),
           ],
         ),
       ),
@@ -402,13 +409,14 @@ class _ThemeSegment extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     return Container(
-      height: 32,
-      padding: const EdgeInsets.all(3),
+      height: 36,
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: context.col.bg,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: context.col.border, width: 0.5),
+        color: colors.colorBackgroundPrimary,
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: colors.colorBorderSubtle, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -450,20 +458,21 @@ class _Segment extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: AppDuration.fast,
-        width: 34,
-        height: 26,
+        width: 32,
+        height: 28,
         decoration: BoxDecoration(
-          color: selected ? AppColors.red : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
+          color: selected ? colors.colorAccentPrimary : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
         ),
         child: Icon(
           icon,
           size: 14,
-          color: selected ? AppColors.white : context.col.textTer,
+          color: selected ? Colors.white : colors.colorTextTertiary,
         ),
       ),
     );
@@ -475,6 +484,7 @@ class _Segment extends StatelessWidget {
 class _SignOutButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: () async {
         await Supabase.instance.client.auth.signOut();
@@ -484,17 +494,17 @@ class _SignOutButton extends ConsumerWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         decoration: BoxDecoration(
-          color: AppColors.red.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          color: colors.colorAccentPrimary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: AppColors.red.withValues(alpha: 0.35), width: 0.5),
+              color: colors.colorAccentPrimary.withValues(alpha: 0.35), width: 1),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.logout_rounded, color: AppColors.red, size: 18),
+            Icon(Icons.logout_rounded, color: colors.colorAccentPrimary, size: 18),
             const SizedBox(width: AppSpacing.sm),
-            Text('Sign Out', style: AppTextStyles.bodyM(AppColors.red)),
+            Text('Sign Out', style: AppTextStyles.labelM(colors.colorAccentPrimary)),
           ],
         ),
       ),

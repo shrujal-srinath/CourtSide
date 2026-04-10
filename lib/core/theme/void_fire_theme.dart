@@ -22,7 +22,7 @@ class VoidFireTheme {
     // Accent — Ruby Red
     colorAccentPrimary: ColorTokens.accentPrimary,
     colorAccentPressed: ColorTokens.accentSecondary,
-    colorAccentSubtle:  ColorTokens.accentMuted,
+    colorAccentSubtle:  ColorTokens.accentSubtle,
 
     // Text
     colorTextPrimary:   ColorTokens.textPrimary,
@@ -32,7 +32,7 @@ class VoidFireTheme {
 
     // Borders
     colorBorderSubtle: ColorTokens.borderSubtle,
-    colorBorderMedium: ColorTokens.borderMuted,
+    colorBorderMedium: ColorTokens.borderMedium,
 
     // Semantic
     colorSuccess: ColorTokens.success,

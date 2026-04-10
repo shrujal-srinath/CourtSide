@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../providers/auth_provider.dart';
@@ -53,10 +54,11 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.col;
     final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: colors.colorBackgroundPrimary,
+      backgroundColor: c.bg,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeIn,
@@ -70,21 +72,24 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                 children: [
                   const SizedBox(height: AppSpacing.section + AppSpacing.lg),
 
-                  // ── Logo block ─────────────────────────────
-                  _buildLogo(colors),
+                  // ── Logo block ─────────────────────────────────
+                  _buildLogo(),
 
                   const Spacer(),
 
-                  // ── Hero text ──────────────────────────────
-                  _buildHero(colors),
+                  // ── Hero text ──────────────────────────────────
+                  _buildHero(c),
 
                   const SizedBox(height: AppSpacing.section + AppSpacing.md),
 
-                  // ── Buttons ────────────────────────────────
-                  _buildGoogleButton(colors),
-                  const SizedBox(height: AppSpacing.md),
-                  _buildPhoneButton(colors),
+                  // ── Buttons ────────────────────────────────────
+                  _buildGoogleButton(c),
+                  const SizedBox(height: 12),
+                  _buildPhoneButton(),
+                  const SizedBox(height: 12),
+                  _buildDevButton(c),
 
+                  // ── Error ──────────────────────────────────────
                   if (_error != null) ...[
                     const SizedBox(height: AppSpacing.lg),
                     _buildError(_error!, colors),
@@ -92,8 +97,8 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
 
                   const SizedBox(height: AppSpacing.xxxl),
 
-                  // ── Sign in link ───────────────────────────
-                  _buildSignInLink(colors),
+                  // ── Sign in link ───────────────────────────────
+                  _buildSignInLink(c),
 
                   const SizedBox(height: AppSpacing.section),
                 ],
@@ -105,51 +110,74 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
     );
   }
 
-  Widget _buildLogo(AppColorScheme colors) {
+  // ── Logo ───────────────────────────────────────────────────
+  Widget _buildLogo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'COURTSIDE',
-          style: AppTextStyles.displayS(colors.colorAccentPrimary),
+          style: GoogleFonts.inter(
+            fontSize: 30,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+            color: AppColors.red,
+          ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           'BY THE BOX',
-          style: AppTextStyles.overline(colors.colorTextTertiary),
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 2.2,
+            color: const Color(0xFF9CA3AF),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildHero(AppColorScheme colors) {
+  // ── Hero ───────────────────────────────────────────────────
+  Widget _buildHero(ThemeColors c) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Book the Court.\nOwn the Stats.',
-          style: AppTextStyles.displayL(colors.colorTextPrimary),
+          style: GoogleFonts.inter(
+            fontSize: 38,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -1,
+            color: c.text,
+            height: 1.1,
+          ),
         ),
         const SizedBox(height: AppSpacing.md + 2),
         Text(
           'Your verified game stats, court bookings\nand player rank — all in one place.',
-          style: AppTextStyles.bodyL(colors.colorTextSecondary),
+          style: GoogleFonts.inter(
+            fontSize: 15,
+            color: c.textSec,
+            height: 1.55,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildGoogleButton(AppColorScheme colors) {
+  // ── Google button ──────────────────────────────────────────
+  Widget _buildGoogleButton(ThemeColors c) {
     return GestureDetector(
       onTap: _googleLoading ? null : _signInWithGoogle,
       child: AnimatedContainer(
         duration: AppDuration.fast,
         height: 54,
         decoration: BoxDecoration(
-          color: colors.colorSurfaceElevated,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-              color: colors.colorBorderSubtle, width: 0.5),
+          color: c.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: c.border, width: 0.5),
+          boxShadow: AppShadow.searchLight,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -160,7 +188,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: colors.colorTextPrimary,
+                  color: c.text,
                 ),
               )
             else ...[
@@ -168,7 +196,11 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
               const SizedBox(width: AppSpacing.md),
               Text(
                 'Continue with Google',
-                style: AppTextStyles.headingS(colors.colorTextPrimary),
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: c.text,
+                ),
               ),
             ],
           ],
@@ -177,24 +209,61 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
     );
   }
 
-  Widget _buildPhoneButton(AppColorScheme colors) {
+  // ── Phone button ───────────────────────────────────────────
+  Widget _buildPhoneButton() {
     return GestureDetector(
       onTap: () => context.go(AppRoutes.phoneAuth),
       child: Container(
         height: 54,
         decoration: BoxDecoration(
-          color: colors.colorAccentPrimary,
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          color: AppColors.red,
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.phone_rounded,
-                color: colors.colorTextOnAccent, size: 20),
-            const SizedBox(width: AppSpacing.sm + 2),
+            const Icon(Icons.phone_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
             Text(
               'Continue with Phone',
-              style: AppTextStyles.headingS(colors.colorTextOnAccent),
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Dev Access button ───────────────────────────────────────────
+  Widget _buildDevButton(ThemeColors c) {
+    return GestureDetector(
+      onTap: () {
+        ref.read(devAccessProvider.notifier).state = true;
+        context.go(AppRoutes.home);
+      },
+      child: Container(
+        height: 54,
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: c.border, width: 0.5),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.developer_mode_rounded, color: c.text, size: 20),
+            const SizedBox(width: 10),
+            Text(
+              'Dev Access',
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: c.text,
+              ),
             ),
           ],
         ),
@@ -208,30 +277,34 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md + 2, vertical: AppSpacing.md),
       decoration: BoxDecoration(
-        color: colors.colorError.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: AppColors.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
-            color: colors.colorError.withValues(alpha: 0.3), width: 0.5),
+          color: AppColors.error.withValues(alpha: 0.2),
+          width: 0.5,
+        ),
       ),
       child: Text(message, style: AppTextStyles.bodyS(colors.colorError)),
     );
   }
 
-  Widget _buildSignInLink(AppColorScheme colors) {
+  // ── Sign in link ───────────────────────────────────────────
+  Widget _buildSignInLink(ThemeColors c) {
     return Center(
       child: GestureDetector(
         onTap: () => context.go(AppRoutes.login),
         child: RichText(
           text: TextSpan(
-            style: AppTextStyles.bodyM(colors.colorTextSecondary),
+            style: GoogleFonts.inter(fontSize: 14, color: c.textSec),
             children: [
               const TextSpan(text: 'Already have an account? '),
               TextSpan(
                 text: 'Sign in',
-                style: AppTextStyles.bodyM(colors.colorAccentPrimary).copyWith(
+                style: AppTextStyles.bodyM(context.colors.colorAccentPrimary).copyWith(
                   fontWeight: FontWeight.w700,
+                  color: AppColors.red,
                   decoration: TextDecoration.underline,
-                  decorationColor: colors.colorAccentPrimary,
+                  decorationColor: AppColors.red,
                 ),
               ),
             ],

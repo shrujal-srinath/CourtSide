@@ -56,54 +56,45 @@ class AppShadow {
   AppShadow._();
 
   static List<BoxShadow> get card => [
-    const BoxShadow(
-      color: Color(0xB3000000), // 70% black
-      blurRadius: 16,
-      offset: Offset(0, 6),
-      spreadRadius: -2,
-    ),
-    BoxShadow(
-      color: ColorTokens.accentPrimary.withValues(alpha: 0.08),
-      blurRadius: 10,
-      offset: const Offset(0, 3),
-    ),
-  ];
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ];
 
   static List<BoxShadow> get cardElevated => [
-    const BoxShadow(
-      color: Color(0xCC000000), // 80% black
-      blurRadius: 24,
-      offset: Offset(0, 10),
-      spreadRadius: -4,
-    ),
-    BoxShadow(
-      color: ColorTokens.accentPrimary.withValues(alpha: 0.12),
-      blurRadius: 14,
-      offset: const Offset(0, 5),
-    ),
-  ];
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.08),
+          blurRadius: 16,
+          offset: const Offset(0, 6),
+        ),
+      ];
 
   static List<BoxShadow> get navBar => [
-    const BoxShadow(
-      color: Color(0xCC000000),
-      blurRadius: 32,
-      offset: Offset(0, -4),
-    ),
-  ];
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.07),
+          blurRadius: 20,
+          offset: const Offset(0, 4),
+        ),
+      ];
 
   static List<BoxShadow> get fab => [
-    BoxShadow(
-      color: ColorTokens.accentPrimary.withValues(alpha: 0.5),
-      blurRadius: 20,
-      offset: const Offset(0, 4),
-      spreadRadius: -4,
-    ),
-  ];
+        BoxShadow(
+          color: ColorTokens.accentPrimary.withValues(alpha: 0.28),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
+        ),
+      ];
 
-  /// Backward-compat aliases (context param ignored — always dark).
-  /// Migrate call sites to AppShadow.card / AppShadow.navBar.
-  // ignore: avoid_unused_parameters
+  static List<BoxShadow> get searchLight => [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.04),
+          blurRadius: 4,
+          offset: const Offset(0, 1),
+        ),
+      ];
+
   static List<BoxShadow> cardFor(BuildContext context) => card;
-  // ignore: avoid_unused_parameters
   static List<BoxShadow> navFor(BuildContext context) => navBar;
 }

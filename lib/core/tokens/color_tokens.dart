@@ -9,28 +9,26 @@ import 'package:flutter/material.dart';
 class ColorTokens {
   ColorTokens._();
 
-  // ── Backgrounds — 4 elevation levels ─────────────────────────
-  static const Color backgroundPrimary = Color(0xFF000000); // scaffold, true black
-  static const Color surfacePrimary    = Color(0xFF0D0D0D); // cards, default surface
-  static const Color surfaceElevated   = Color(0xFF161616); // elevated cards, inputs
-  static const Color surfaceOverlay    = Color(0xFF222222); // modals, sheets, dialogs
+  // ── Backgrounds & Surfaces ─────────────────────────────────────
+  static const Color backgroundPrimary = Color(0xFFF6F7F9); // Light gray background
+  static const Color surfacePrimary    = Color(0xFFFFFFFF); // White cards
+  static const Color surfaceElevated   = Color(0xFFFFFFFF); // elevated cards
+  static const Color surfaceOverlay    = Color(0xFFFFFFFF); // modals, sheets
 
-  // ── Brand accent — Ruby Red, used SPARINGLY ───────────────────
-  // Rule: accentPrimary appears on CTAs, active states, brand mark ONLY.
-  // Never use red as a background. Never on text blocks.
-  static const Color accentPrimary   = Color(0xFFB91C3A); // Ruby — primary CTA, active
-  static const Color accentSecondary = Color(0xFF8E1229); // pressed / dark variant
-  static const Color accentMuted     = Color(0xFF280010); // subtle tint (badges, chips)
+  // ── Brand accent — CourtSide Red ───────────────────────────────
+  static const Color accentPrimary   = Color(0xFFFF2D2D); // Vibrant red CTA
+  static const Color accentSecondary = Color(0xFFE52E2E); // Pressed variant
+  static const Color accentSubtle    = Color(0x14FF2D2D); // 8% alpha red
 
-  // ── Text — 4 levels, white dominant ──────────────────────────
-  static const Color textPrimary   = Color(0xFFFFFFFF); // headings, key numbers, names
-  static const Color textSecondary = Color(0xFFCCCCCC); // body, supporting text
-  static const Color textTertiary  = Color(0xFF888888); // captions, meta, timestamps
-  static const Color textDisabled  = Color(0xFF444444); // disabled states
+  // ── Text — Light mode hierarchy ───────────────────────────────
+  static const Color textPrimary   = Color(0xFF111827); // Charcoal dark
+  static const Color textSecondary = Color(0xFF6B7280); // Medium gray
+  static const Color textTertiary  = Color(0xFF9CA3AF); // Light gray / Disabled
+  static const Color textOnAccent  = Color(0xFFFFFFFF); // White text on red
 
-  // ── Borders — prefer elevation contrast over visible borders ──
-  static const Color borderSubtle = Color(0xFF1F1F1F); // only when same-color surfaces adjacent
-  static const Color borderMuted  = Color(0xFF2A2A2A); // focused inputs, active containers
+  // ── Borders & Dividers ────────────────────────────────────────
+  static const Color borderSubtle = Color(0xFFE5E7EB); // Dividers, light borders
+  static const Color borderMedium  = Color(0xFFD1D5DB); // Focused states
 
   // ── Semantic ──────────────────────────────────────────────────
   static const Color success = Color(0xFF22C55E);
@@ -38,8 +36,7 @@ class ColorTokens {
   static const Color error   = Color(0xFFEF4444);
   static const Color info    = Color(0xFF3B82F6);
 
-  // ── Sport accents — only for sport-specific chips/badges ──────
-  // NEVER bleed into general UI. These live on sport elements only.
+  // ── Sport accents ─────────────────────────────────────────────
   static const Color sportBasketball = Color(0xFFFF6B35);
   static const Color sportCricket    = Color(0xFF00C9A7);
   static const Color sportBadminton  = Color(0xFFFFC107);

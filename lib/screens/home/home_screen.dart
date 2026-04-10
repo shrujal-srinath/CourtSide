@@ -13,7 +13,6 @@ import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../models/fake_data.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/common/cs_shimmer.dart';
 
 // ── Sport config ────────────────────────────────────────────────
 
@@ -39,14 +38,6 @@ Color _sportColor(String sport) {
     case 'cricket':    return AppColors.cricket;
     case 'badminton':  return AppColors.badminton;
     default:           return AppColors.football;
-  }
-}
-
-String _sportEmoji(String sport) {
-  switch (sport) {
-    case 'basketball': return '🏀';
-    case 'cricket':    return '🏏';
-    default:           return '🏸';
   }
 }
 
@@ -387,11 +378,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
+                  physics: const BouncingScrollPhysics(),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Search Bar
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+                        child: _HomeSearchBar(
+                          onTap: () => context.go(AppRoutes.explore),
+                        ),
+                      ),
+
                       const SizedBox(height: AppSpacing.md),
+
+                      _SectionHeader(
+                        title: 'LIVE NOW',
+                        onSeeAll: () {},
+                      ),
 
                       _HomeCarousel(
                         userLocation: _userLocation,
@@ -401,19 +406,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             setState(() => _mapExpanded = true),
                       ),
 
-                      const SizedBox(height: AppSpacing.md),
+                      const SizedBox(height: AppSpacing.xl),
+
+                      _SectionHeader(
+                        title: 'EXPLORE SPORTS',
+                        onSeeAll: () {},
+                      ),
 
                       _SportChipRow(
                         activeSport: _activeSport,
                         onSelect: _selectSport,
                       ),
 
-                      const SizedBox(height: AppSpacing.xs),
+                      const SizedBox(height: AppSpacing.xl),
 
                       _SectionHeader(
-                        title: 'COURTS NEAR YOU',
+                        title: 'POPULAR NEAR YOU',
                         onSeeAll: () => context.go(AppRoutes.explore),
                       ),
+
                       _CourtsNearYou(
                         venues: FakeData.venues,
                         onVenueTap: (v) =>
@@ -423,7 +434,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: AppSpacing.xl),
 
                       _SectionHeader(
-                        title: 'ACTIVITY',
+                        title: 'LATEST ACTIVITY',
                         onSeeAll: () {},
                       ),
                       _CommunityFeed(
@@ -432,11 +443,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             .toList(),
                       ),
 
-                      const SizedBox(height: AppSpacing.xl),
-
-                      _PromoTiles(),
-
-                      const SizedBox(height: 100),
+                      const SizedBox(height: 120),
                     ],
                   ),
                 ),
@@ -574,166 +581,89 @@ class _HomeHeader extends StatelessWidget {
 
     return Container(
       color: colors.colorBackgroundPrimary,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg, topPad + AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // ── ROW 1: name + location | bell + avatar ────────────
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-                AppSpacing.lg, topPad + AppSpacing.sm,
-                AppSpacing.lg, AppSpacing.sm),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Left: name + tappable location row
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        firstName,
-                        style: AppTextStyles.headingL(colors.colorTextPrimary)
-                            .copyWith(fontWeight: FontWeight.w900),
-                      ),
-                      const SizedBox(height: 3),
-                      GestureDetector(
-                        onTap: onLocationTap,
-                        behavior: HitTestBehavior.opaque,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.xs),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: colors.colorAccentPrimary,
-                                ),
-                              ),
-                              const SizedBox(width: 5),
-                              Text(
-                                locationLabel,
-                                style: AppTextStyles.labelS(
-                                    colors.colorTextSecondary),
-                              ),
-                              const SizedBox(width: 3),
-                              Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                size: 14,
-                                color: colors.colorTextTertiary,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+          Row(
+            children: [
+              // Avatar
+              GestureDetector(
+                onTap: () => context.push(AppRoutes.profile),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colors.colorBorderSubtle,
                   ),
-                ),
-                // Notification bell — taps open notifications sheet
-                GestureDetector(
-                  onTap: () => _showNotificationsSheet(context),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: colors.colorSurfacePrimary,
-                          border: Border.all(
-                              color: colors.colorBorderSubtle, width: 0.5),
-                        ),
-                        child: Icon(
-                          Icons.notifications_outlined,
-                          color: colors.colorTextPrimary,
-                          size: 22,
-                        ),
-                      ),
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: colors.colorAccentPrimary,
-                            border: Border.all(
-                              color: colors.colorBackgroundPrimary,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                // Avatar — taps navigate to profile
-                GestureDetector(
-                  onTap: () => context.push(AppRoutes.profile),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: colors.colorAccentSubtle,
-                      border: Border.all(
-                          color: colors.colorAccentPrimary, width: 1.5),
-                    ),
-                    child: Center(
-                      child: Text(
-                        initials,
-                        style:
-                            AppTextStyles.labelM(colors.colorAccentPrimary),
-                      ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: AppTextStyles.labelM(colors.colorTextPrimary),
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-
-          // ── ROW 2: search bar with animated hint ──────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
-            child: GestureDetector(
-              onTap: () => context.go(AppRoutes.explore),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: colors.colorSurfacePrimary,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  border:
-                      Border.all(color: colors.colorBorderSubtle, width: 0.5),
-                ),
+              ),
+              const SizedBox(width: 12),
+              // Location
+              GestureDetector(
+                onTap: onLocationTap,
+                behavior: HitTestBehavior.opaque,
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.search_rounded,
-                        size: 18, color: colors.colorTextTertiary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Search for ',
-                            style: AppTextStyles.bodyS(
-                                colors.colorTextTertiary),
-                          ),
-                          const _AnimatedSearchHint(),
-                        ],
-                      ),
+                    Text(
+                      locationLabel.length > 20
+                          ? '${locationLabel.substring(0, 17)}...'
+                          : locationLabel,
+                      style: AppTextStyles.headingS(colors.colorTextPrimary),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 14,
+                      color: colors.colorTextTertiary,
                     ),
                   ],
                 ),
+              ),
+            ],
+          ),
+          // Notification bell
+          GestureDetector(
+            onTap: () => _showNotificationsSheet(context),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    Icons.notifications_none_rounded,
+                    color: colors.colorTextPrimary,
+                    size: 24,
+                  ),
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: colors.colorAccentPrimary,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: colors.colorBackgroundPrimary, width: 1.5),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -748,8 +678,62 @@ class _HomeHeader extends StatelessWidget {
 //  Cycles through search term suggestions with a vertical slide
 // ═══════════════════════════════════════════════════════════════
 
+class _HomeSearchBar extends StatelessWidget {
+  const _HomeSearchBar({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: colors.colorSurfacePrimary,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colors.colorBorderSubtle, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.search_rounded,
+                size: 20, color: colors.colorTextTertiary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Row(
+                children: [
+                  Text(
+                    'Search for ',
+                    style: AppTextStyles.bodyM(colors.colorTextTertiary),
+                  ),
+                  const _AnimatedSearchHint(),
+                ],
+              ),
+            ),
+            Container(
+              height: 20,
+              width: 1,
+              color: colors.colorBorderSubtle,
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+            Icon(Icons.tune_rounded, size: 18, color: colors.colorAccentPrimary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _AnimatedSearchHint extends StatefulWidget {
-  const _AnimatedSearchHint();
+  const _AnimatedSearchHint({super.key});
 
   @override
   State<_AnimatedSearchHint> createState() => _AnimatedSearchHintState();
@@ -1050,13 +1034,11 @@ class _PulsingPin extends StatefulWidget {
     required this.color,
     required this.size,
     required this.borderColor,
-    this.pulse = true,
   });
 
   final Color color;
   final double size;
   final Color borderColor;
-  final bool pulse;
 
   @override
   State<_PulsingPin> createState() => _PulsingPinState();
@@ -1069,12 +1051,10 @@ class _PulsingPinState extends State<_PulsingPin>
   @override
   void initState() {
     super.initState();
-    if (widget.pulse) {
-      _ctrl = AnimationController(
-        vsync: this,
-        duration: const Duration(seconds: 2),
-      )..repeat(reverse: true);
-    }
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
   }
 
   @override
@@ -1811,160 +1791,147 @@ class _SportChipRow extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════
 
 class _CourtsNearYou extends StatelessWidget {
-  const _CourtsNearYou({
-    required this.venues,
-    required this.onVenueTap,
-  });
-
+  const _CourtsNearYou({required this.venues, required this.onVenueTap});
   final List<Venue> venues;
   final ValueChanged<Venue> onVenueTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 196,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        itemCount: venues.length,
-        separatorBuilder: (c, i) => const SizedBox(width: AppSpacing.md),
-        itemBuilder: (c, i) {
-          final v = venues[i];
-          return _CourtCard(venue: v, onTap: () => onVenueTap(v));
-        },
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      itemCount: math.min(venues.length, 5),
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (ctx, i) => _VenueCard(
+        venue: venues[i],
+        onTap: () => onVenueTap(venues[i]),
       ),
     );
   }
 }
 
-class _CourtCard extends StatefulWidget {
-  const _CourtCard({required this.venue, required this.onTap});
+class _VenueCard extends StatelessWidget {
+  const _VenueCard({required this.venue, required this.onTap, super.key});
   final Venue venue;
   final VoidCallback onTap;
 
   @override
-  State<_CourtCard> createState() => _CourtCardState();
-}
-
-class _CourtCardState extends State<_CourtCard> {
-  bool _pressed = false;
-
-  @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-
     return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 80),
-        child: Container(
-          width: 175,
-          decoration: BoxDecoration(
-            color: colors.colorSurfaceElevated,
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
-            boxShadow: AppShadow.cardElevated,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Photo placeholder
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(AppRadius.card)),
-                child: Stack(
-                  children: [
-                    CsShimmer(
-                      child: Container(
-                        height: 108,
-                        width: double.infinity,
-                        color: colors.colorSurfaceOverlay,
-                      ),
-                    ),
-                    Container(
-                      height: 108,
-                      width: double.infinity,
-                      color: colors.colorSurfaceOverlay.withValues(alpha: 0.8),
-                      child: Center(
-                        child: Text(
-                          widget.venue.name[0],
-                          style: AppTextStyles.displayL(
-                              colors.colorBorderMedium),
-                        ),
-                      ),
-                    ),
-                    if (widget.venue.hasTheBox)
-                      Positioned(
-                        top: 8, right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: colors.colorAccentPrimary,
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.pill),
-                          ),
-                          child: Text(
-                            'THE BOX',
-                            style: AppTextStyles.overline(
-                                colors.colorTextOnAccent),
-                          ),
-                        ),
-                      ),
-                  ],
+      onTap: onTap,
+      child: Container(
+        height: 110,
+        decoration: BoxDecoration(
+          color: colors.colorSurfacePrimary,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.05), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Image
+            Container(
+              width: 100,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+                image: DecorationImage(
+                  image: NetworkImage(venue.photoUrl),
+                  fit: BoxFit.cover,
                 ),
               ),
-
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.sm + 2, AppSpacing.sm,
-                    AppSpacing.sm + 2, AppSpacing.sm),
+            ),
+            // Details
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      widget.venue.name,
-                      style: AppTextStyles.headingS(colors.colorTextPrimary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${widget.venue.area}  ·  ${widget.venue.rating} ★',
-                      style: AppTextStyles.bodyS(colors.colorTextSecondary),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ...widget.venue.sports.take(3).map((s) => Container(
-                              width: 8,
-                              height: 8,
-                              margin: const EdgeInsets.only(right: 5),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _sportColor(s),
+                        Text(
+                          venue.name,
+                          style: AppTextStyles.headingS(colors.colorTextPrimary)
+                              .copyWith(fontSize: 14, fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.location_on_rounded, size: 10, color: colors.colorTextTertiary),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${venue.address.split(',').first} · 1.2km',
+                              style: AppTextStyles.bodyS(colors.colorTextSecondary)
+                                  .copyWith(fontSize: 10),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.star_rounded, size: 12, color: colors.colorWarning),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '4.8',
+                                  style: AppTextStyles.labelS(colors.colorTextPrimary)
+                                      .copyWith(fontSize: 11),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 1),
+                            Text(
+                              'Active Now',
+                              style: AppTextStyles.labelS(colors.colorSuccess)
+                                  .copyWith(fontSize: 9),
+                            ),
+                          ],
+                        ),
+                        // Book Button
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: colors.colorAccentPrimary,
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Book',
+                                style: AppTextStyles.labelS(Colors.white),
                               ),
-                            )),
-                        const Spacer(),
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 11,
-                          color: colors.colorTextTertiary,
+                              const SizedBox(width: 4),
+                              const Icon(Icons.arrow_forward_rounded, size: 10, color: Colors.white),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -2146,103 +2113,6 @@ class _SportIconBadge extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  PROMO TILES
-// ═══════════════════════════════════════════════════════════════
-
-class _PromoTiles extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, 0, AppSpacing.lg, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: _PromoTile(
-              icon: Icons.stadium_outlined,
-              title: 'List your venue',
-              subtitle: 'Register your turf on Courtside',
-              onTap: () {},
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: _PromoTile(
-              icon: Icons.bar_chart_rounded,
-              title: 'THE BOX',
-              subtitle: 'Live stats for your games',
-              onTap: () {},
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PromoTile extends StatelessWidget {
-  const _PromoTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: colors.colorSurfacePrimary,
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(
-              color: colors.colorBorderSubtle, width: 0.5),
-          boxShadow: AppShadow.card,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40, height: 40,
-                  decoration: BoxDecoration(
-                    color: colors.colorSurfaceElevated,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: Center(
-                    child: Icon(icon,
-                        size: 20, color: colors.colorTextSecondary),
-                  ),
-                ),
-                const Spacer(),
-                Icon(Icons.arrow_forward_ios_rounded,
-                    color: colors.colorTextTertiary, size: 12),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm + 2),
-            Text(title,
-                style: AppTextStyles.headingS(colors.colorTextPrimary)),
-            const SizedBox(height: 3),
-            Text(subtitle,
-                style: AppTextStyles.bodyS(colors.colorTextSecondary)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
 //  SECTION HEADER — overline style, textTertiary. NEVER red.
 // ═══════════════════════════════════════════════════════════════
 
@@ -2256,35 +2126,19 @@ class _SectionHeader extends StatelessWidget {
     final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.xs, AppSpacing.lg, AppSpacing.sm + 2),
+          AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 2,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: colors.colorAccentPrimary,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(title,
-                  style: AppTextStyles.overline(colors.colorTextTertiary)),
-            ],
+          Text(
+            title.toUpperCase(),
+            style: AppTextStyles.overline(colors.colorTextSecondary),
           ),
           GestureDetector(
             onTap: onSeeAll,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              child: Text(
-                'See all',
-                style: AppTextStyles.labelS(colors.colorTextSecondary),
-              ),
+            child: Text(
+              'See All',
+              style: AppTextStyles.labelS(colors.colorAccentPrimary),
             ),
           ),
         ],

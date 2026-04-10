@@ -31,12 +31,26 @@ import 'app_transitions.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authAsync = ref.watch(authStateProvider);
+  final isDevAccess = ref.watch(devAccessProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: false,
 
     redirect: (context, state) {
+      if (isDevAccess) {
+        final publicRoutes = [
+          AppRoutes.landing,
+          AppRoutes.login,
+          AppRoutes.phoneAuth,
+          AppRoutes.splash,
+        ];
+        if (publicRoutes.contains(state.matchedLocation)) {
+          return AppRoutes.home;
+        }
+        return null;
+      }
+      
       if (authAsync.isLoading) return null;
       final isLoggedIn = authAsync.asData?.value != null;
       final loc = state.matchedLocation;

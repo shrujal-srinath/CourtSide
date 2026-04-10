@@ -15,7 +15,7 @@ class BasketballModeScreen extends StatelessWidget {
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: context.colors.colorBackgroundPrimary,
       body: Column(
         children: [
           SizedBox(height: topPad),
@@ -33,9 +33,9 @@ class BasketballModeScreen extends StatelessWidget {
                     height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.surface,
+                      color: context.colors.colorSurfacePrimary,
                       border:
-                          Border.all(color: AppColors.border, width: 0.5),
+                          Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
                     ),
                     child: const Icon(
                       Icons.arrow_back_ios_new_rounded,
@@ -58,7 +58,7 @@ class BasketballModeScreen extends StatelessWidget {
                       Text(
                         'HOW DO YOU WANT TO PLAY?',
                         style: AppTextStyles.headingL(
-                            AppColors.textPrimaryDark),
+                            context.colors.colorTextPrimary),
                       ),
                     ],
                   ),
@@ -155,9 +155,9 @@ class _ModeCard extends StatelessWidget {
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.colorSurfacePrimary,
           borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(color: AppColors.border, width: 0.5),
+          border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
         ),
         padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
@@ -184,7 +184,7 @@ class _ModeCard extends StatelessWidget {
                 const Spacer(),
                 Icon(
                   Icons.arrow_forward_ios_rounded,
-                  color: AppColors.textSecondaryDark,
+                  color: context.colors.colorTextSecondary,
                   size: 14,
                 ),
               ],
@@ -194,20 +194,20 @@ class _ModeCard extends StatelessWidget {
 
             Text(
               title,
-              style: AppTextStyles.displayS(AppColors.textPrimaryDark),
+              style: AppTextStyles.displayS(context.colors.colorTextPrimary),
             ),
 
             const SizedBox(height: AppSpacing.sm),
 
             Text(
               subtitle,
-              style: AppTextStyles.bodyM(AppColors.textSecondaryDark),
+              style: AppTextStyles.bodyM(context.colors.colorTextSecondary),
             ),
 
             const SizedBox(height: AppSpacing.lg),
 
             // Divider
-            Container(height: 0.5, color: AppColors.border),
+            Container(height: 0.5, color: context.colors.colorBorderSubtle),
 
             const SizedBox(height: AppSpacing.md),
 
@@ -237,7 +237,7 @@ class _ModeCard extends StatelessWidget {
                         child: Text(
                           row.label,
                           style: AppTextStyles.bodyS(
-                              AppColors.textSecondaryDark),
+                              context.colors.colorTextSecondary),
                         ),
                       ),
                     ],

@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 class AppGradients {
   AppGradients._();
 
-  /// Main brand background — near-black with navy undertone
+  /// Main brand background — light neutral
   static const LinearGradient brand = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF080A0F), Color(0xFF0D1829)],
+    colors: [Color(0xFFF5F6F8), Color(0xFFF5F6F8)],
   );
 
   /// Stat story card base (for Instagram share card)
@@ -21,17 +21,31 @@ class AppGradients {
   static const LinearGradient redFade = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Colors.transparent, Color(0x99E8112D)],
+    colors: [Colors.transparent, Color(0x47FF3B3B)],
   );
 
   /// Profile stats banner background
   static const LinearGradient profileBanner = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF0D1829), Color(0xFF1A0A12)],
+    colors: [Color(0xFFF5F6F8), Color(0xFFFFFFFF)],
   );
 
-  /// Sport-specific card tint overlays
+  /// Live section gradient (from HTML: rgba(255,59,59,0.05) to white)
+  static const LinearGradient liveSection = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0x0DFF3B3B), Color(0x05FF3B3B), Color(0x99FFFFFF)],
+  );
+
+  /// Recommended section gradient
+  static const LinearGradient recommended = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0x0DFF3B3B), Color(0x05FF3B3B), Color(0xFFFFFFFF)],
+  );
+
+  /// Sport-specific card tint overlays (light mode)
   static LinearGradient forSport(String sport) {
     final colors = _sportColors[sport.toLowerCase()];
     if (colors != null) {
@@ -44,14 +58,14 @@ class AppGradients {
     return const LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFF161B24), Color(0xFF0F1117)],
+      colors: [Color(0xFFF3F4F6), Color(0xFFF5F6F8)],
     );
   }
 
   static const Map<String, List<Color>> _sportColors = {
-    'basketball': [Color(0xFF1A0F00), Color(0xFF0F1117)],
-    'cricket':    [Color(0xFF001A16), Color(0xFF0F1117)],
-    'badminton':  [Color(0xFF1A1500), Color(0xFF0F1117)],
-    'football':   [Color(0xFF001A08), Color(0xFF0F1117)],
+    'basketball': [Color(0xFFFFF5F0), Color(0xFFF5F6F8)],
+    'cricket':    [Color(0xFFF0FAF8), Color(0xFFF5F6F8)],
+    'badminton':  [Color(0xFFFFFCF0), Color(0xFFF5F6F8)],
+    'football':   [Color(0xFFF0F8F2), Color(0xFFF5F6F8)],
   };
 }

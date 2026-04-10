@@ -3,6 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/constants.dart';
 
+// ── Dev access bypass ───────────────────────────────────────────
+final devAccessProvider = StateProvider<bool>((ref) => false);
+
 // ── Supabase client singleton ───────────────────────────────────
 final supabaseProvider = Provider<SupabaseClient>(
   (_) => Supabase.instance.client,

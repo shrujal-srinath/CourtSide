@@ -26,6 +26,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
   String?    _error;
   String     _phone    = '';
 
+  // Country code — default India
   final String _countryCode = '+91';
 
   @override

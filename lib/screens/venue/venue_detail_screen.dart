@@ -2,12 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../models/fake_data.dart';
 import '../../widgets/common/cs_button.dart';
-import '../../widgets/common/cs_shimmer.dart';
 
 class VenueDetailScreen extends StatefulWidget {
   const VenueDetailScreen({super.key, required this.venueId});
@@ -58,14 +56,6 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
   Court? get _activeCourt => _activeSport.isEmpty
       ? null
       : FakeData.courtByVenueAndSport(_venue.id, _activeSport);
-
-  Future<void> _launchMaps() async {
-    final uri = Uri.parse(
-        'https://maps.google.com/maps?daddr=${_venue.lat},${_venue.lng}');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
 
   void _handleBookTap() {
     if (_activeSport.isEmpty) {
@@ -241,169 +231,132 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
           // ── Hero image area ────────────────────────────────────
           Stack(
             children: [
-              CsShimmer(
+              // Hero Image
+              Container(
+                height: 280 + topPad,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: NetworkImage(_venue.photoUrl),
+                    fit: BoxFit.cover,
+                  ),
+                ),
                 child: Container(
-                  height: 220 + topPad,
-                  width: double.infinity,
-                  color: colors.colorSurfaceOverlay,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.4),
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.6),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              Container(
-                height: 220 + topPad,
-                width: double.infinity,
-                color: colors.colorSurfaceOverlay.withValues(alpha: 0.85),
+
+              // Back button
+              Positioned(
+                top: topPad + 12,
+                left: 16,
+                child: GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2), width: 0.5),
+                    ),
+                    child: const Icon(Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white, size: 18),
+                  ),
+                ),
+              ),
+
+              // Bottom details in Hero
+              Positioned(
+                bottom: 24,
+                left: 20,
+                right: 20,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: topPad),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: colors.colorAccentPrimary,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'FEATURED VENUE',
+                        style: AppTextStyles.labelS(Colors.white)
+                            .copyWith(letterSpacing: 1),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     Text(
-                      _venue.name[0],
-                      style: AppTextStyles.displayXL(colors.colorBorderMedium),
+                      _venue.name,
+                      style: AppTextStyles.displayM(Colors.white),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on_rounded,
+                            color: colors.colorAccentPrimary, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          _venue.area,
+                          style: AppTextStyles.bodyM(Colors.white.withValues(alpha: 0.9)),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.star_rounded,
+                                  color: Colors.amber, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${_venue.rating}',
+                                style: AppTextStyles.labelS(Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              // Back button
-              Positioned(
-                top: topPad + AppSpacing.sm,
-                left: AppSpacing.md,
-                child: GestureDetector(
-                  onTap: () => context.pop(),
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: colors.colorSurfaceOverlay.withValues(alpha: 0.85),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: colors.colorBorderSubtle, width: 0.5),
-                    ),
-                    child: Icon(Icons.arrow_back_ios_new_rounded,
-                        color: colors.colorTextPrimary, size: 16),
-                  ),
-                ),
-              ),
-              // THE BOX badge
-              if (_venue.hasTheBox)
-                Positioned(
-                  top: topPad + AppSpacing.sm,
-                  right: AppSpacing.md,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm + 2, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: colors.colorAccentPrimary,
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    child: Text(
-                      'THE BOX',
-                      style: AppTextStyles.overline(colors.colorTextOnAccent),
-                    ),
-                  ),
-                ),
             ],
           ),
 
-          // ── Scrollable content ───────────────────────────────
+          // ── Scrollable content ──────────────────────────────────
           Expanded(
             child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 120),
               physics: const BouncingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
-                  // ── Venue info ─────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg, AppSpacing.lg,
-                        AppSpacing.lg, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _venue.name,
-                          style: AppTextStyles.displayS(colors.colorTextPrimary),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Row(
-                          children: [
-                            Icon(Icons.location_on_rounded,
-                                color: colors.colorTextSecondary, size: 13),
-                            const SizedBox(width: 3),
-                            Expanded(
-                              child: Text(
-                                '${_venue.address}  ·  Open till ${_venue.closingTime}',
-                                style:
-                                    AppTextStyles.bodyS(colors.colorTextSecondary),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        // Directions row
-                        GestureDetector(
-                          onTap: _launchMaps,
-                          behavior: HitTestBehavior.opaque,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.xs),
-                            child: Row(
-                              children: [
-                                Icon(Icons.directions_rounded,
-                                    size: 14,
-                                    color: colors.colorInfo),
-                                const SizedBox(width: AppSpacing.xs),
-                                Text(
-                                  'Get directions',
-                                  style: AppTextStyles.labelS(colors.colorInfo),
-                                ),
-                                const Spacer(),
-                                Icon(Icons.open_in_new_rounded,
-                                    size: 12,
-                                    color: colors.colorTextTertiary),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Row(
-                          children: [
-                            _StatPill(
-                                value: _venue.rating.toString(),
-                                label: 'Rating',
-                                colors: colors),
-                            const SizedBox(width: AppSpacing.sm),
-                            _StatPill(
-                                value: _venue.reviewCount.toString(),
-                                label: 'Reviews',
-                                colors: colors),
-                            const SizedBox(width: AppSpacing.sm),
-                            _StatPill(
-                                value: _venue.sports.length.toString(),
-                                label: 'Sports',
-                                colors: colors),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
                   const SizedBox(height: AppSpacing.lg),
                   Container(height: 0.5, color: colors.colorBorderSubtle),
 
                   // ── Sport grid ─────────────────────────────
+                  const _SectionHeader(title: 'PICK A SPORT'),
+                  
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
-                    child: Text(
-                      'PICK A SPORT',
-                      style: AppTextStyles.overline(colors.colorTextTertiary),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm + 2),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                     child: _SportGrid(
                       sports: _venue.sports,
                       venueId: _venue.id,
@@ -417,36 +370,29 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                     ),
                   ),
 
-                  // ── Court info (when sport selected) ────────
                   if (court != null) ...[
-                    const SizedBox(height: AppSpacing.lg),
-                    Container(height: 0.5, color: colors.colorBorderSubtle),
+                    const _SectionHeader(title: 'FACILITY INFO'),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.lg, AppSpacing.md,
-                          AppSpacing.lg, AppSpacing.md),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                       child: Column(
                         children: [
                           _InfoRow(
                               label: 'Surface',
-                              value:
-                                  '${court.surface} · ${court.isIndoor ? 'Indoor' : 'Outdoor'}',
+                              value: '${court.surface} · ${court.isIndoor ? 'Indoor' : 'Outdoor'}',
                               colors: colors),
                           _InfoRow(
                             label: 'THE BOX',
-                            value: court.hasTheBox
-                                ? 'Equipped ✓'
-                                : 'Not equipped',
+                            value: court.hasTheBox ? 'Equipped ✓' : 'Not equipped',
                             valueColor: court.hasTheBox
                                 ? colors.colorAccentPrimary
                                 : colors.colorTextSecondary,
                             colors: colors,
                           ),
                           _InfoRow(
-                            label: 'Available today',
+                            label: 'Available Today',
                             value: court.slotsAvailableToday == 0
-                                ? 'Fully booked'
-                                : '${court.slotsAvailableToday} slots',
+                                ? 'Fully Booked'
+                                : '${court.slotsAvailableToday} Slots',
                             valueColor: court.slotsAvailableToday == 0
                                 ? colors.colorError
                                 : colors.colorSuccess,
@@ -457,49 +403,42 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                     ),
                   ],
 
-                  Container(height: 0.5, color: colors.colorBorderSubtle),
-
-                  // ── Amenities ──────────────────────────────
+                  const _SectionHeader(title: 'AMENITIES'),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg, AppSpacing.md,
-                        AppSpacing.lg, AppSpacing.md),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
-                        Text(
-                          'AMENITIES',
-                          style:
-                              AppTextStyles.overline(colors.colorTextTertiary),
-                        ),
-                        const SizedBox(height: AppSpacing.sm + 2),
-                        Wrap(
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.sm,
-                          children: _venue.amenities
-                              .map((a) => Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.sm + 2,
-                                        vertical: AppSpacing.xs + 1),
-                                    decoration: BoxDecoration(
-                                      color: colors.colorSurfaceElevated,
-                                      borderRadius: BorderRadius.circular(
-                                          AppRadius.pill),
-                                      border: Border.all(
-                                          color: colors.colorBorderSubtle,
-                                          width: 0.5),
-                                    ),
-                                    child: Text(a,
-                                        style: AppTextStyles.labelS(
-                                            colors.colorTextSecondary)),
-                                  ))
-                              .toList(),
-                        ),
-                      ],
+                        'Parking',
+                        'Restrooms',
+                        'Changing Rooms',
+                        'Drinking Water',
+                        'First Aid',
+                      ].map((a) => _AmenityTag(label: a, colors: colors)).toList(),
                     ),
                   ),
 
-                  SizedBox(height: botPad + 100),
+                  const _SectionHeader(title: 'LOCATION'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    child: Container(
+                      height: 180,
+                      decoration: BoxDecoration(
+                        color: colors.colorSurfaceElevated,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border:
+                            Border.all(color: colors.colorBorderSubtle, width: 0.5),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'MAP PLACEHOLDER\n${_venue.lat}, ${_venue.lng}',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodyS(colors.colorTextTertiary),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -507,32 +446,47 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
         ],
       ),
 
-      // ── Persistent bottom bar ─────────────────────────────────
+      // ── Fixed CTA Button ────────────────────────────────────
       bottomNavigationBar: Container(
+        padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + botPad),
         decoration: BoxDecoration(
-          color: colors.colorBackgroundPrimary,
+          color: colors.colorSurfacePrimary,
           border: Border(
               top: BorderSide(color: colors.colorBorderSubtle, width: 0.5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
+            ),
+          ],
         ),
-        padding: EdgeInsets.fromLTRB(
-            AppSpacing.lg, AppSpacing.md,
-            AppSpacing.lg, botPad + AppSpacing.md),
-        child: _activeSport.isEmpty
-            ? CsButton.secondary(
-                label: bookLabel,
-                onTap: _handleBookTap,
-              )
-            : CsButton.primary(
-                label: bookLabel,
-                onTap: bookEnabled ? _handleBookTap : null,
-                isDisabled: !bookEnabled,
-              ),
+        child: CsButton.primary(
+          label: bookLabel,
+          onTap: bookEnabled ? _handleBookTap : null,
+        ),
       ),
     );
   }
 }
 
-// ── Sport Grid ──────────────────────────────────────────────────
+// ── Shared Subview Components ──────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 24, AppSpacing.lg, 12),
+      child: Text(
+        title,
+        style: AppTextStyles.overline(context.colors.colorTextTertiary),
+      ),
+    );
+  }
+}
 
 class _SportGrid extends StatelessWidget {
   const _SportGrid({
@@ -549,7 +503,7 @@ class _SportGrid extends StatelessWidget {
   final List<String> sports;
   final String venueId;
   final String activeSport;
-  final ValueChanged<String> onSelect;
+  final Function(String) onSelect;
   final Color Function(String, AppColorScheme) sportColor;
   final IconData Function(String) sportIcon;
   final String Function(String) sportLabel;
@@ -557,146 +511,105 @@ class _SportGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Build rows of 2 sport cards each
-    final cards = sports.map((sport) {
-      final court = FakeData.courtByVenueAndSport(venueId, sport);
-      final sc = sportColor(sport, colors);
-      final isActive = sport == activeSport;
-      final priceLabel = court != null
-          ? '₹${court.pricePerSlot} / ${court.slotDurationMin} min'
-          : '—';
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisExtent: 68,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemCount: sports.length,
+      itemBuilder: (context, i) {
+        final sport = sports[i];
+        final selected = activeSport == sport;
+        final color = sportColor(sport, colors);
 
-      return GestureDetector(
-        onTap: () => onSelect(sport),
-        child: AnimatedContainer(
-          duration: AppDuration.fast,
-          height: 80,
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: isActive
-                ? sc.withValues(alpha: 0.12)
-                : colors.colorSurfaceElevated,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: isActive ? sc : colors.colorBorderSubtle,
-              width: isActive ? 1.0 : 0.5,
+        return GestureDetector(
+          onTap: () => onSelect(sport),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: selected
+                  ? color.withValues(alpha: 0.08)
+                  : colors.colorSurfacePrimary,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(
+                color: selected ? color : colors.colorBorderSubtle,
+                width: selected ? 1.5 : 0.5,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(sportIcon(sport),
+                    color: selected ? color : colors.colorTextSecondary,
+                    size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    sportLabel(sport),
+                    style: AppTextStyles.headingS(selected
+                        ? colors.colorTextPrimary
+                        : colors.colorTextSecondary),
+                  ),
+                ),
+                if (selected)
+                  Icon(Icons.check_circle_rounded, color: color, size: 16),
+              ],
             ),
           ),
-          child: Row(
-            children: [
-              Icon(
-                sportIcon(sport),
-                size: 28,
-                color: isActive ? sc : colors.colorTextSecondary,
-              ),
-              const SizedBox(width: AppSpacing.sm + 2),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      sportLabel(sport),
-                      style: AppTextStyles.headingS(
-                        isActive ? sc : colors.colorTextPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      priceLabel,
-                      style: AppTextStyles.bodyS(colors.colorTextSecondary),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }).toList();
-
-    // Lay out in rows of 2
-    final rows = <Widget>[];
-    for (var i = 0; i < cards.length; i += 2) {
-      final rowCards = cards.sublist(i, (i + 2).clamp(0, cards.length));
-      rows.add(Row(
-        children: [
-          Expanded(child: rowCards[0]),
-          if (rowCards.length > 1) ...[
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(child: rowCards[1]),
-          ] else
-            const Expanded(child: SizedBox()),
-        ],
-      ));
-      if (i + 2 < cards.length) rows.add(const SizedBox(height: AppSpacing.sm));
-    }
-
-    return Column(children: rows);
+        );
+      },
+    );
   }
 }
 
-// ── Stat Pill ──────────────────────────────────────────────────
-
-class _StatPill extends StatelessWidget {
-  const _StatPill({
-    required this.value,
-    required this.label,
-    required this.colors,
-  });
-  final String value;
+class _InfoRow extends StatelessWidget {
+  const _InfoRow(
+      {required this.label,
+      required this.value,
+      this.valueColor,
+      required this.colors});
   final String label;
+  final String value;
+  final Color? valueColor;
   final AppColorScheme colors;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: AppSpacing.xs + 2),
-      decoration: BoxDecoration(
-        color: colors.colorSurfaceElevated,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
-      ),
-      child: Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Text(label, style: AppTextStyles.bodyM(colors.colorTextSecondary)),
           Text(value,
-              style: AppTextStyles.headingM(colors.colorTextPrimary)),
-          Text(label,
-              style: AppTextStyles.labelS(colors.colorTextSecondary)),
+              style: AppTextStyles.headingS(
+                  valueColor ?? colors.colorTextPrimary)),
         ],
       ),
     );
   }
 }
 
-// ── Info Row ────────────────────────────────────────────────────
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    required this.colors,
-    this.valueColor,
-  });
+class _AmenityTag extends StatelessWidget {
+  const _AmenityTag({required this.label, required this.colors});
   final String label;
-  final String value;
   final AppColorScheme colors;
-  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm + 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label,
-              style: AppTextStyles.bodyM(colors.colorTextSecondary)),
-          Text(value,
-              style: AppTextStyles.headingS(
-                  valueColor ?? colors.colorTextPrimary)),
-        ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: colors.colorBackgroundPrimary,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.labelS(colors.colorTextSecondary),
       ),
     );
   }

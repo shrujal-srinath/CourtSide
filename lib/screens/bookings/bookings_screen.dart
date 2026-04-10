@@ -53,23 +53,23 @@ class _BookingScreenState extends State<BookingScreen> {
 
     if (_court == null || _venue == null) {
       return Scaffold(
-        backgroundColor: AppColors.black,
-        body: const Center(
+        backgroundColor: context.colors.colorBackgroundPrimary,
+        body: Center(
           child: Text('Court not found',
-            style: TextStyle(color: AppColors.white)),
+            style: TextStyle(color: context.colors.colorTextPrimary)),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: context.colors.colorBackgroundPrimary,
       body: Column(
         children: [
           SizedBox(height: topPad),
 
           // ── Header ───────────────────────────────────────────
           Container(
-            color: AppColors.black,
+            color: context.colors.colorBackgroundPrimary,
             padding: const EdgeInsets.fromLTRB(14, 8, 18, 14),
             child: Row(
               children: [
@@ -79,11 +79,11 @@ class _BookingScreenState extends State<BookingScreen> {
                     width: 36, height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.surface,
-                      border: Border.all(color: AppColors.border, width: 0.5),
+                      color: context.colors.colorSurfacePrimary,
+                      border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
                     ),
-                    child: const Icon(Icons.arrow_back_ios_new_rounded,
-                      color: AppColors.white, size: 16),
+                    child: Icon(Icons.arrow_back_ios_new_rounded,
+                      color: context.colors.colorTextPrimary, size: 16),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -92,14 +92,14 @@ class _BookingScreenState extends State<BookingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Book a slot',
-                        style: GoogleFonts.barlow(
+                        style: GoogleFonts.inter(
                           fontSize: 17, fontWeight: FontWeight.w700,
-                          color: AppColors.white,
+                          color: context.colors.colorTextPrimary,
                         ),
                       ),
                       Text('${_venue!.name} · ${_court!.name}',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12, color: AppColors.textSecondaryDark),
+                        style: GoogleFonts.inter(
+                          fontSize: 12, color: context.colors.colorTextSecondary),
                       ),
                     ],
                   ),
@@ -108,7 +108,7 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
           ),
 
-          Container(height: 0.5, color: AppColors.border),
+          Container(height: 0.5, color: context.colors.colorBorderSubtle),
 
           Expanded(
             child: SingleChildScrollView(
@@ -121,7 +121,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     child: Text('Select date',
                       style: GoogleFonts.dmSans(
                         fontSize: 11, fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondaryDark,
+                        color: context.colors.colorTextSecondary,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -149,12 +149,12 @@ class _BookingScreenState extends State<BookingScreen> {
                             decoration: BoxDecoration(
                               color: active
                                   ? AppColors.red
-                                  : AppColors.surface,
+                                  : context.colors.colorSurfacePrimary,
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
                                 color: active
                                     ? AppColors.red
-                                    : AppColors.border,
+                                    : context.colors.colorBorderSubtle,
                                 width: 0.5,
                               ),
                             ),
@@ -163,7 +163,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                 fontSize: 13, fontWeight: FontWeight.w600,
                                 color: active
                                     ? AppColors.white
-                                    : AppColors.textSecondaryDark,
+                                    : context.colors.colorTextSecondary,
                               ),
                             ),
                           ),
@@ -178,7 +178,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     child: Text('Available slots',
                       style: GoogleFonts.dmSans(
                         fontSize: 11, fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondaryDark,
+                        color: context.colors.colorTextSecondary,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -211,17 +211,17 @@ class _BookingScreenState extends State<BookingScreen> {
                           borderColor = AppColors.red;
                           textColor = AppColors.white;
                         } else if (booked) {
-                          bgColor = AppColors.surfaceHigh;
-                          borderColor = AppColors.border;
-                          textColor = AppColors.textSecondaryDark;
+                          bgColor = context.colors.colorSurfaceElevated;
+                          borderColor = context.colors.colorBorderSubtle;
+                          textColor = context.colors.colorTextSecondary;
                         } else if (available) {
-                          bgColor = AppColors.surface;
-                          borderColor = AppColors.border;
-                          textColor = AppColors.white;
+                          bgColor = context.colors.colorSurfacePrimary;
+                          borderColor = context.colors.colorBorderSubtle;
+                          textColor = context.colors.colorTextPrimary;
                         } else {
-                          bgColor = AppColors.surfaceHigh;
-                          borderColor = AppColors.border;
-                          textColor = AppColors.textSecondaryDark;
+                          bgColor = context.colors.colorSurfaceElevated;
+                          borderColor = context.colors.colorBorderSubtle;
+                          textColor = context.colors.colorTextSecondary;
                         }
 
                         return GestureDetector(
@@ -255,7 +255,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                   Text('Booked',
                                     style: GoogleFonts.dmSans(
                                       fontSize: 9,
-                                      color: AppColors.textSecondaryDark,
+                                      color: context.colors.colorTextSecondary,
                                     ),
                                   ),
                               ],
@@ -273,11 +273,11 @@ class _BookingScreenState extends State<BookingScreen> {
                       children: [
                         _Legend(color: AppColors.red, label: 'Selected'),
                         const SizedBox(width: 16),
-                        _Legend(color: AppColors.surface,
+                        _Legend(color: context.colors.colorSurfacePrimary,
                           label: 'Available', border: true),
                         const SizedBox(width: 16),
                         _Legend(
-                          color: AppColors.surfaceHigh,
+                          color: context.colors.colorSurfaceElevated,
                           label: 'Booked'),
                       ],
                     ),
@@ -298,9 +298,9 @@ class _BookingScreenState extends State<BookingScreen> {
                 18, 14, 18,
                 MediaQuery.of(context).padding.bottom + 14),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.colors.colorSurfacePrimary,
                 border: Border(
-                  top: BorderSide(color: AppColors.border, width: 0.5)),
+                  top: BorderSide(color: context.colors.colorBorderSubtle, width: 0.5)),
               ),
               child: Row(
                 children: [
@@ -312,12 +312,12 @@ class _BookingScreenState extends State<BookingScreen> {
                         Text('${_selectedSlots.length} slot${_selectedSlots.length > 1 ? 's' : ''}  ·  ${_court!.slotDurationMin * _selectedSlots.length} min',
                           style: GoogleFonts.dmSans(
                             fontSize: 12,
-                            color: AppColors.textSecondaryDark),
+                            color: context.colors.colorTextSecondary),
                         ),
                         Text('₹$_totalAmount',
-                          style: GoogleFonts.barlow(
+                          style: GoogleFonts.inter(
                             fontSize: 22, fontWeight: FontWeight.w700,
-                            color: AppColors.white,
+                            color: context.colors.colorTextPrimary,
                           ),
                         ),
                       ],
@@ -369,7 +369,7 @@ class _BookingScreenState extends State<BookingScreen> {
       context: context,
       barrierDismissible: false,
       builder: (_) => Dialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.colorSurfacePrimary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20)),
         child: Padding(
@@ -388,15 +388,15 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
               const SizedBox(height: 16),
               Text('Booking confirmed!',
-                style: GoogleFonts.barlow(
+                style: GoogleFonts.inter(
                   fontSize: 20, fontWeight: FontWeight.w700,
-                  color: AppColors.white,
+                  color: context.colors.colorTextPrimary,
                 ),
               ),
               const SizedBox(height: 8),
               Text('${_venue!.name}\n${_selectedSlots.length} slot${_selectedSlots.length > 1 ? 's' : ''} · ₹$_totalAmount',
-                style: GoogleFonts.dmSans(
-                  fontSize: 14, color: AppColors.textSecondaryDark,
+                style: GoogleFonts.inter(
+                  fontSize: 14, color: context.colors.colorTextSecondary,
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
@@ -440,14 +440,14 @@ class _Legend extends StatelessWidget {
             color: color,
             borderRadius: BorderRadius.circular(4),
             border: border
-                ? Border.all(color: AppColors.border, width: 0.5)
+                ? Border.all(color: context.colors.colorBorderSubtle, width: 0.5)
                 : null,
           ),
         ),
         const SizedBox(width: 5),
         Text(label,
-          style: GoogleFonts.dmSans(
-            fontSize: 11, color: AppColors.textSecondaryDark),
+          style: GoogleFonts.inter(
+            fontSize: 11, color: context.colors.colorTextSecondary),
         ),
       ],
     );
@@ -472,9 +472,9 @@ class _ConfirmSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: context.colors.colorSurfacePrimary,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -483,7 +483,7 @@ class _ConfirmSheet extends StatelessWidget {
             margin: const EdgeInsets.only(top: 10),
             width: 36, height: 3,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: context.colors.colorBorderSubtle,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -495,9 +495,9 @@ class _ConfirmSheet extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Confirm booking',
-                  style: GoogleFonts.barlow(
+                  style: GoogleFonts.inter(
                     fontSize: 18, fontWeight: FontWeight.w700,
-                    color: AppColors.white,
+                    color: context.colors.colorTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -506,21 +506,21 @@ class _ConfirmSheet extends StatelessWidget {
                 _Row('Slots', slots.map((s) => s.startTime).join(', ')),
                 _Row('Duration', '${court.slotDurationMin * slots.length} min'),
                 const SizedBox(height: 8),
-                Container(height: 0.5, color: AppColors.border),
+                Container(height: 0.5, color: context.colors.colorBorderSubtle),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Total',
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.inter(
                         fontSize: 16, fontWeight: FontWeight.w700,
-                        color: AppColors.white,
+                        color: context.colors.colorTextPrimary,
                       ),
                     ),
                     Text('₹$total',
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.inter(
                         fontSize: 20, fontWeight: FontWeight.w700,
-                        color: AppColors.white,
+                        color: context.colors.colorTextPrimary,
                       ),
                     ),
                   ],
@@ -555,14 +555,14 @@ class _Row extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label,
-            style: GoogleFonts.dmSans(
-              fontSize: 13, color: AppColors.textSecondaryDark),
+            style: GoogleFonts.inter(
+              fontSize: 13, color: context.colors.colorTextSecondary),
           ),
           Flexible(
             child: Text(value,
               style: GoogleFonts.dmSans(
                 fontSize: 13, fontWeight: FontWeight.w500,
-                color: AppColors.white,
+                color: context.colors.colorTextPrimary,
               ),
               textAlign: TextAlign.right,
             ),

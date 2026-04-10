@@ -102,7 +102,7 @@ class _BasketballPlayersScreenState
               backgroundColor: AppColors.overlay,
               content: Text(
                 'Max $startingCount starters per team',
-                style: AppTextStyles.bodyS(AppColors.textPrimaryDark),
+                style: AppTextStyles.bodyS(context.colors.colorTextPrimary),
               ),
               duration: const Duration(seconds: 2),
             ),
@@ -175,7 +175,7 @@ class _BasketballPlayersScreenState
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: context.colors.colorBackgroundPrimary,
       body: Column(
         children: [
           SizedBox(height: topPad),
@@ -193,9 +193,9 @@ class _BasketballPlayersScreenState
                     height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.surface,
+                      color: context.colors.colorSurfacePrimary,
                       border: Border.all(
-                          color: AppColors.border, width: 0.5),
+                          color: context.colors.colorBorderSubtle, width: 0.5),
                     ),
                     child: const Icon(
                       Icons.arrow_back_ios_new_rounded,
@@ -216,7 +216,7 @@ class _BasketballPlayersScreenState
                     Text(
                       'ADD PLAYERS',
                       style: AppTextStyles.headingL(
-                          AppColors.textPrimaryDark),
+                          context.colors.colorTextPrimary),
                     ),
                   ],
                 ),
@@ -233,9 +233,9 @@ class _BasketballPlayersScreenState
             child: Container(
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.colors.colorSurfacePrimary,
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.border, width: 0.5),
+                border: Border.all(color: context.colors.colorBorderSubtle, width: 0.5),
               ),
               child: TabBar(
                 controller: _tabController,
@@ -249,7 +249,7 @@ class _BasketballPlayersScreenState
                 labelStyle:
                     AppTextStyles.headingS(AppColors.white),
                 unselectedLabelStyle:
-                    AppTextStyles.headingS(AppColors.textSecondaryDark),
+                    AppTextStyles.headingS(context.colors.colorTextSecondary),
                 tabs: [
                   Tab(text: widget.config.teamA.name),
                   Tab(text: widget.config.teamB.name),
@@ -414,7 +414,7 @@ class _TeamRosterState extends State<_TeamRoster> {
             children: [
               Text(
                 'STARTING ${widget.startingCount}',
-                style: AppTextStyles.overline(AppColors.textSecondaryDark),
+                style: AppTextStyles.overline(context.colors.colorTextSecondary),
               ),
               const SizedBox(width: AppSpacing.sm),
               Container(
@@ -454,7 +454,7 @@ class _TeamRosterState extends State<_TeamRoster> {
                 top: AppSpacing.lg, bottom: AppSpacing.sm),
             child: Text(
               'BENCH',
-              style: AppTextStyles.overline(AppColors.textSecondaryDark),
+              style: AppTextStyles.overline(context.colors.colorTextSecondary),
             ),
           ),
           ...widget.players.asMap().entries
@@ -483,7 +483,7 @@ class _TeamRosterState extends State<_TeamRoster> {
               child: Container(
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: context.colors.colorSurfacePrimary,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                   border: Border.all(
                     color: widget.teamColor.withValues(alpha: 0.2),
@@ -576,12 +576,12 @@ class _PlayerRowState extends State<_PlayerRow> {
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.colorSurfacePrimary,
           borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
             color: widget.isOnCourt
                 ? widget.teamColor.withValues(alpha: 0.25)
-                : AppColors.border,
+                : context.colors.colorBorderSubtle,
             width: 0.5,
           ),
         ),
@@ -612,7 +612,7 @@ class _PlayerRowState extends State<_PlayerRow> {
                 decoration: InputDecoration(
                   hintText: '#',
                   hintStyle: AppTextStyles.statM(
-                      AppColors.textSecondaryDark),
+                      context.colors.colorTextSecondary),
                   border: InputBorder.none,
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(
@@ -624,7 +624,7 @@ class _PlayerRowState extends State<_PlayerRow> {
             Container(
                 width: 0.5,
                 height: 24,
-                color: AppColors.border),
+                color: context.colors.colorBorderSubtle),
 
             const SizedBox(width: AppSpacing.md),
 
@@ -634,11 +634,11 @@ class _PlayerRowState extends State<_PlayerRow> {
                 controller: _nameCtrl,
                 onChanged: (_) => _notify(),
                 style: AppTextStyles.headingS(
-                    AppColors.textPrimaryDark),
+                    context.colors.colorTextPrimary),
                 decoration: InputDecoration(
                   hintText: 'Player name',
                   hintStyle: AppTextStyles.headingS(
-                      AppColors.textSecondaryDark
+                      context.colors.colorTextSecondary
                           .withValues(alpha: 0.5)),
                   border: InputBorder.none,
                   isDense: true,
@@ -662,14 +662,14 @@ class _PlayerRowState extends State<_PlayerRow> {
                       color: widget.isOnCourt
                           ? widget.teamColor
                               .withValues(alpha: 0.15)
-                          : AppColors.surfaceHigh,
+                          : context.colors.colorSurfaceElevated,
                       borderRadius:
                           BorderRadius.circular(AppRadius.pill),
                       border: Border.all(
                         color: widget.isOnCourt
                             ? widget.teamColor
                                 .withValues(alpha: 0.4)
-                            : AppColors.border,
+                            : context.colors.colorBorderSubtle,
                         width: 0.5,
                       ),
                     ),
@@ -678,7 +678,7 @@ class _PlayerRowState extends State<_PlayerRow> {
                       style: AppTextStyles.labelS(
                         widget.isOnCourt
                             ? widget.teamColor
-                            : AppColors.textSecondaryDark,
+                            : context.colors.colorTextSecondary,
                       ),
                     ),
                   ),
@@ -693,7 +693,7 @@ class _PlayerRowState extends State<_PlayerRow> {
                     const EdgeInsets.only(left: AppSpacing.sm),
                 child: Icon(
                   Icons.remove_circle_outline_rounded,
-                  color: AppColors.textTertiaryDark,
+                  color: context.colors.colorTextTertiary,
                   size: 18,
                 ),
               ),
