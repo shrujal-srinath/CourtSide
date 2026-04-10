@@ -60,8 +60,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen>
-    with SingleTickerProviderStateMixin {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   GoogleMapController? _mapController;
   GoogleMapController? _expandedMapController;
   LatLng? _userLocation;
@@ -74,17 +73,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   String? _mapStyle;
   Venue? _selectedVenue;
   Venue? _displayedVenue;
-  late AnimationController _pulseController;
 
   static const _bengaluru = LatLng(12.9716, 77.5946);
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
     _initLocation();
   }
 
@@ -98,7 +92,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void dispose() {
     _mapController?.dispose();
     _expandedMapController?.dispose();
-    _pulseController.dispose();
     super.dispose();
   }
 
@@ -255,13 +248,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     } catch (_) {}
   }
 
-  void _onMapCreated(GoogleMapController c) {
-    _mapController = c;
-    if (_userLocation != null) {
-      c.animateCamera(CameraUpdate.newLatLngZoom(_userLocation!, 13));
-    }
-  }
-
   void _onExpandedMapCreated(GoogleMapController c) {
     _expandedMapController = c;
     if (_userLocation != null) {
@@ -270,13 +256,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _selectSport(String sport) => context.push(AppRoutes.sportById(sport));
-
-  String _greeting() {
-    final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -292,10 +271,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         children: [
           Column(
             children: [
-              _Header(
+              _HomeHeader(
                 firstName: firstName,
                 topPad: topPad,
-                greeting: _greeting(),
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -305,21 +283,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     children: [
                       const SizedBox(height: AppSpacing.md),
 
-                      _LiveNowStrip(pulseController: _pulseController),
-
-                      const SizedBox(height: AppSpacing.lg),
-
-                      _CollapsedMapPreview(
-                        userLocation: _userLocation,
-                        markers: _markers,
-                        loading: _locationLoading,
-                        mapStyle: _mapStyle,
-                        onMapCreated: _onMapCreated,
-                        onTap: () => setState(() {
-                          _mapExpanded = true;
-                          _selectedVenue = null;
-                        }),
-                      ),
+                      const _HomeCarousel(),
 
                       const SizedBox(height: AppSpacing.md),
 
@@ -417,133 +381,922 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 }
 
+
 // ═══════════════════════════════════════════════════════════════
-//  HEADER
+//  HOME HEADER
 // ═══════════════════════════════════════════════════════════════
 
-class _Header extends StatelessWidget {
-  const _Header({
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({
     required this.firstName,
     required this.topPad,
-    required this.greeting,
   });
 
   final String firstName;
   final double topPad;
-  final String greeting;
+
+  void _showNotificationsSheet(BuildContext context) {
+    final colors = context.colors;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: colors.colorSurfacePrimary,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xxl),
+          ),
+          border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+        ),
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          MediaQuery.of(context).padding.bottom + AppSpacing.xxl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colors.colorBorderMedium,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Icon(Icons.notifications_none_rounded,
+                size: 36, color: colors.colorTextTertiary),
+            const SizedBox(height: AppSpacing.md),
+            Text('No new notifications',
+                style: AppTextStyles.headingS(colors.colorTextPrimary)),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'You\'re all caught up. Booking confirmations\nand game alerts will appear here.',
+              style: AppTextStyles.bodyM(colors.colorTextSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.xxl),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final initials = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'P';
+
+    return Container(
+      color: colors.colorBackgroundPrimary,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── ROW 1: name + location | bell + avatar ────────────
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+                AppSpacing.lg, topPad + AppSpacing.sm,
+                AppSpacing.lg, AppSpacing.sm),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Left: name + tappable location row
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        firstName,
+                        style: AppTextStyles.headingL(colors.colorTextPrimary)
+                            .copyWith(fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 3),
+                      GestureDetector(
+                        onTap: () {},
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: colors.colorAccentPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              'Koramangala, Bengaluru',
+                              style: AppTextStyles.labelS(
+                                  colors.colorTextSecondary),
+                            ),
+                            const SizedBox(width: 3),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 12,
+                              color: colors.colorTextTertiary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Notification bell — taps open notifications sheet
+                GestureDetector(
+                  onTap: () => _showNotificationsSheet(context),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: colors.colorSurfacePrimary,
+                          border: Border.all(
+                              color: colors.colorBorderSubtle, width: 0.5),
+                        ),
+                        child: Icon(
+                          Icons.notifications_outlined,
+                          color: colors.colorTextPrimary,
+                          size: 22,
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: colors.colorAccentPrimary,
+                            border: Border.all(
+                              color: colors.colorBackgroundPrimary,
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                // Avatar — taps navigate to profile
+                GestureDetector(
+                  onTap: () => context.push(AppRoutes.profile),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: colors.colorAccentSubtle,
+                      border: Border.all(
+                          color: colors.colorAccentPrimary, width: 1.5),
+                    ),
+                    child: Center(
+                      child: Text(
+                        initials,
+                        style:
+                            AppTextStyles.labelS(colors.colorAccentPrimary),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── ROW 2: search bar with animated hint ──────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
+            child: GestureDetector(
+              onTap: () => context.go(AppRoutes.explore),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: colors.colorSurfacePrimary,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border:
+                      Border.all(color: colors.colorBorderSubtle, width: 1),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.search_rounded,
+                        size: 18, color: colors.colorTextTertiary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Search for ',
+                            style: AppTextStyles.bodyS(
+                                colors.colorTextTertiary),
+                          ),
+                          const _AnimatedSearchHint(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ANIMATED SEARCH HINT
+//  Cycles through search term suggestions with a vertical slide
+// ═══════════════════════════════════════════════════════════════
+
+class _AnimatedSearchHint extends StatefulWidget {
+  const _AnimatedSearchHint();
+
+  @override
+  State<_AnimatedSearchHint> createState() => _AnimatedSearchHintState();
+}
+
+class _AnimatedSearchHintState extends State<_AnimatedSearchHint>
+    with SingleTickerProviderStateMixin {
+  static const _terms = ['courts', 'players', 'venues', 'games'];
+
+  int _index = 0;
+  late final AnimationController _ctrl;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.4),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+
+    _ctrl.forward();
+    _scheduleCycle();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _scheduleCycle() {
+    Future.delayed(const Duration(milliseconds: 2200), () {
+      if (!mounted) return;
+      _ctrl.reverse().then((_) {
+        if (!mounted) return;
+        setState(() => _index = (_index + 1) % _terms.length);
+        _ctrl.forward();
+        _scheduleCycle();
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: Text(
+          _terms[_index],
+          style: AppTextStyles.bodyS(colors.colorTextTertiary).copyWith(
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONTEXT-DRIVEN CAROUSEL
+// ═══════════════════════════════════════════════════════════════
+
+enum _CarouselPanel { map, ongoingGame, friendGame, lastGame }
+
+class _HomeCarousel extends StatefulWidget {
+  const _HomeCarousel();
+
+  @override
+  State<_HomeCarousel> createState() => _HomeCarouselState();
+}
+
+class _HomeCarouselState extends State<_HomeCarousel> {
+  late final PageController _pageController;
+  int _currentPage = 0;
+  late final List<_CarouselPanel> _panels;
+
+  static const _swipeLabels = {
+    _CarouselPanel.ongoingGame: '⚡ game',
+    _CarouselPanel.friendGame: '👥 friends',
+    _CarouselPanel.lastGame: '📊 last game',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _panels = _buildPanels();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  List<_CarouselPanel> _buildPanels() {
+    final panels = <_CarouselPanel>[_CarouselPanel.map];
+
+    // Upcoming basketball booking → treat as "your game is happening"
+    final hasOngoingGame = FakeData.bookingHistory.any(
+      (b) => b.status == BookingStatus.upcoming && b.sport == 'basketball',
+    );
+    if (hasOngoingGame) panels.add(_CarouselPanel.ongoingGame);
+
+    // Hardcoded friend playing flag for now
+    const hasFriendPlaying = true;
+    if (hasFriendPlaying) panels.add(_CarouselPanel.friendGame);
+
+    // Any completed booking → last game panel
+    final hasLastGame = FakeData.bookingHistory.any(
+      (b) => b.status == BookingStatus.completed,
+    );
+    if (hasLastGame) panels.add(_CarouselPanel.lastGame);
+
+    return panels;
+  }
+
+  Widget _buildPanel(_CarouselPanel panel) {
+    switch (panel) {
+      case _CarouselPanel.map:
+        return const _MapPanel();
+      case _CarouselPanel.ongoingGame:
+        return const _OngoingGamePanel();
+      case _CarouselPanel.friendGame:
+        return const _FriendGamePanel();
+      case _CarouselPanel.lastGame:
+        return const _LastGamePanel();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final showIndicators = _panels.length > 1;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── 96px carousel container ──────────────────────────────
+        Padding(
+          padding:
+              const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            child: Container(
+              height: 96,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border:
+                    Border.all(color: colors.colorBorderSubtle, width: 1),
+              ),
+              child: Stack(
+                children: [
+                  // PageView sits below the 3px indicator strip
+                  Positioned(
+                    top: showIndicators ? 3 : 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: PageView(
+                      controller: _pageController,
+                      physics: const BouncingScrollPhysics(),
+                      onPageChanged: (i) =>
+                          setState(() => _currentPage = i),
+                      children: _panels
+                          .map(_buildPanel)
+                          .toList(),
+                    ),
+                  ),
+                  // Top-edge line indicators
+                  if (showIndicators)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Row(
+                        children: List.generate(_panels.length, (i) {
+                          final active = i == _currentPage;
+                          return Expanded(
+                            flex: active ? 2 : 1,
+                            child: AnimatedContainer(
+                              duration:
+                                  const Duration(milliseconds: 250),
+                              height: 3,
+                              decoration: BoxDecoration(
+                                color: active
+                                    ? colors.colorAccentPrimary
+                                    : colors.colorBorderSubtle,
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(2),
+                                  bottomRight: Radius.circular(2),
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // ── Swipe hint row (centered, only when multiple panels) ─
+        if (showIndicators)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, 4, AppSpacing.lg, 4),
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'swipe for  ',
+                    style:
+                        AppTextStyles.labelS(colors.colorTextTertiary),
+                  ),
+                  ..._panels.skip(1).map((p) {
+                    final label = _swipeLabels[p] ?? '';
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: colors.colorSurfacePrimary,
+                          border: Border.all(
+                              color: colors.colorBorderSubtle, width: 1),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Text(
+                          label,
+                          style: AppTextStyles.labelS(
+                              colors.colorTextTertiary),
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PULSING PIN (map venue dot with animated outer ring)
+// ═══════════════════════════════════════════════════════════════
+
+class _PulsingPin extends StatefulWidget {
+  const _PulsingPin({
+    required this.color,
+    required this.size,
+    required this.borderColor,
+    this.pulse = true,
+  });
+
+  final Color color;
+  final double size;
+  final Color borderColor;
+  final bool pulse;
+
+  @override
+  State<_PulsingPin> createState() => _PulsingPinState();
+}
+
+class _PulsingPinState extends State<_PulsingPin>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.pulse) {
+      _ctrl = AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 2),
+      )..repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final outerSize = widget.size + 8.0;
+    return SizedBox(
+      width: outerSize,
+      height: outerSize,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          if (_ctrl != null)
+            AnimatedBuilder(
+              animation: _ctrl!,
+              builder: (_, _) => Container(
+                width: outerSize,
+                height: outerSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: widget.color.withValues(
+                      alpha: _ctrl!.value * 0.35),
+                ),
+              ),
+            ),
+          Container(
+            width: widget.size,
+            height: widget.size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: widget.color,
+              border: Border.all(color: widget.borderColor, width: 2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PULSING DOT (live indicator in _OngoingGamePanel)
+// ═══════════════════════════════════════════════════════════════
+
+class _PulsingDot extends StatefulWidget {
+  const _PulsingDot({required this.color});
+  final Color color;
+
+  @override
+  State<_PulsingDot> createState() => _PulsingDotState();
+}
+
+class _PulsingDotState extends State<_PulsingDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, _) => Container(
+        width: 6,
+        height: 6,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: widget.color.withValues(alpha: 0.5 + _ctrl.value * 0.5),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MAP PANEL  (pure Flutter — no google_maps_flutter)
+// ═══════════════════════════════════════════════════════════════
+
+class _MapPanel extends StatelessWidget {
+  const _MapPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return LayoutBuilder(
+      builder: (_, constraints) {
+        final w = constraints.maxWidth;
+        final h = constraints.maxHeight;
+
+        return Container(
+          color: colors.colorSurfacePrimary,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Faint horizontal grid lines at 25%, 50%, 75%
+              ...[0.25, 0.5, 0.75].map(
+                (f) => Positioned(
+                  top: h * f,
+                  left: 0,
+                  right: 0,
+                  child: Opacity(
+                    opacity: 0.4,
+                    child: Container(
+                        height: 1, color: colors.colorBorderSubtle),
+                  ),
+                ),
+              ),
+              // Faint vertical grid lines at 40%, 70%
+              ...[0.4, 0.7].map(
+                (f) => Positioned(
+                  left: w * f,
+                  top: 0,
+                  bottom: 0,
+                  child: Opacity(
+                    opacity: 0.4,
+                    child: Container(
+                        width: 1, color: colors.colorBorderSubtle),
+                  ),
+                ),
+              ),
+
+              // Nearest venue pin — pulsing accent
+              Positioned(
+                left: w * 0.35 - 8.5,
+                top: h * 0.28 - 8.5,
+                child: _PulsingPin(
+                  color: colors.colorAccentPrimary,
+                  size: 9,
+                  borderColor: colors.colorTextOnAccent,
+                ),
+              ),
+              // Secondary pins — no pulse
+              Positioned(
+                left: w * 0.62 - 7.5,
+                top: h * 0.45 - 7.5,
+                child: _PulsingPin(
+                  color: colors.colorSuccess,
+                  size: 7,
+                  borderColor: colors.colorTextOnAccent,
+                  pulse: false,
+                ),
+              ),
+              Positioned(
+                left: w * 0.18 - 7.5,
+                top: h * 0.55 - 7.5,
+                child: _PulsingPin(
+                  color: colors.colorInfo,
+                  size: 7,
+                  borderColor: colors.colorTextOnAccent,
+                  pulse: false,
+                ),
+              ),
+
+              // Bottom gradient overlay
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: h * 0.6,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        colors.colorBackgroundPrimary
+                            .withValues(alpha: 0.0),
+                        colors.colorBackgroundPrimary
+                            .withValues(alpha: 0.92),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Top-left map label chip
+              Positioned(
+                top: 8,
+                left: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: colors.colorSurfaceOverlay,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    border: Border.all(
+                        color: colors.colorBorderSubtle, width: 0.5),
+                  ),
+                  child: Text(
+                    '🗺 Courts near you',
+                    style:
+                        AppTextStyles.labelS(colors.colorTextTertiary),
+                  ),
+                ),
+              ),
+
+              // Bottom info row: venue name + slots + Book button
+              Positioned(
+                bottom: 8,
+                left: 10,
+                right: 10,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Game Theory Koramangala',
+                            style: AppTextStyles.labelM(
+                                colors.colorTextPrimary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            '0.8 km · 5 slots open',
+                            style: AppTextStyles.labelS(
+                                colors.colorTextSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {},
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: colors.colorAccentPrimary,
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.sm),
+                        ),
+                        child: Text(
+                          'Book →',
+                          style: AppTextStyles.labelS(
+                              colors.colorTextOnAccent),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ONGOING GAME PANEL
+// ═══════════════════════════════════════════════════════════════
+
+class _OngoingGamePanel extends StatelessWidget {
+  const _OngoingGamePanel();
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
 
     return Container(
-      color: colors.colorBackgroundPrimary,
-      padding: EdgeInsets.fromLTRB(
-          AppSpacing.lg, topPad + AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      color: colors.colorSurfacePrimary,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Avatar
-              GestureDetector(
-                onTap: () => context.push('/profile'),
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: colors.colorAccentPrimary.withValues(alpha: 0.15),
-                    border: Border.all(
-                        color: colors.colorBorderMedium, width: 1.0),
-                  ),
-                  child: Center(
-                    child: Text(
-                      firstName.isNotEmpty ? firstName[0].toUpperCase() : 'P',
-                      style: AppTextStyles.headingS(colors.colorAccentPrimary),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      greeting,
-                      style: AppTextStyles.bodyS(colors.colorTextSecondary),
-                    ),
-                    Text(
-                      firstName,
-                      style: AppTextStyles.headingL(colors.colorTextPrimary),
-                    ),
-                  ],
-                ),
-              ),
-              // Streak badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm + 2, vertical: AppSpacing.xs + 1),
-                decoration: BoxDecoration(
-                  color: colors.colorWarning.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(
-                      color: colors.colorWarning.withValues(alpha: 0.3),
-                      width: 0.5),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('🔥', style: TextStyle(fontSize: 12)),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text('7', style: AppTextStyles.labelM(colors.colorWarning)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm + 2),
-              // Notification bell
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.colorSurfacePrimary,
-                  border: Border.all(
-                      color: colors.colorBorderSubtle, width: 0.5),
-                ),
-                child: Icon(Icons.notifications_none_rounded,
-                    color: colors.colorTextPrimary, size: 18),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          // Search bar
-          GestureDetector(
-            onTap: () => context.go(AppRoutes.explore),
-            child: Container(
-              height: 46,
-              decoration: BoxDecoration(
-                color: colors.colorSurfacePrimary,
-                borderRadius: BorderRadius.circular(AppRadius.lg - 2),
-                border: Border.all(
-                    color: colors.colorBorderSubtle, width: 0.5),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Row(
+          // Left accent bar 3px colorAccentPrimary
+          Container(width: 3, color: colors.colorAccentPrimary),
+          // Content
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.search_rounded,
-                      color: colors.colorTextSecondary, size: 20),
-                  const SizedBox(width: AppSpacing.sm + 2),
-                  Expanded(
-                    child: Text(
-                      'Search venues, courts, areas...',
-                      style: AppTextStyles.bodyM(colors.colorTextSecondary),
-                    ),
+                  // Live indicator row
+                  Row(
+                    children: [
+                      _PulsingDot(color: colors.colorAccentPrimary),
+                      const SizedBox(width: 5),
+                      Text(
+                        'YOUR GAME · LIVE',
+                        style: AppTextStyles.overline(
+                            colors.colorAccentPrimary),
+                      ),
+                    ],
                   ),
-                  Icon(Icons.mic_none_rounded,
-                      color: colors.colorTextTertiary, size: 18),
+                  const SizedBox(height: 4),
+                  // Score row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        'Warriors',
+                        style: AppTextStyles.labelS(
+                            colors.colorTextSecondary),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '48',
+                        style: AppTextStyles.headingL(
+                                colors.colorTextPrimary)
+                            .copyWith(
+                          letterSpacing: -1,
+                          fontFeatures: [
+                            const FontFeature.tabularFigures()
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '–',
+                        style: AppTextStyles.headingS(
+                            colors.colorTextTertiary),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '41',
+                        style: AppTextStyles.headingL(
+                                colors.colorTextPrimary)
+                            .copyWith(
+                          letterSpacing: -1,
+                          fontFeatures: [
+                            const FontFeature.tabularFigures()
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Rivals',
+                        style: AppTextStyles.labelS(
+                            colors.colorTextSecondary),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    'Q3 · 4:22',
+                    style:
+                        AppTextStyles.labelS(colors.colorTextSecondary),
+                  ),
+                  const Spacer(),
+                  // Bottom stat + action row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'You: 14pts · 5reb',
+                        style: AppTextStyles.labelS(
+                            colors.colorTextSecondary),
+                      ),
+                      Text(
+                        'Open scorer →',
+                        style: AppTextStyles.labelS(
+                            colors.colorAccentPrimary),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -555,395 +1308,283 @@ class _Header extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  LIVE NOW STRIP
+//  FRIEND GAME PANEL
 // ═══════════════════════════════════════════════════════════════
 
-class _LiveNowStrip extends StatelessWidget {
-  const _LiveNowStrip({required this.pulseController});
-  final AnimationController pulseController;
+class _FriendGamePanel extends StatelessWidget {
+  const _FriendGamePanel();
 
   @override
   Widget build(BuildContext context) {
-    final games = FakeData.pickupGames;
-    if (games.isEmpty) return const SizedBox.shrink();
     final colors = context.colors;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm + 2),
-          child: Row(
+    return Container(
+      color: colors.colorSurfacePrimary,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Friend header
+          Row(
             children: [
-              // Pulsing dot
-              AnimatedBuilder(
-                animation: pulseController,
-                builder: (c, ch) => Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: colors.colorAccentPrimary.withValues(
-                        alpha: 0.5 + pulseController.value * 0.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colors.colorAccentPrimary.withValues(
-                            alpha: pulseController.value * 0.5),
-                        blurRadius: 6,
-                        spreadRadius: 1,
-                      ),
-                    ],
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.colorSurfaceElevated,
+                  border: Border.all(
+                      color: colors.colorBorderSubtle, width: 0.5),
+                ),
+                child: Center(
+                  child: Text(
+                    'AR',
+                    style: AppTextStyles.overline(
+                            colors.colorTextSecondary)
+                        .copyWith(fontSize: 7),
                   ),
                 ),
               ),
-              const SizedBox(width: 7),
-              Text(
-                'LIVE NOW',
-                style: AppTextStyles.overline(colors.colorAccentPrimary),
+              const SizedBox(width: 6),
+              Text('Arjun R',
+                  style: AppTextStyles.labelM(colors.colorTextPrimary)),
+              const SizedBox(width: 4),
+              Text('is playing now',
+                  style:
+                      AppTextStyles.labelS(colors.colorTextSecondary)),
+            ],
+          ),
+          const SizedBox(height: 3),
+          // Live dot + venue
+          Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.colorSuccess,
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 5),
               Text(
-                '${games.length} games',
-                style: AppTextStyles.labelS(colors.colorTextSecondary),
+                'Live · Box Sports',
+                style: AppTextStyles.labelS(colors.colorSuccess),
               ),
             ],
           ),
-        ),
-        SizedBox(
-          height: 86,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            itemCount: games.length,
-            separatorBuilder: (c, i) => const SizedBox(width: AppSpacing.sm + 2),
-            itemBuilder: (c, i) {
-              final g = games[i];
-              final sc = _sportColor(g.sport);
-              return GestureDetector(
-                onTap: () => _showLiveGamesSheet(c),
-                child: Container(
-                  width: 196,
-                  decoration: BoxDecoration(
-                    color: colors.colorSurfacePrimary,
-                    borderRadius: BorderRadius.circular(AppRadius.card),
-                    border: Border.all(
-                        color: colors.colorBorderSubtle, width: 0.5),
-                    boxShadow: AppShadow.card,
-                  ),
-                  child: Row(
-                    children: [
-                      // Sport-colored left accent
-                      Container(
-                        width: 3,
-                        decoration: BoxDecoration(
-                          color: sc,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(AppRadius.card),
-                            bottomLeft: Radius.circular(AppRadius.card),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(11, 11, 12, 11),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(_sportEmoji(g.sport),
-                                      style: const TextStyle(fontSize: 13)),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    g.sport.toUpperCase(),
-                                    style: AppTextStyles.overline(sc),
-                                  ),
-                                  const Spacer(),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: colors.colorSurfaceElevated,
-                                      borderRadius:
-                                          BorderRadius.circular(AppRadius.pill),
-                                    ),
-                                    child: Text(
-                                      'DEMO',
-                                      style: AppTextStyles.labelS(
-                                          colors.colorTextSecondary),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                g.venueName,
-                                style: AppTextStyles.headingS(
-                                    colors.colorTextPrimary),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const Spacer(),
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 7, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: colors.colorSuccess
-                                          .withValues(alpha: 0.12),
-                                      borderRadius:
-                                          BorderRadius.circular(AppRadius.pill),
-                                      border: Border.all(
-                                        color: colors.colorSuccess
-                                            .withValues(alpha: 0.3),
-                                        width: 0.5,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      '${g.spotsTotal - g.spotsFilled} left',
-                                      style: AppTextStyles.labelS(
-                                          colors.colorSuccess),
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  Text(g.time,
-                                      style: AppTextStyles.labelS(
-                                          colors.colorTextSecondary)),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-void _showLiveGamesSheet(BuildContext ctx) {
-  final colors = ctx.colors;
-  showModalBottomSheet(
-    context: ctx,
-    backgroundColor: colors.colorSurfaceOverlay,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadius.xxl)),
-    ),
-    builder: (_) => Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xxl, AppSpacing.xl, AppSpacing.xxl, AppSpacing.xxxl + 4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 36, height: 4,
-            decoration: BoxDecoration(
-              color: colors.colorBorderMedium,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          Container(
-            width: 52, height: 52,
-            decoration: BoxDecoration(
-              color: colors.colorWarning.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-              border: Border.all(
-                  color: colors.colorWarning.withValues(alpha: 0.3), width: 1),
-            ),
-            child: const Center(
-              child: Text('🔴', style: TextStyle(fontSize: 22)),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text('Live Games Coming Soon',
-              style: AppTextStyles.headingM(colors.colorTextPrimary)),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'This is sample data. Real live pickup games will appear here once the app goes live.',
-            style: AppTextStyles.bodyM(colors.colorTextSecondary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.xxl),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              style: TextButton.styleFrom(
-                backgroundColor: colors.colorSurfaceElevated,
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+          const SizedBox(height: 4),
+          // Score + quarter
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '34 – 28',
+                style:
+                    AppTextStyles.headingM(colors.colorTextPrimary)
+                        .copyWith(
+                  fontFeatures: [const FontFeature.tabularFigures()],
                 ),
               ),
-              child: Text('Got it',
-                  style: AppTextStyles.labelM(colors.colorTextPrimary)),
+              const SizedBox(width: 8),
+              Text(
+                'Q2',
+                style: AppTextStyles.labelS(colors.colorTextTertiary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Arjun: 18pts · 3ast · 71% FG',
+            style: AppTextStyles.labelS(colors.colorTextSecondary),
+          ),
+          const Spacer(),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              'Watch live →',
+              style: AppTextStyles.labelS(colors.colorTextPrimary),
             ),
           ),
         ],
       ),
-    ),
-  );
+    );
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  COLLAPSED MAP PREVIEW
+//  LAST GAME PANEL
 // ═══════════════════════════════════════════════════════════════
 
-class _CollapsedMapPreview extends StatelessWidget {
-  const _CollapsedMapPreview({
-    required this.userLocation,
-    required this.markers,
-    required this.loading,
-    required this.mapStyle,
-    required this.onMapCreated,
-    required this.onTap,
-  });
-
-  final LatLng? userLocation;
-  final Set<Marker> markers;
-  final bool loading;
-  final String? mapStyle;
-  final Function(GoogleMapController) onMapCreated;
-  final VoidCallback onTap;
-
-  static const _bengaluru = LatLng(12.9716, 77.5946);
+class _LastGamePanel extends StatelessWidget {
+  const _LastGamePanel();
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppRadius.xl),
-          child: SizedBox(
-            height: 160,
-            child: Stack(
-              fit: StackFit.expand,
+    // Pull PTS from FakeData basketball stats if available
+    final stat = FakeData.playerStats
+        .where((s) => s.sport == 'basketball')
+        .firstOrNull;
+    final pts = stat != null
+        ? '${(stat.stats['ppg'] as double).round()}'
+        : '24';
+
+    return Container(
+      color: colors.colorSurfacePrimary,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top: label + W badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Last game · Yesterday',
+                style: AppTextStyles.labelS(colors.colorTextTertiary),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: colors.colorSuccess.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Text(
+                  'W',
+                  style: AppTextStyles.labelS(colors.colorSuccess),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            'Warriors 72 – 58',
+            style: AppTextStyles.labelM(colors.colorTextPrimary).copyWith(
+              fontFeatures: [const FontFeature.tabularFigures()],
+            ),
+          ),
+          const SizedBox(height: 5),
+          // 4-cell stat row with dividers
+          IntrinsicHeight(
+            child: Row(
               children: [
-                AbsorbPointer(
-                  absorbing: true,
-                  child: GoogleMap(
-                    onMapCreated: onMapCreated,
-                    initialCameraPosition: CameraPosition(
-                      target: userLocation ?? _bengaluru,
-                      zoom: 13,
-                    ),
-                    markers: markers,
-                    style: mapStyle,
-                    myLocationEnabled: true,
-                    myLocationButtonEnabled: false,
-                    zoomControlsEnabled: false,
-                    mapToolbarEnabled: false,
-                    compassEnabled: false,
-                    scrollGesturesEnabled: false,
-                    zoomGesturesEnabled: false,
-                    rotateGesturesEnabled: false,
-                    tiltGesturesEnabled: false,
-                  ),
-                ),
-
-                if (loading)
-                  Container(
-                    color: colors.colorBackgroundPrimary
-                        .withValues(alpha: 0.55),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                          color: colors.colorAccentPrimary,
-                          strokeWidth: 2),
-                    ),
-                  ),
-
-                Positioned(
-                  bottom: 0, left: 0, right: 0,
-                  child: Container(
-                    height: 80,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          colors.colorBackgroundPrimary.withValues(alpha: 0.0),
-                          colors.colorBackgroundPrimary.withValues(alpha: 0.72),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                Positioned(
-                  bottom: 12, left: 14,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('🗺', style: TextStyle(fontSize: 13)),
-                      const SizedBox(width: 5),
-                      Text(
-                        'Courts Near You',
-                        style: AppTextStyles.labelM(
-                            colors.colorTextPrimary),
-                      ),
-                    ],
-                  ),
-                ),
-
-                Positioned(
-                  bottom: 10, right: 12,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm + 2,
-                            vertical: AppSpacing.xs + 1),
-                        decoration: BoxDecoration(
-                          color: colors.colorSurfaceOverlay
-                              .withValues(alpha: 0.75),
-                          borderRadius:
-                              BorderRadius.circular(AppRadius.pill),
-                          border: Border.all(
-                              color: colors.colorBorderSubtle
-                                  .withValues(alpha: 0.5),
-                              width: 0.5),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.open_in_full_rounded,
-                                color: colors.colorInfo, size: 11),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Tap to explore',
-                              style: AppTextStyles.labelS(colors.colorInfo),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                _StatCell(
+                    value: pts,
+                    label: 'PTS',
+                    valueColor: colors.colorAccentPrimary,
+                    colors: colors),
+                _StatDivider(colors: colors),
+                _StatCell(
+                    value: '8',
+                    label: 'REB',
+                    valueColor: colors.colorTextPrimary,
+                    colors: colors),
+                _StatDivider(colors: colors),
+                _StatCell(
+                    value: '5',
+                    label: 'AST',
+                    valueColor: colors.colorTextPrimary,
+                    colors: colors),
+                _StatDivider(colors: colors),
+                _StatCell(
+                    value: '68%',
+                    label: 'FG%',
+                    valueColor: colors.colorTextPrimary,
+                    colors: colors),
               ],
             ),
           ),
-        ),
+          const Spacer(),
+          // Bottom: hardware verified + share button
+          Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.colorSuccess,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                'Hardware verified · THE BOX',
+                style: AppTextStyles.labelS(colors.colorSuccess),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => context.push('/stats/share'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: colors.colorAccentPrimary,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Text(
+                    'Share →',
+                    style:
+                        AppTextStyles.labelS(colors.colorTextOnAccent),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
+
+class _StatCell extends StatelessWidget {
+  const _StatCell({
+    required this.value,
+    required this.label,
+    required this.valueColor,
+    required this.colors,
+  });
+
+  final String value;
+  final String label;
+  final Color valueColor;
+  final AppColorScheme colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: AppTextStyles.headingS(valueColor).copyWith(
+              fontFeatures: [const FontFeature.tabularFigures()],
+            ),
+          ),
+          Text(
+            label,
+            style: AppTextStyles.overline(colors.colorTextTertiary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatDivider extends StatelessWidget {
+  const _StatDivider({required this.colors});
+  final AppColorScheme colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(width: 1, color: colors.colorBorderSubtle);
+  }
+}
+
 
 // ═══════════════════════════════════════════════════════════════
 //  SPORT CHIP ROW
