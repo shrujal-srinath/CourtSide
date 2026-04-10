@@ -365,6 +365,10 @@ class FakeData {
       name: 'Court 1', surface: 'Hardwood', isIndoor: true,
       pricePerSlot: 400, slotDurationMin: 45,
       hasTheBox: true, slotsAvailableToday: 5),
+    Court(id: 'c1b', venueId: 'v1', sport: 'basketball',
+      name: 'Court 2', surface: 'Hardwood', isIndoor: true,
+      pricePerSlot: 400, slotDurationMin: 45,
+      hasTheBox: false, slotsAvailableToday: 3),
     Court(id: 'c2', venueId: 'v1', sport: 'badminton',
       name: 'Court A', surface: 'Synthetic', isIndoor: true,
       pricePerSlot: 250, slotDurationMin: 45,
@@ -535,6 +539,18 @@ class FakeData {
 
   static Court? courtByVenueAndSport(String venueId, String sport) =>
       courts.where((c) => c.venueId == venueId && c.sport == sport).firstOrNull;
+
+  static List<Court> courtsByVenueAndSport(String venueId, String sport) =>
+      courts.where((c) => c.venueId == venueId && c.sport == sport).toList();
+
+  static List<Slot> slotsByCourtId(String courtId) =>
+      slotsC1.map((s) => Slot(
+        id: '${s.id}_$courtId',
+        courtId: courtId,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        status: s.status,
+      )).toList();
 
   static List<PickupGame> pickupGamesBySport(String sport) =>
       pickupGames.where((g) => g.sport == sport).toList();

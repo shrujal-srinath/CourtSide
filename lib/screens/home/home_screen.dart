@@ -1,5 +1,6 @@
 // lib/screens/home/home_screen.dart
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -73,8 +74,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String? _mapStyle;
   Venue? _selectedVenue;
   Venue? _displayedVenue;
+  String _locationLabel = 'Koramangala, Bengaluru';
 
   static const _bengaluru = LatLng(12.9716, 77.5946);
+
+  static const _neighborhoods = [
+    'Koramangala',
+    'Indiranagar',
+    'Whitefield',
+    'HSR Layout',
+    'Jayanagar',
+    'Marathahalli',
+    'Bellandur',
+    'Electronic City',
+  ];
 
   @override
   void initState() {
@@ -257,6 +270,101 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _selectSport(String sport) => context.push(AppRoutes.sportById(sport));
 
+  // ── Location picker ──────────────────────────────────────────
+
+  void _showLocationPicker(BuildContext ctx) {
+    final colors = ctx.colors;
+    showModalBottomSheet<void>(
+      context: ctx,
+      backgroundColor: Colors.transparent,
+      builder: (_) => StatefulBuilder(
+        builder: (sheetCtx, setSheetState) => Container(
+          decoration: BoxDecoration(
+            color: colors.colorSurfacePrimary,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xxl),
+            ),
+            border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+          ),
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            MediaQuery.of(ctx).padding.bottom + AppSpacing.xxl,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.colorBorderMedium,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                'CHOOSE AREA',
+                style: AppTextStyles.overline(colors.colorTextTertiary),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              ..._neighborhoods.map((hood) {
+                final fullLabel = '$hood, Bengaluru';
+                final isActive = _locationLabel == fullLabel;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => _locationLabel = fullLabel);
+                    Navigator.of(sheetCtx).pop();
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    height: 44,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xs),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.location_on_rounded,
+                          size: 16,
+                          color: isActive
+                              ? colors.colorAccentPrimary
+                              : colors.colorTextTertiary,
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text(
+                            hood,
+                            style: isActive
+                                ? AppTextStyles.headingS(
+                                        colors.colorTextPrimary)
+                                    .copyWith(fontWeight: FontWeight.w700)
+                                : AppTextStyles.bodyM(
+                                    colors.colorTextSecondary),
+                          ),
+                        ),
+                        if (isActive)
+                          Icon(
+                            Icons.check_rounded,
+                            size: 16,
+                            color: colors.colorAccentPrimary,
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
@@ -274,6 +382,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               _HomeHeader(
                 firstName: firstName,
                 topPad: topPad,
+                locationLabel: _locationLabel,
+                onLocationTap: () => _showLocationPicker(context),
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -283,7 +393,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       const SizedBox(height: AppSpacing.md),
 
-                      const _HomeCarousel(),
+                      _HomeCarousel(
+                        userLocation: _userLocation,
+                        markers: _markers,
+                        mapStyle: _mapStyle,
+                        onExpandMap: () =>
+                            setState(() => _mapExpanded = true),
+                      ),
 
                       const SizedBox(height: AppSpacing.md),
 
@@ -390,10 +506,14 @@ class _HomeHeader extends StatelessWidget {
   const _HomeHeader({
     required this.firstName,
     required this.topPad,
+    required this.locationLabel,
+    required this.onLocationTap,
   });
 
   final String firstName;
   final double topPad;
+  final String locationLabel;
+  final VoidCallback onLocationTap;
 
   void _showNotificationsSheet(BuildContext context) {
     final colors = context.colors;
@@ -478,31 +598,36 @@ class _HomeHeader extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       GestureDetector(
-                        onTap: () {},
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: colors.colorAccentPrimary,
+                        onTap: onLocationTap,
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.xs),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: colors.colorAccentPrimary,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              'Koramangala, Bengaluru',
-                              style: AppTextStyles.labelS(
-                                  colors.colorTextSecondary),
-                            ),
-                            const SizedBox(width: 3),
-                            Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              size: 12,
-                              color: colors.colorTextTertiary,
-                            ),
-                          ],
+                              const SizedBox(width: 5),
+                              Text(
+                                locationLabel,
+                                style: AppTextStyles.labelS(
+                                    colors.colorTextSecondary),
+                              ),
+                              const SizedBox(width: 3),
+                              Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                size: 14,
+                                color: colors.colorTextTertiary,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -553,8 +678,8 @@ class _HomeHeader extends StatelessWidget {
                 GestureDetector(
                   onTap: () => context.push(AppRoutes.profile),
                   child: Container(
-                    width: 30,
-                    height: 30,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: colors.colorAccentSubtle,
@@ -565,7 +690,7 @@ class _HomeHeader extends StatelessWidget {
                       child: Text(
                         initials,
                         style:
-                            AppTextStyles.labelS(colors.colorAccentPrimary),
+                            AppTextStyles.labelM(colors.colorAccentPrimary),
                       ),
                     ),
                   ),
@@ -587,7 +712,7 @@ class _HomeHeader extends StatelessWidget {
                   color: colors.colorSurfacePrimary,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                   border:
-                      Border.all(color: colors.colorBorderSubtle, width: 1),
+                      Border.all(color: colors.colorBorderSubtle, width: 0.5),
                 ),
                 child: Row(
                   children: [
@@ -699,7 +824,17 @@ class _AnimatedSearchHintState extends State<_AnimatedSearchHint>
 enum _CarouselPanel { map, ongoingGame, friendGame, lastGame }
 
 class _HomeCarousel extends StatefulWidget {
-  const _HomeCarousel();
+  const _HomeCarousel({
+    required this.userLocation,
+    required this.markers,
+    required this.mapStyle,
+    required this.onExpandMap,
+  });
+
+  final LatLng? userLocation;
+  final Set<Marker> markers;
+  final String? mapStyle;
+  final VoidCallback onExpandMap;
 
   @override
   State<_HomeCarousel> createState() => _HomeCarouselState();
@@ -709,11 +844,12 @@ class _HomeCarouselState extends State<_HomeCarousel> {
   late final PageController _pageController;
   int _currentPage = 0;
   late final List<_CarouselPanel> _panels;
+  Timer? _autoTimer;
 
-  static const _swipeLabels = {
-    _CarouselPanel.ongoingGame: '⚡ game',
-    _CarouselPanel.friendGame: '👥 friends',
-    _CarouselPanel.lastGame: '📊 last game',
+  static const _nextPanelHints = {
+    _CarouselPanel.ongoingGame: 'Swipe for your live game →',
+    _CarouselPanel.friendGame:  'Swipe to see friends →',
+    _CarouselPanel.lastGame:    'Swipe for last game →',
   };
 
   @override
@@ -721,12 +857,30 @@ class _HomeCarouselState extends State<_HomeCarousel> {
     super.initState();
     _pageController = PageController();
     _panels = _buildPanels();
+    if (_panels.length > 1) _scheduleAutoAdvance();
   }
 
   @override
   void dispose() {
+    _autoTimer?.cancel();
     _pageController.dispose();
     super.dispose();
+  }
+
+  void _scheduleAutoAdvance() {
+    _autoTimer?.cancel();
+    // Map panel holds 5s, all others hold 3s
+    final holdMs = _currentPage == 0 ? 5000 : 3000;
+    _autoTimer = Timer(Duration(milliseconds: holdMs), () {
+      if (!mounted) return;
+      final next = (_currentPage + 1) % _panels.length;
+      _pageController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+      // onPageChanged will fire and reschedule
+    });
   }
 
   List<_CarouselPanel> _buildPanels() {
@@ -754,7 +908,12 @@ class _HomeCarouselState extends State<_HomeCarousel> {
   Widget _buildPanel(_CarouselPanel panel) {
     switch (panel) {
       case _CarouselPanel.map:
-        return const _MapPanel();
+        return _MapPanel(
+          userLocation: widget.userLocation,
+          markers: widget.markers,
+          mapStyle: widget.mapStyle,
+          onTap: widget.onExpandMap,
+        );
       case _CarouselPanel.ongoingGame:
         return const _OngoingGamePanel();
       case _CarouselPanel.friendGame:
@@ -772,110 +931,109 @@ class _HomeCarouselState extends State<_HomeCarousel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── 96px carousel container ──────────────────────────────
+        // ── Carousel container (taller for map) ──────────────────
         Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.lg),
             child: Container(
-              height: 96,
+              height: 160,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                border:
-                    Border.all(color: colors.colorBorderSubtle, width: 1),
+                border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
               ),
-              child: Stack(
-                children: [
-                  // PageView sits below the 3px indicator strip
-                  Positioned(
-                    top: showIndicators ? 3 : 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: PageView(
-                      controller: _pageController,
-                      physics: const BouncingScrollPhysics(),
-                      onPageChanged: (i) =>
-                          setState(() => _currentPage = i),
-                      children: _panels
-                          .map(_buildPanel)
-                          .toList(),
-                    ),
-                  ),
-                  // Top-edge line indicators
-                  if (showIndicators)
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        children: List.generate(_panels.length, (i) {
-                          final active = i == _currentPage;
-                          return Expanded(
-                            flex: active ? 2 : 1,
-                            child: AnimatedContainer(
-                              duration:
-                                  const Duration(milliseconds: 250),
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: active
-                                    ? colors.colorAccentPrimary
-                                    : colors.colorBorderSubtle,
-                                borderRadius: const BorderRadius.only(
-                                  bottomLeft: Radius.circular(2),
-                                  bottomRight: Radius.circular(2),
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                ],
+              child: PageView(
+                controller: _pageController,
+                physics: const BouncingScrollPhysics(),
+                onPageChanged: (i) {
+                  setState(() => _currentPage = i);
+                  if (_panels.length > 1) _scheduleAutoAdvance();
+                },
+                children: _panels.map(_buildPanel).toList(),
               ),
             ),
           ),
         ),
 
-        // ── Swipe hint row (centered, only when multiple panels) ─
+        // ── Progress bar indicators ───────────────────────────────
         if (showIndicators)
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, 4, AppSpacing.lg, 4),
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'swipe for  ',
-                    style:
-                        AppTextStyles.labelS(colors.colorTextTertiary),
-                  ),
-                  ..._panels.skip(1).map((p) {
-                    final label = _swipeLabels[p] ?? '';
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: colors.colorSurfacePrimary,
-                          border: Border.all(
-                              color: colors.colorBorderSubtle, width: 1),
+                AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
+            child: Column(
+              children: [
+                Row(
+                  children: List.generate(_panels.length, (i) {
+                    final panel = _panels[i];
+                    final isActive = i == _currentPage;
+                    final isPast = i < _currentPage;
+                    final holdMs = panel == _CarouselPanel.map ? 5000 : 3000;
+
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                            right: i < _panels.length - 1 ? AppSpacing.sm : 0),
+                        child: ClipRRect(
                           borderRadius:
                               BorderRadius.circular(AppRadius.pill),
-                        ),
-                        child: Text(
-                          label,
-                          style: AppTextStyles.labelS(
-                              colors.colorTextTertiary),
+                          child: Stack(
+                            children: [
+                              // Track
+                              Container(
+                                height: 2,
+                                color: colors.colorBorderMedium
+                                    .withValues(alpha: 0.5),
+                              ),
+                              // Fill
+                              TweenAnimationBuilder<double>(
+                                key: ValueKey('bar_${i}_$_currentPage'),
+                                tween: Tween(
+                                  begin: isPast ? 1.0 : 0.0,
+                                  end: (isActive || isPast) ? 1.0 : 0.0,
+                                ),
+                                duration: isActive
+                                    ? Duration(milliseconds: holdMs)
+                                    : const Duration(milliseconds: 150),
+                                curve: isActive
+                                    ? Curves.linear
+                                    : Curves.easeOut,
+                                builder: (context0, v, child0) =>
+                                    FractionallySizedBox(
+                                  widthFactor: v,
+                                  alignment: Alignment.centerLeft,
+                                  child: Container(
+                                    height: 2,
+                                    color: colors.colorAccentPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
                   }),
-                ],
-              ),
+                ),
+                const SizedBox(height: 6),
+                // Contextual hint — changes per panel, fades on change
+                SizedBox(
+                  height: 16,
+                  child: AnimatedSwitcher(
+                    duration: AppDuration.fast,
+                    transitionBuilder: (child, anim) =>
+                        FadeTransition(opacity: anim, child: child),
+                    child: _currentPage < _panels.length - 1
+                        ? Text(
+                            _nextPanelHints[_panels[_currentPage + 1]] ?? '',
+                            key: ValueKey(_currentPage),
+                            style: AppTextStyles.labelS(
+                                colors.colorTextTertiary),
+                            textAlign: TextAlign.center,
+                          )
+                        : const SizedBox.shrink(key: ValueKey('last')),
+                  ),
+                ),
+              ],
             ),
           ),
       ],
@@ -1010,181 +1168,151 @@ class _PulsingDotState extends State<_PulsingDot>
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  MAP PANEL  (pure Flutter — no google_maps_flutter)
+//  MAP PANEL  — real GoogleMap, non-interactive, tap to expand
 // ═══════════════════════════════════════════════════════════════
 
-class _MapPanel extends StatelessWidget {
-  const _MapPanel();
+class _MapPanel extends StatefulWidget {
+  const _MapPanel({
+    required this.userLocation,
+    required this.markers,
+    required this.mapStyle,
+    required this.onTap,
+  });
+
+  final LatLng? userLocation;
+  final Set<Marker> markers;
+  final String? mapStyle;
+  final VoidCallback onTap;
+
+  static const _bengaluru = LatLng(12.9716, 77.5946);
+
+  @override
+  State<_MapPanel> createState() => _MapPanelState();
+}
+
+class _MapPanelState extends State<_MapPanel> {
+  GoogleMapController? _ctrl;
+
+  @override
+  void dispose() {
+    _ctrl?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(_MapPanel old) {
+    super.didUpdateWidget(old);
+    if (widget.userLocation != null &&
+        widget.userLocation != old.userLocation) {
+      _ctrl?.animateCamera(
+        CameraUpdate.newLatLngZoom(widget.userLocation!, 13),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final target = widget.userLocation ?? _MapPanel._bengaluru;
 
-    return LayoutBuilder(
-      builder: (_, constraints) {
-        final w = constraints.maxWidth;
-        final h = constraints.maxHeight;
-
-        return Container(
-          color: colors.colorSurfacePrimary,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Faint horizontal grid lines at 25%, 50%, 75%
-              ...[0.25, 0.5, 0.75].map(
-                (f) => Positioned(
-                  top: h * f,
-                  left: 0,
-                  right: 0,
-                  child: Opacity(
-                    opacity: 0.4,
-                    child: Container(
-                        height: 1, color: colors.colorBorderSubtle),
-                  ),
-                ),
-              ),
-              // Faint vertical grid lines at 40%, 70%
-              ...[0.4, 0.7].map(
-                (f) => Positioned(
-                  left: w * f,
-                  top: 0,
-                  bottom: 0,
-                  child: Opacity(
-                    opacity: 0.4,
-                    child: Container(
-                        width: 1, color: colors.colorBorderSubtle),
-                  ),
-                ),
-              ),
-
-              // Nearest venue pin — pulsing accent
-              Positioned(
-                left: w * 0.35 - 8.5,
-                top: h * 0.28 - 8.5,
-                child: _PulsingPin(
-                  color: colors.colorAccentPrimary,
-                  size: 9,
-                  borderColor: colors.colorTextOnAccent,
-                ),
-              ),
-              // Secondary pins — no pulse
-              Positioned(
-                left: w * 0.62 - 7.5,
-                top: h * 0.45 - 7.5,
-                child: _PulsingPin(
-                  color: colors.colorSuccess,
-                  size: 7,
-                  borderColor: colors.colorTextOnAccent,
-                  pulse: false,
-                ),
-              ),
-              Positioned(
-                left: w * 0.18 - 7.5,
-                top: h * 0.55 - 7.5,
-                child: _PulsingPin(
-                  color: colors.colorInfo,
-                  size: 7,
-                  borderColor: colors.colorTextOnAccent,
-                  pulse: false,
-                ),
-              ),
-
-              // Bottom gradient overlay
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: h * 0.6,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        colors.colorBackgroundPrimary
-                            .withValues(alpha: 0.0),
-                        colors.colorBackgroundPrimary
-                            .withValues(alpha: 0.92),
-                      ],
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ── Real Google Map ───────────────────────────────────
+          widget.userLocation == null
+              ? Container(
+                  color: colors.colorSurfacePrimary,
+                  child: Center(
+                    child: Text(
+                      'Loading map…',
+                      style: AppTextStyles.labelS(colors.colorTextTertiary),
                     ),
                   ),
-                ),
-              ),
-
-              // Top-left map label chip
-              Positioned(
-                top: 8,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: colors.colorSurfaceOverlay,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    border: Border.all(
-                        color: colors.colorBorderSubtle, width: 0.5),
+                )
+              : GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: target,
+                    zoom: 13,
                   ),
-                  child: Text(
-                    '🗺 Courts near you',
-                    style:
-                        AppTextStyles.labelS(colors.colorTextTertiary),
-                  ),
+                  onMapCreated: (c) => _ctrl = c,
+                  style: widget.mapStyle,
+                  markers: widget.markers,
+                  myLocationEnabled: false,
+                  myLocationButtonEnabled: false,
+                  zoomControlsEnabled: false,
+                  compassEnabled: false,
+                  mapToolbarEnabled: false,
+                  scrollGesturesEnabled: false,
+                  zoomGesturesEnabled: false,
+                  rotateGesturesEnabled: false,
+                  tiltGesturesEnabled: false,
+                  liteModeEnabled: false,
                 ),
-              ),
 
-              // Bottom info row: venue name + slots + Book button
-              Positioned(
-                bottom: 8,
-                left: 10,
-                right: 10,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Game Theory Koramangala',
-                            style: AppTextStyles.labelM(
-                                colors.colorTextPrimary),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            '0.8 km · 5 slots open',
-                            style: AppTextStyles.labelS(
-                                colors.colorTextSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {},
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: colors.colorAccentPrimary,
-                          borderRadius:
-                              BorderRadius.circular(AppRadius.sm),
-                        ),
-                        child: Text(
-                          'Book →',
-                          style: AppTextStyles.labelS(
-                              colors.colorTextOnAccent),
-                        ),
-                      ),
-                    ),
+          // ── Bottom gradient ───────────────────────────────────
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 64,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    colors.colorBackgroundPrimary.withValues(alpha: 0.0),
+                    colors.colorBackgroundPrimary.withValues(alpha: 0.82),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-        );
-      },
+
+          // ── Top-left label chip ───────────────────────────────
+          Positioned(
+            top: AppSpacing.sm,
+            left: AppSpacing.sm,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: colors.colorSurfaceOverlay.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(
+                    color: colors.colorBorderSubtle, width: 0.5),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.map_outlined,
+                      size: 11, color: colors.colorTextSecondary),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Courts near you',
+                    style: AppTextStyles.labelS(colors.colorTextSecondary),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Bottom CTA ────────────────────────────────────────
+          Positioned(
+            bottom: AppSpacing.sm,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Text(
+                'Tap to explore courts near you',
+                style: AppTextStyles.labelS(colors.colorTextSecondary),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1945,10 +2073,7 @@ class _CommunityFeed extends StatelessWidget {
                     Text('2h ago',
                         style: AppTextStyles.bodyS(colors.colorTextTertiary)),
                     const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      _sportEmoji(b.sport),
-                      style: const TextStyle(fontSize: 18),
-                    ),
+                    _SportIconBadge(sport: b.sport),
                   ],
                 ),
               ],
@@ -1985,6 +2110,42 @@ class _MiniStat extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  SPORT ICON BADGE — replaces emoji in activity feed
+// ═══════════════════════════════════════════════════════════════
+
+class _SportIconBadge extends StatelessWidget {
+  const _SportIconBadge({required this.sport});
+  final String sport;
+
+  static IconData _icon(String sport) {
+    switch (sport) {
+      case 'basketball': return Icons.sports_basketball;
+      case 'cricket':    return Icons.sports_cricket;
+      case 'football':   return Icons.sports_soccer;
+      default:           return Icons.sports_tennis;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sportColor = _sportColor(sport);
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: sportColor.withValues(alpha: 0.12),
+        border: Border.all(
+            color: sportColor.withValues(alpha: 0.3), width: 0.5),
+      ),
+      child: Center(
+        child: Icon(_icon(sport), size: 14, color: sportColor),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  PROMO TILES
 // ═══════════════════════════════════════════════════════════════
 
@@ -1998,7 +2159,7 @@ class _PromoTiles extends StatelessWidget {
         children: [
           Expanded(
             child: _PromoTile(
-              emoji: '🏟️',
+              icon: Icons.stadium_outlined,
               title: 'List your venue',
               subtitle: 'Register your turf on Courtside',
               onTap: () {},
@@ -2007,7 +2168,7 @@ class _PromoTiles extends StatelessWidget {
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: _PromoTile(
-              emoji: '📊',
+              icon: Icons.bar_chart_rounded,
               title: 'THE BOX',
               subtitle: 'Live stats for your games',
               onTap: () {},
@@ -2021,13 +2182,13 @@ class _PromoTiles extends StatelessWidget {
 
 class _PromoTile extends StatelessWidget {
   const _PromoTile({
-    required this.emoji,
+    required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
   });
 
-  final String emoji;
+  final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
@@ -2059,8 +2220,8 @@ class _PromoTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Center(
-                    child: Text(emoji,
-                        style: const TextStyle(fontSize: 20)),
+                    child: Icon(icon,
+                        size: 20, color: colors.colorTextSecondary),
                   ),
                 ),
                 const Spacer(),
@@ -2099,13 +2260,31 @@ class _SectionHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title,
-              style: AppTextStyles.overline(colors.colorTextTertiary)),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 2,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: colors.colorAccentPrimary,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(title,
+                  style: AppTextStyles.overline(colors.colorTextTertiary)),
+            ],
+          ),
           GestureDetector(
             onTap: onSeeAll,
-            child: Text(
-              'See all',
-              style: AppTextStyles.labelS(colors.colorTextSecondary),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+              child: Text(
+                'See all',
+                style: AppTextStyles.labelS(colors.colorTextSecondary),
+              ),
             ),
           ),
         ],

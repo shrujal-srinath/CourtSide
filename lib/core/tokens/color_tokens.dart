@@ -10,10 +10,10 @@ class ColorTokens {
   ColorTokens._();
 
   // ── Backgrounds — 4 elevation levels ─────────────────────────
-  static const Color backgroundPrimary = Color(0xFF080808); // scaffold, deepest black
-  static const Color surfacePrimary    = Color(0xFF101010); // cards, default surface
-  static const Color surfaceElevated   = Color(0xFF1A1A1A); // elevated cards, inputs
-  static const Color surfaceOverlay    = Color(0xFF242424); // modals, sheets, dialogs
+  static const Color backgroundPrimary = Color(0xFF000000); // scaffold, true black
+  static const Color surfacePrimary    = Color(0xFF0D0D0D); // cards, default surface
+  static const Color surfaceElevated   = Color(0xFF161616); // elevated cards, inputs
+  static const Color surfaceOverlay    = Color(0xFF222222); // modals, sheets, dialogs
 
   // ── Brand accent — Ruby Red, used SPARINGLY ───────────────────
   // Rule: accentPrimary appears on CTAs, active states, brand mark ONLY.

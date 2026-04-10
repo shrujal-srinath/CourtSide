@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../models/fake_data.dart';
 import '../providers/auth_provider.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/auth/landing_screen.dart';
@@ -103,12 +104,15 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // ── Booking ──────────────────────────────────────────────
       GoRoute(
-        path: '/book/:courtId',
+        path: '/book/:venueId',
         pageBuilder: (context, state) {
-          final courtId = state.pathParameters['courtId'] ?? '';
-          return bottomSheetPage(
+          final venueId = state.pathParameters['venueId'] ?? '';
+          final extra = state.extra as Map<String, dynamic>?;
+          final sport = extra?['sport'] as String? ?? '';
+          final venue = extra?['venue'] as Venue?;
+          return slideUpPage(
             key: state.pageKey,
-            child: BookingScreen(courtId: courtId),
+            child: BookingScreen(venueId: venueId, sport: sport, venue: venue),
           );
         },
       ),

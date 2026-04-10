@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
 import '../../core/theme.dart';
@@ -32,8 +33,16 @@ final class _SheetFailure extends _SheetResult {
 // ── Booking Screen ──────────────────────────────────────────────
 
 class BookingScreen extends ConsumerStatefulWidget {
-  const BookingScreen({super.key, required this.courtId});
-  final String courtId;
+  const BookingScreen({
+    super.key,
+    required this.venueId,
+    required this.sport,
+    this.venue,
+  });
+
+  final String venueId;
+  final String sport;
+  final Venue? venue;
 
   @override
   ConsumerState<BookingScreen> createState() => _BookingScreenState();
@@ -42,15 +51,38 @@ class BookingScreen extends ConsumerStatefulWidget {
 class _BookingScreenState extends ConsumerState<BookingScreen> {
   DateTime _selectedDate = DateTime.now();
   Slot? _selectedSlot;
+  Court? _selectedCourt;
 
-  Court? get _court =>
-      FakeData.courts.where((c) => c.id == widget.courtId).firstOrNull;
+  Venue? get _venue => widget.venue ??
+      FakeData.venues.where((v) => v.id == widget.venueId).firstOrNull;
 
-  Venue? get _venue => _court != null
-      ? FakeData.venues.where((v) => v.id == _court!.venueId).firstOrNull
-      : null;
+  List<Court> get _courts =>
+      FakeData.courtsByVenueAndSport(widget.venueId, widget.sport);
 
-  List<Slot> get _slots => FakeData.slotsC1;
+  List<Slot> get _slots {
+    final court = _selectedCourt ?? _courts.firstOrNull;
+    if (court == null) return FakeData.slotsC1;
+    return FakeData.slotsByCourtId(court.id);
+  }
+
+  Color get _sportColor {
+    final colors = context.colors;
+    switch (widget.sport) {
+      case 'basketball': return colors.colorSportBasketball;
+      case 'cricket':    return colors.colorSportCricket;
+      case 'badminton':  return colors.colorSportBadminton;
+      default:           return colors.colorSportFootball;
+    }
+  }
+
+  String get _sportLabel {
+    switch (widget.sport) {
+      case 'basketball': return 'Basketball';
+      case 'cricket':    return 'Box Cricket';
+      case 'badminton':  return 'Badminton';
+      default:           return 'Football';
+    }
+  }
 
   static const _months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -62,16 +94,48 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   ];
   static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  // ── Slot selection ────────────────────────────────────────────
+
+  void _onSlotTap(Slot slot) {
+    final courts = _courts;
+    if (courts.length > 1) {
+      // Multiple courts: show picker first
+      setState(() => _selectedSlot = slot);
+      _showCourtPicker(slot);
+    } else {
+      // Single court: auto-select
+      setState(() {
+        _selectedSlot = slot;
+        _selectedCourt = courts.firstOrNull;
+      });
+    }
+  }
+
+  void _showCourtPicker(Slot slot) {
+    final courts = _courts;
+    showModalBottomSheet<Court?>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _CourtPickerSheet(
+        courts: courts,
+        slot: slot,
+        initialCourt: _selectedCourt,
+      ),
+    ).then((court) {
+      if (!mounted || court == null) return;
+      setState(() => _selectedCourt = court);
+    });
+  }
+
   // ── Payment flow ──────────────────────────────────────────────
 
   Future<void> _openConfirmSheet() async {
-    // razorpay_flutter does not compile for web — show a clear message instead.
     if (kIsWeb) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Payment requires the mobile app. Testing on Android emulator.',
-          ),
+              'Payment requires the mobile app. Testing on Android emulator.'),
         ),
       );
       return;
@@ -82,7 +146,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     final userEmail = user?.email ?? '';
     final userName =
         (user?.userMetadata?['full_name'] as String?) ?? 'Player';
-    final court = _court;
+    final court = _selectedCourt;
     final slot = _selectedSlot;
 
     if (court == null || slot == null) return;
@@ -98,6 +162,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         court: court,
         venue: _venue,
         slot: slot,
+        sport: widget.sport,
         formattedDate: formattedDate,
         userId: userId,
         userEmail: userEmail,
@@ -117,7 +182,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         ),
       );
     }
-    // null result = user dismissed sheet by swiping — no action needed
   }
 
   void _showSuccess(String qrCode, String bookingId) {
@@ -139,7 +203,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ── Success mark ────────────────────────────────
               Container(
                 width: 64,
                 height: 64,
@@ -147,11 +210,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                   color: colors.colorSuccess.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.check_rounded,
-                  color: colors.colorSuccess,
-                  size: 36,
-                ),
+                child: Icon(Icons.check_rounded,
+                    color: colors.colorSuccess, size: 36),
               ),
               const SizedBox(height: AppSpacing.lg),
               Text(
@@ -166,11 +226,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.xl),
-              // ── QR code ─────────────────────────────────────
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  // colorTextOnAccent is #FFFFFF — required for QR scanability
                   color: colors.colorTextOnAccent,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
@@ -181,19 +239,14 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              // ── Booking reference ────────────────────────────
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
+                    horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: colors.colorSurfaceElevated,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                   border: Border.all(
-                    color: colors.colorBorderSubtle,
-                    width: 0.5,
-                  ),
+                      color: colors.colorBorderSubtle, width: 0.5),
                 ),
                 child: Text(
                   'REF: $refDisplay',
@@ -222,15 +275,19 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     final colors = context.colors;
     final topPad = MediaQuery.of(context).padding.top;
     final botPad = MediaQuery.of(context).padding.bottom;
-    final court = _court;
     final venue = _venue;
-    final canBook = _selectedSlot != null;
+    final courts = _courts;
+    final canBook = _selectedSlot != null && _selectedCourt != null;
+    final slotSelected = _selectedSlot != null;
+    final awaitingCourt = slotSelected && _selectedCourt == null;
+    final sc = _sportColor;
+    final firstCourt = courts.firstOrNull;
 
     return Scaffold(
       backgroundColor: colors.colorBackgroundPrimary,
       body: Column(
         children: [
-          // ── Header ──────────────────────────────────────────────
+          // ── Header ────────────────────────────────────────────
           Container(
             color: colors.colorBackgroundPrimary,
             padding: EdgeInsets.fromLTRB(
@@ -259,34 +316,35 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        court?.name ?? 'Book a Court',
-                        style: AppTextStyles.headingM(colors.colorTextPrimary),
+                        venue?.name ?? 'Book a Court',
+                        style:
+                            AppTextStyles.headingM(colors.colorTextPrimary),
                       ),
                       if (venue != null)
                         Text(
-                          venue.name,
-                          style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                          venue.area,
+                          style:
+                              AppTextStyles.bodyS(colors.colorTextSecondary),
                         ),
                     ],
                   ),
                 ),
-                if (court != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm + 2,
-                        vertical: AppSpacing.xs + 1),
-                    decoration: BoxDecoration(
-                      color: colors.colorAccentPrimary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                      border: Border.all(
-                          color: colors.colorAccentPrimary.withValues(alpha: 0.3),
-                          width: 0.5),
-                    ),
-                    child: Text(
-                      '₹${court.pricePerSlot}/slot',
-                      style: AppTextStyles.labelS(colors.colorAccentPrimary),
-                    ),
+                // Sport badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm + 2,
+                      vertical: AppSpacing.xs + 1),
+                  decoration: BoxDecoration(
+                    color: sc.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    border: Border.all(
+                        color: sc.withValues(alpha: 0.4), width: 0.5),
                   ),
+                  child: Text(
+                    _sportLabel,
+                    style: AppTextStyles.labelS(sc),
+                  ),
+                ),
               ],
             ),
           ),
@@ -295,18 +353,18 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
-                  // ── DATE SECTION ───────────────────────────────
+                  // ── DATE STRIP ─────────────────────────────────
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.lg),
                     child: Text(
                       'PICK A DATE',
-                      style: AppTextStyles.overline(colors.colorTextTertiary),
+                      style:
+                          AppTextStyles.overline(colors.colorTextTertiary),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm + 2),
@@ -324,12 +382,16 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                         final today = DateTime.now();
                         final date = today.add(Duration(days: i));
                         final isToday = i == 0;
-                        final isSelected = date.year == _selectedDate.year &&
-                            date.month == _selectedDate.month &&
-                            date.day == _selectedDate.day;
+                        final isSelected =
+                            date.year == _selectedDate.year &&
+                                date.month == _selectedDate.month &&
+                                date.day == _selectedDate.day;
                         return GestureDetector(
-                          onTap: () =>
-                              setState(() => _selectedDate = date),
+                          onTap: () => setState(() {
+                            _selectedDate = date;
+                            _selectedSlot = null;
+                            _selectedCourt = null;
+                          }),
                           child: AnimatedContainer(
                             duration: AppDuration.fast,
                             width: 58,
@@ -355,7 +417,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                                 Text(
                                   isToday
                                       ? 'TODAY'
-                                      : _weekdays[(date.weekday - 1) % 7],
+                                      : _weekdays[
+                                          (date.weekday - 1) % 7],
                                   style: AppTextStyles.overline(
                                     isSelected
                                         ? colors.colorTextOnAccent
@@ -392,7 +455,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: AppSpacing.xxl + AppSpacing.xs),
+                  const SizedBox(height: AppSpacing.xxl),
 
                   // ── SLOTS SECTION ──────────────────────────────
                   Padding(
@@ -402,95 +465,241 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                       children: [
                         Text(
                           'AVAILABLE SLOTS',
-                          style:
-                              AppTextStyles.overline(colors.colorTextTertiary),
+                          style: AppTextStyles.overline(
+                              colors.colorTextTertiary),
                         ),
                         const Spacer(),
-                        _LegendDot(
-                            color: colors.colorSurfaceElevated,
-                            label: 'Open',
-                            colors: colors),
-                        const SizedBox(width: AppSpacing.sm + 2),
-                        _LegendDot(
-                            color: colors.colorAccentPrimary,
-                            label: 'Selected',
-                            colors: colors),
-                        const SizedBox(width: AppSpacing.sm + 2),
-                        _LegendDot(
-                            color: colors.colorSurfacePrimary,
-                            label: 'Booked',
-                            colors: colors),
+                        if (firstCourt != null)
+                          Text(
+                            '${courts.length} court${courts.length > 1 ? 's' : ''} · ₹${firstCourt.pricePerSlot}/slot',
+                            style: AppTextStyles.labelS(
+                                colors.colorTextSecondary),
+                          ),
                       ],
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm + 2),
+
+                  // Full-width slot row cards
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.lg),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: AppSpacing.sm + 2,
-                        mainAxisSpacing: AppSpacing.sm + 2,
-                        childAspectRatio: 2.4,
-                      ),
-                      itemCount: _slots.length,
-                      itemBuilder: (_, i) {
-                        final slot = _slots[i];
+                    child: Column(
+                      children: _slots.asMap().entries.map((entry) {
+                        final slot = entry.value;
                         final isSelected = _selectedSlot?.id == slot.id;
-                        final isBooked = slot.status == SlotStatus.booked ||
-                            slot.status == SlotStatus.blocked;
-                        return GestureDetector(
-                          onTap: isBooked
-                              ? null
-                              : () => setState(() => _selectedSlot = slot),
-                          child: AnimatedContainer(
-                            duration: AppDuration.fast,
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? colors.colorAccentPrimary
-                                  : isBooked
-                                      ? colors.colorSurfacePrimary
-                                      : colors.colorSurfaceElevated,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.md),
-                              border: Border.all(
+                        final isBooked =
+                            slot.status == SlotStatus.booked ||
+                                slot.status == SlotStatus.blocked;
+                        final isAvailable = !isBooked;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                              bottom: AppSpacing.sm),
+                          child: GestureDetector(
+                            onTap: isAvailable
+                                ? () => _onSlotTap(slot)
+                                : null,
+                            behavior: HitTestBehavior.opaque,
+                            child: AnimatedContainer(
+                              duration: AppDuration.fast,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.lg,
+                                  vertical: AppSpacing.md),
+                              decoration: BoxDecoration(
                                 color: isSelected
                                     ? colors.colorAccentPrimary
+                                        .withValues(alpha: 0.08)
                                     : isBooked
-                                        ? colors.colorBorderSubtle
-                                        : colors.colorBorderMedium,
-                                width: isSelected ? 1.0 : 0.5,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${slot.startTime} – ${slot.endTime}',
-                                style: AppTextStyles.headingS(
-                                  isSelected
-                                      ? colors.colorTextOnAccent
+                                        ? colors.colorSurfacePrimary
+                                        : colors.colorSurfaceElevated,
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.md),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? colors.colorAccentPrimary
                                       : isBooked
-                                          ? colors.colorTextTertiary
-                                          : colors.colorTextPrimary,
-                                ).copyWith(
-                                  decoration: isBooked
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                                  decorationColor: colors.colorTextTertiary,
+                                          ? colors.colorBorderSubtle
+                                          : colors.colorBorderMedium,
+                                  width: isSelected ? 1.0 : 0.5,
                                 ),
-                                textAlign: TextAlign.center,
+                              ),
+                              child: Opacity(
+                                opacity: isBooked ? 0.45 : 1.0,
+                                child: Row(
+                                  children: [
+                                    // Status dot
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isBooked
+                                            ? colors.colorTextTertiary
+                                            : isSelected
+                                                ? colors.colorAccentPrimary
+                                                : colors.colorSuccess,
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.md),
+                                    // Time + subtitle
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${slot.startTime} – ${slot.endTime}',
+                                            style: AppTextStyles.headingS(
+                                              isBooked
+                                                  ? colors.colorTextTertiary
+                                                  : isSelected
+                                                      ? colors
+                                                          .colorAccentPrimary
+                                                      : colors
+                                                          .colorTextPrimary,
+                                            ),
+                                          ),
+                                          if (firstCourt != null && !isBooked)
+                                            Text(
+                                              '${firstCourt.slotDurationMin} min · ${courts.length} court${courts.length > 1 ? 's' : ''} available',
+                                              style: AppTextStyles.bodyS(
+                                                  colors.colorTextSecondary),
+                                            ),
+                                          if (isBooked)
+                                            Text(
+                                              'Booked',
+                                              style: AppTextStyles.bodyS(
+                                                  colors.colorTextTertiary),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    // Price + chevron
+                                    if (isAvailable) ...[
+                                      Text(
+                                        firstCourt != null
+                                            ? '₹${firstCourt.pricePerSlot}'
+                                            : '',
+                                        style: AppTextStyles.headingS(
+                                          isSelected
+                                              ? colors.colorAccentPrimary
+                                              : colors.colorTextPrimary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: AppSpacing.sm),
+                                      Icon(
+                                        Icons.chevron_right_rounded,
+                                        size: 18,
+                                        color: isSelected
+                                            ? colors.colorAccentPrimary
+                                            : colors.colorTextTertiary,
+                                      ),
+                                    ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         );
-                      },
+                      }).toList(),
                     ),
                   ),
 
-                  // ── BOOKING SUMMARY ────────────────────────────
+                  // ── Court selection indicator ──────────────────
+                  if (slotSelected && courts.length > 1)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg, 0, AppSpacing.lg, 0),
+                      child: AnimatedSwitcher(
+                        duration: AppDuration.normal,
+                        transitionBuilder: (child, anim) => FadeTransition(
+                          opacity: anim,
+                          child: SlideTransition(
+                            position: Tween(
+                              begin: const Offset(0, 0.06),
+                              end: Offset.zero,
+                            ).animate(anim),
+                            child: child,
+                          ),
+                        ),
+                        child: _selectedCourt != null
+                            ? Container(
+                                key: const ValueKey('court-selected'),
+                                padding: const EdgeInsets.all(AppSpacing.md),
+                                decoration: BoxDecoration(
+                                  color: colors.colorSurfaceElevated,
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.md),
+                                  border: Border.all(
+                                      color: colors.colorSuccess
+                                          .withValues(alpha: 0.3),
+                                      width: 0.5),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.sports_outlined,
+                                        size: 16,
+                                        color: colors.colorSuccess),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Text(
+                                      _selectedCourt!.name,
+                                      style: AppTextStyles.headingS(
+                                          colors.colorTextPrimary),
+                                    ),
+                                    const Spacer(),
+                                    GestureDetector(
+                                      onTap: () => _showCourtPicker(
+                                          _selectedSlot!),
+                                      child: Text(
+                                        'Change',
+                                        style: AppTextStyles.labelS(
+                                            colors.colorInfo),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : GestureDetector(
+                                key: const ValueKey('court-pick'),
+                                onTap: () =>
+                                    _showCourtPicker(_selectedSlot!),
+                                child: Container(
+                                  padding:
+                                      const EdgeInsets.all(AppSpacing.md),
+                                  decoration: BoxDecoration(
+                                    color: colors.colorAccentPrimary
+                                        .withValues(alpha: 0.06),
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadius.md),
+                                    border: Border.all(
+                                        color: colors.colorAccentPrimary
+                                            .withValues(alpha: 0.3),
+                                        width: 0.5),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.add_circle_outline_rounded,
+                                          size: 16,
+                                          color: colors.colorAccentPrimary),
+                                      const SizedBox(width: AppSpacing.sm),
+                                      Text(
+                                        'Choose your court',
+                                        style: AppTextStyles.headingS(
+                                            colors.colorAccentPrimary),
+                                      ),
+                                      const Spacer(),
+                                      Icon(Icons.chevron_right_rounded,
+                                          size: 18,
+                                          color: colors.colorAccentPrimary),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ),
+
+                  // ── Booking summary ────────────────────────────
                   AnimatedSwitcher(
                     duration: AppDuration.normal,
                     switchInCurve: Curves.easeOutCubic,
@@ -504,11 +713,11 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                         child: child,
                       ),
                     ),
-                    child: _selectedSlot != null
+                    child: canBook
                         ? Padding(
                             key: const ValueKey('summary'),
                             padding: const EdgeInsets.fromLTRB(
-                                AppSpacing.lg, AppSpacing.xxl,
+                                AppSpacing.lg, AppSpacing.xl,
                                 AppSpacing.lg, 0),
                             child: Container(
                               decoration: BoxDecoration(
@@ -521,6 +730,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                               ),
                               child: Column(
                                 children: [
+                                  _SummaryRow(
+                                    icon: Icons.sports_outlined,
+                                    label: 'Court',
+                                    value: _selectedCourt!.name,
+                                    colors: colors,
+                                  ),
                                   _SummaryRow(
                                     icon: Icons.calendar_today_rounded,
                                     label: 'Date',
@@ -535,15 +750,14 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                                         '${_selectedSlot!.startTime} – ${_selectedSlot!.endTime}',
                                     colors: colors,
                                   ),
-                                  if (court != null)
-                                    _SummaryRow(
-                                      icon: Icons.currency_rupee_rounded,
-                                      label: 'Amount',
-                                      value: '₹${court.pricePerSlot}',
-                                      isLast: true,
-                                      highlight: true,
-                                      colors: colors,
-                                    ),
+                                  _SummaryRow(
+                                    icon: Icons.currency_rupee_rounded,
+                                    label: 'Amount',
+                                    value: '₹${_selectedCourt!.pricePerSlot}',
+                                    isLast: true,
+                                    highlight: true,
+                                    colors: colors,
+                                  ),
                                 ],
                               ),
                             ),
@@ -551,11 +765,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                         : const SizedBox.shrink(key: ValueKey('empty')),
                   ),
 
-                  // ── AMENITIES ──────────────────────────────────
-                  if (venue != null && venue.amenities.isNotEmpty)
+                  // ── Amenities ──────────────────────────────────
+                  if (_venue != null && _venue!.amenities.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.lg, AppSpacing.xxl, AppSpacing.lg, 0),
+                          AppSpacing.lg, AppSpacing.xxl,
+                          AppSpacing.lg, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -566,15 +781,15 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                           Wrap(
                             spacing: AppSpacing.sm,
                             runSpacing: AppSpacing.sm,
-                            children: venue.amenities.map((a) {
+                            children: _venue!.amenities.map((a) {
                               return Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: AppSpacing.sm + 2,
                                     vertical: AppSpacing.xs + 1),
                                 decoration: BoxDecoration(
                                   color: colors.colorSurfaceElevated,
-                                  borderRadius: BorderRadius.circular(
-                                      AppRadius.pill),
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.pill),
                                   border: Border.all(
                                       color: colors.colorBorderSubtle,
                                       width: 0.5),
@@ -589,7 +804,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                       ),
                     ),
 
-                  // ── CANCELLATION NOTICE ────────────────────────
+                  // ── Cancellation notice ────────────────────────
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                         AppSpacing.lg, AppSpacing.xl,
@@ -636,15 +851,208 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         decoration: BoxDecoration(
           color: colors.colorSurfacePrimary,
           border: Border(
-              top: BorderSide(color: colors.colorBorderSubtle, width: 0.5)),
+              top: BorderSide(
+                  color: colors.colorBorderSubtle, width: 0.5)),
         ),
-        child: CsButton.primary(
-          label: canBook
-              ? 'Book & Pay ₹${court?.pricePerSlot ?? "—"}'
-              : 'Select a time slot',
-          onTap: canBook ? _openConfirmSheet : null,
-          isDisabled: !canBook,
+        child: awaitingCourt
+            ? CsButton.secondary(
+                label: 'Choose a Court',
+                onTap: _selectedSlot != null
+                    ? () => _showCourtPicker(_selectedSlot!)
+                    : null,
+              )
+            : CsButton.primary(
+                label: canBook
+                    ? 'Book & Pay ₹${_selectedCourt!.pricePerSlot}'
+                    : 'Select a time slot',
+                onTap: canBook ? _openConfirmSheet : null,
+                isDisabled: !canBook,
+              ),
+      ),
+    );
+  }
+}
+
+// ── Court Picker Sheet ────────────────────────────────────────────
+
+class _CourtPickerSheet extends StatefulWidget {
+  const _CourtPickerSheet({
+    required this.courts,
+    required this.slot,
+    this.initialCourt,
+  });
+
+  final List<Court> courts;
+  final Slot slot;
+  final Court? initialCourt;
+
+  @override
+  State<_CourtPickerSheet> createState() => _CourtPickerSheetState();
+}
+
+class _CourtPickerSheetState extends State<_CourtPickerSheet> {
+  Court? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.initialCourt ?? widget.courts.firstOrNull;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final botPad = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.colorSurfacePrimary,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xxl),
         ),
+        border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          const SizedBox(height: AppSpacing.md),
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colors.colorBorderMedium,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+
+          // Title
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Choose your court',
+                        style: AppTextStyles.headingL(colors.colorTextPrimary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${widget.slot.startTime} – ${widget.slot.endTime}',
+                        style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Court cards
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Column(
+              children: widget.courts.map((court) {
+                final isSelected = _selected?.id == court.id;
+                return Padding(
+                  padding:
+                      const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selected = court),
+                    behavior: HitTestBehavior.opaque,
+                    child: AnimatedContainer(
+                      duration: AppDuration.fast,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? colors.colorAccentPrimary
+                                .withValues(alpha: 0.06)
+                            : colors.colorSurfaceElevated,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        border: Border.all(
+                          color: isSelected
+                              ? colors.colorAccentPrimary
+                              : colors.colorBorderSubtle,
+                          width: isSelected ? 1.0 : 0.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          // Radio
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isSelected
+                                  ? colors.colorAccentPrimary
+                                  : Colors.transparent,
+                              border: Border.all(
+                                color: isSelected
+                                    ? colors.colorAccentPrimary
+                                    : colors.colorBorderMedium,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: isSelected
+                                ? Icon(Icons.check_rounded,
+                                    size: 12,
+                                    color: colors.colorTextOnAccent)
+                                : null,
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  court.name,
+                                  style: AppTextStyles.headingS(
+                                      colors.colorTextPrimary),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${court.surface} · ${court.isIndoor ? 'Indoor' : 'Outdoor'}${court.hasTheBox ? ' · THE BOX' : ''}',
+                                  style: AppTextStyles.bodyS(
+                                      colors.colorTextSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '₹${court.pricePerSlot}',
+                            style: AppTextStyles.headingS(
+                                colors.colorTextPrimary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+                AppSpacing.lg, 0, AppSpacing.lg, botPad + AppSpacing.xl),
+            child: CsButton.primary(
+              label: 'Confirm Court',
+              onTap: _selected != null
+                  ? () => Navigator.of(context).pop(_selected)
+                  : null,
+              isDisabled: _selected == null,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -657,6 +1065,7 @@ class _ConfirmSheet extends StatefulWidget {
     required this.court,
     required this.venue,
     required this.slot,
+    required this.sport,
     required this.formattedDate,
     required this.userId,
     required this.userEmail,
@@ -666,6 +1075,7 @@ class _ConfirmSheet extends StatefulWidget {
   final Court court;
   final Venue? venue;
   final Slot slot;
+  final String sport;
   final String formattedDate;
   final String userId;
   final String userEmail;
@@ -697,7 +1107,7 @@ class _ConfirmSheetState extends State<_ConfirmSheet> {
   Future<void> _handlePay() async {
     _isLoading.value = true;
 
-    final amountInPaise = widget.court.pricePerSlot * 100; // rupees → paise
+    final amountInPaise = widget.court.pricePerSlot * 100;
     final description =
         '${widget.court.name} · ${widget.slot.startTime}–${widget.slot.endTime}';
 
@@ -741,6 +1151,13 @@ class _ConfirmSheetState extends State<_ConfirmSheet> {
     }
   }
 
+  Future<void> _launchShop() async {
+    final uri = Uri.parse('https://courtside.in/shop');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -754,107 +1171,212 @@ class _ConfirmSheetState extends State<_ConfirmSheet> {
         ),
         border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ── Sheet handle ──────────────────────────────────
-          const SizedBox(height: AppSpacing.md),
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colors.colorBorderMedium,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            const SizedBox(height: AppSpacing.md),
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colors.colorBorderMedium,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.xl),
 
-          // ── Title ─────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Confirm Booking',
-                style: AppTextStyles.headingL(colors.colorTextPrimary),
+            // Title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Confirm Booking',
+                  style: AppTextStyles.headingL(colors.colorTextPrimary),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Review your booking before payment.',
-                style: AppTextStyles.bodyM(colors.colorTextSecondary),
+            const SizedBox(height: AppSpacing.xs),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Review your booking before payment.',
+                  style: AppTextStyles.bodyM(colors.colorTextSecondary),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.xl),
 
-          // ── Summary ───────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Container(
-              decoration: BoxDecoration(
-                color: colors.colorSurfaceElevated,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(
-                    color: colors.colorBorderSubtle, width: 0.5),
-              ),
-              child: Column(
-                children: [
-                  if (widget.venue != null)
+            // Summary
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colors.colorSurfaceElevated,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(
+                      color: colors.colorBorderSubtle, width: 0.5),
+                ),
+                child: Column(
+                  children: [
+                    if (widget.venue != null)
+                      _SheetRow(
+                        label: 'Venue',
+                        value: widget.venue!.name,
+                        colors: colors,
+                      ),
                     _SheetRow(
-                      label: 'Venue',
-                      value: widget.venue!.name,
+                      label: 'Court',
+                      value: widget.court.name,
                       colors: colors,
                     ),
-                  _SheetRow(
-                    label: 'Court',
-                    value: widget.court.name,
-                    colors: colors,
+                    _SheetRow(
+                      label: 'Date',
+                      value: widget.formattedDate,
+                      colors: colors,
+                    ),
+                    _SheetRow(
+                      label: 'Time',
+                      value:
+                          '${widget.slot.startTime} – ${widget.slot.endTime}',
+                      colors: colors,
+                    ),
+                    _SheetRow(
+                      label: 'Amount',
+                      value: '₹${widget.court.pricePerSlot}',
+                      colors: colors,
+                      isLast: true,
+                      highlight: true,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.xxl),
+
+            // ── Equipment add-ons ──────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'NEED EQUIPMENT?',
+                    style: AppTextStyles.overline(colors.colorTextTertiary),
                   ),
-                  _SheetRow(
-                    label: 'Date',
-                    value: widget.formattedDate,
-                    colors: colors,
-                  ),
-                  _SheetRow(
-                    label: 'Time',
-                    value:
-                        '${widget.slot.startTime} – ${widget.slot.endTime}',
-                    colors: colors,
-                  ),
-                  _SheetRow(
-                    label: 'Amount',
-                    value: '₹${widget.court.pricePerSlot}',
-                    colors: colors,
-                    isLast: true,
-                    highlight: true,
+                  const SizedBox(height: AppSpacing.sm + 2),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _EquipmentCard(
+                          icon: Icons.sports_tennis_rounded,
+                          name: 'Racket Rental',
+                          price: '+₹150/session',
+                          onBuyNow: _launchShop,
+                          colors: colors,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: _EquipmentCard(
+                          icon: Icons.directions_run_rounded,
+                          name: 'Shoe Rental',
+                          price: '+₹100/session',
+                          onBuyNow: _launchShop,
+                          colors: colors,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.xxl),
 
-          // ── Pay button ────────────────────────────────────
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.lg, 0, AppSpacing.lg, botPad + AppSpacing.xl,
-            ),
-            child: ValueListenableBuilder<bool>(
-              valueListenable: _isLoading,
-              builder: (_, isLoading, _) => CsButton.primary(
-                label: 'Pay & Confirm  ₹${widget.court.pricePerSlot}',
-                onTap: isLoading ? null : _handlePay,
-                isLoading: isLoading,
-                isDisabled: isLoading,
+            const SizedBox(height: AppSpacing.xxl),
+
+            // Pay button
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                  AppSpacing.lg, 0,
+                  AppSpacing.lg, botPad + AppSpacing.xl),
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _isLoading,
+                builder: (_, isLoading, _) => CsButton.primary(
+                  label: 'Pay & Confirm  ₹${widget.court.pricePerSlot}',
+                  onTap: isLoading ? null : _handlePay,
+                  isLoading: isLoading,
+                  isDisabled: isLoading,
+                ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Equipment Card ───────────────────────────────────────────────
+
+class _EquipmentCard extends StatelessWidget {
+  const _EquipmentCard({
+    required this.icon,
+    required this.name,
+    required this.price,
+    required this.onBuyNow,
+    required this.colors,
+  });
+
+  final IconData icon;
+  final String name;
+  final String price;
+  final VoidCallback onBuyNow;
+  final AppColorScheme colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: colors.colorSurfaceElevated,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 22, color: colors.colorTextSecondary),
+          const SizedBox(height: AppSpacing.sm),
+          Text(name,
+              style: AppTextStyles.labelM(colors.colorTextPrimary)),
+          const SizedBox(height: 2),
+          Text(price,
+              style: AppTextStyles.bodyS(colors.colorTextSecondary)),
+          const SizedBox(height: AppSpacing.sm),
+          GestureDetector(
+            onTap: onBuyNow,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Buy Now',
+                  style: AppTextStyles.labelS(colors.colorInfo)
+                      .copyWith(
+                          decoration: TextDecoration.underline,
+                          decorationColor: colors.colorInfo),
+                ),
+                const SizedBox(width: 2),
+                Icon(Icons.open_in_new_rounded,
+                    size: 10, color: colors.colorInfo),
+              ],
             ),
           ),
         ],
@@ -905,42 +1427,6 @@ class _SheetRow extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ── Legend Dot ───────────────────────────────────────────────────
-
-class _LegendDot extends StatelessWidget {
-  const _LegendDot({
-    required this.color,
-    required this.label,
-    required this.colors,
-  });
-
-  final Color color;
-  final String label;
-  final AppColorScheme colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border:
-                Border.all(color: colors.colorBorderSubtle, width: 0.5),
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(label,
-            style: AppTextStyles.overline(colors.colorTextSecondary)),
-      ],
     );
   }
 }

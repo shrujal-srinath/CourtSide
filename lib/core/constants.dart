@@ -50,6 +50,7 @@ class AppRoutes {
   static String venueById(String id) => '/venue/$id';
   static String sportById(String id) => '/sport/$id';
   static String bookCourt(String id) => '/book/$id';
+  static String bookVenue(String venueId) => '/book/$venueId';
   static String gameById(String id) => '/game/$id';
   static String playerById(String id) => '/player/$id';
 }

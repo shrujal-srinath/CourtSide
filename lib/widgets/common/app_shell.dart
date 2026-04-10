@@ -18,7 +18,7 @@ class AppShell extends StatelessWidget {
   final Widget child;
 
   static const _tabs = [
-    _TabItem(icon: Icons.home_rounded,          label: 'Feed',     path: AppRoutes.home),
+    _TabItem(icon: Icons.home_rounded,          label: 'Home',     path: AppRoutes.home),
     _TabItem(icon: Icons.stadium_outlined,       label: 'Venues',   path: AppRoutes.explore),
     _TabItem(icon: Icons.bar_chart_rounded,      label: 'Stats',    path: AppRoutes.stats),
     _TabItem(icon: Icons.calendar_today_rounded, label: 'Bookings', path: AppRoutes.bookings),
