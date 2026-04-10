@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import '../../core/app_spacing.dart';
 import '../../models/fake_data.dart';
+import '../../widgets/common/cs_button.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key, required this.courtId});
@@ -38,55 +38,52 @@ class _BookingScreenState extends State<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
-    final topPad = MediaQuery.of(context).padding.top;
-    final botPad = MediaQuery.of(context).padding.bottom;
-    final court = _court;
-    final venue = _venue;
+    final colors  = context.colors;
+    final topPad  = MediaQuery.of(context).padding.top;
+    final botPad  = MediaQuery.of(context).padding.bottom;
+    final court   = _court;
+    final venue   = _venue;
     final canBook = _selectedSlot != null;
 
     return Scaffold(
-      backgroundColor: c.bg,
+      backgroundColor: colors.colorBackgroundPrimary,
       body: Column(
         children: [
-          // ── Fixed header ─────────────────────────────────────
+          // ── Header ──────────────────────────────────────────────
           Container(
-            decoration: BoxDecoration(
-              gradient: c.gradBrand,
-              border: Border(
-                bottom: BorderSide(color: c.border, width: 0.5),
-              ),
-            ),
-            padding: EdgeInsets.fromLTRB(18, topPad + 8, 18, 16),
+            color: colors.colorBackgroundPrimary,
+            padding: EdgeInsets.fromLTRB(
+                AppSpacing.lg, topPad + AppSpacing.sm,
+                AppSpacing.lg, AppSpacing.lg),
             child: Row(
               children: [
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Container(
-                    width: 38,
-                    height: 38,
+                    width: 38, height: 38,
                     decoration: BoxDecoration(
-                      color: c.surface.withValues(alpha: 0.7),
+                      color: colors.colorSurfacePrimary,
                       borderRadius: BorderRadius.circular(AppRadius.sm),
-                      border: Border.all(color: c.border, width: 0.5),
+                      border: Border.all(
+                          color: colors.colorBorderSubtle, width: 0.5),
                     ),
                     child: Icon(Icons.arrow_back_rounded,
-                        color: c.text, size: 18),
+                        color: colors.colorTextPrimary, size: 18),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         court?.name ?? 'Book a Court',
-                        style: AppTextStyles.headingM(c.text),
+                        style: AppTextStyles.headingM(colors.colorTextPrimary),
                       ),
                       if (venue != null)
                         Text(
                           venue.name,
-                          style: AppTextStyles.bodyS(c.textSec),
+                          style: AppTextStyles.bodyS(colors.colorTextSecondary),
                         ),
                     ],
                   ),
@@ -94,17 +91,20 @@ class _BookingScreenState extends State<BookingScreen> {
                 if (court != null)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
+                        horizontal: AppSpacing.sm + 2,
+                        vertical: AppSpacing.xs + 1),
                     decoration: BoxDecoration(
-                      color: AppColors.red.withValues(alpha: 0.12),
+                      color: colors.colorAccentPrimary
+                          .withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(AppRadius.pill),
                       border: Border.all(
-                          color: AppColors.red.withValues(alpha: 0.3),
+                          color: colors.colorAccentPrimary
+                              .withValues(alpha: 0.3),
                           width: 0.5),
                     ),
                     child: Text(
                       '₹${court.pricePerSlot}/slot',
-                      style: AppTextStyles.labelS(AppColors.red),
+                      style: AppTextStyles.labelS(colors.colorAccentPrimary),
                     ),
                   ),
               ],
@@ -115,29 +115,32 @@ class _BookingScreenState extends State<BookingScreen> {
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(vertical: 20),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // DATE SECTION
+
+                  // ── DATE SECTION ─────────────────────────────
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 18),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg),
                     child: Text(
                       'PICK A DATE',
-                      style: AppTextStyles.overline(c.textSec),
+                      style: AppTextStyles.overline(
+                          colors.colorTextTertiary),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.sm + 2),
                   SizedBox(
                     height: 80,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg),
                       itemCount: 14,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(width: 8),
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(width: AppSpacing.sm),
                       itemBuilder: (_, i) {
                         final today = DateTime.now();
                         final date = today.add(Duration(days: i));
@@ -154,15 +157,18 @@ class _BookingScreenState extends State<BookingScreen> {
                             width: 58,
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? AppColors.red
-                                  : c.surface,
+                                  ? colors.colorAccentPrimary
+                                  : colors.colorSurfacePrimary,
                               borderRadius:
                                   BorderRadius.circular(AppRadius.md),
                               border: Border.all(
                                 color: isSelected
-                                    ? AppColors.red
-                                    : c.border,
-                                width: 0.5,
+                                    ? colors.colorAccentPrimary
+                                    : isToday
+                                        ? colors.colorAccentPrimary
+                                            .withValues(alpha: 0.4)
+                                        : colors.colorBorderSubtle,
+                                width: isSelected ? 1.0 : 0.5,
                               ),
                             ),
                             child: Column(
@@ -176,23 +182,20 @@ class _BookingScreenState extends State<BookingScreen> {
                                           (date.weekday - 1) % 7],
                                   style: AppTextStyles.overline(
                                     isSelected
-                                        ? AppColors.white
+                                        ? colors.colorTextOnAccent
                                             .withValues(alpha: 0.8)
                                         : isToday
-                                            ? AppColors.red
-                                            : c.textSec,
+                                            ? colors.colorAccentPrimary
+                                            : colors.colorTextSecondary,
                                   ),
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
                                   '${date.day}',
-                                  style: TextStyle(
-                                    fontFamily: 'SpaceGrotesk',
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                    color: isSelected
-                                        ? AppColors.white
-                                        : c.text,
+                                  style: AppTextStyles.statM(
+                                    isSelected
+                                        ? colors.colorTextOnAccent
+                                        : colors.colorTextPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 1),
@@ -200,9 +203,9 @@ class _BookingScreenState extends State<BookingScreen> {
                                   _shortMonths[date.month - 1],
                                   style: AppTextStyles.overline(
                                     isSelected
-                                        ? AppColors.white
+                                        ? colors.colorTextOnAccent
                                             .withValues(alpha: 0.7)
-                                        : c.textTer,
+                                        : colors.colorTextTertiary,
                                   ),
                                 ),
                               ],
@@ -213,85 +216,98 @@ class _BookingScreenState extends State<BookingScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 28),
+                  const SizedBox(height: AppSpacing.xxl + AppSpacing.xs),
 
-                  // SLOTS SECTION
+                  // ── SLOTS SECTION ─────────────────────────────
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 18),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg),
                     child: Row(
                       children: [
                         Text(
                           'AVAILABLE SLOTS',
-                          style: AppTextStyles.overline(c.textSec),
+                          style: AppTextStyles.overline(
+                              colors.colorTextTertiary),
                         ),
                         const Spacer(),
-                        _LegendDot(color: c.surface, label: 'Open'),
-                        const SizedBox(width: 10),
                         _LegendDot(
-                            color: AppColors.red, label: 'Selected'),
-                        const SizedBox(width: 10),
+                            color: colors.colorSurfaceElevated,
+                            label: 'Open',
+                            colors: colors),
+                        const SizedBox(width: AppSpacing.sm + 2),
                         _LegendDot(
-                            color: c.surfaceHigh, label: 'Booked'),
+                            color: colors.colorAccentPrimary,
+                            label: 'Selected',
+                            colors: colors),
+                        const SizedBox(width: AppSpacing.sm + 2),
+                        _LegendDot(
+                            color: colors.colorSurfacePrimary,
+                            label: 'Booked',
+                            colors: colors),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.sm + 2),
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 18),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg),
                     child: GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 2.8,
+                        crossAxisSpacing: AppSpacing.sm + 2,
+                        mainAxisSpacing: AppSpacing.sm + 2,
+                        childAspectRatio: 2.4,
                       ),
                       itemCount: _slots.length,
                       itemBuilder: (_, i) {
                         final slot = _slots[i];
-                        final isSelected = _selectedSlot?.id == slot.id;
+                        final isSelected =
+                            _selectedSlot?.id == slot.id;
                         final isBooked =
                             slot.status == SlotStatus.booked ||
                                 slot.status == SlotStatus.blocked;
                         return GestureDetector(
                           onTap: isBooked
                               ? null
-                              : () => setState(
-                                  () => _selectedSlot = slot),
+                              : () =>
+                                  setState(() => _selectedSlot = slot),
                           child: AnimatedContainer(
                             duration: AppDuration.fast,
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? AppColors.red
+                                  ? colors.colorAccentPrimary
                                   : isBooked
-                                      ? c.surfaceHigh
-                                      : c.surface,
+                                      ? colors.colorSurfacePrimary
+                                      : colors.colorSurfaceElevated,
                               borderRadius:
                                   BorderRadius.circular(AppRadius.md),
                               border: Border.all(
                                 color: isSelected
-                                    ? AppColors.red
-                                    : c.border,
-                                width: 0.5,
+                                    ? colors.colorAccentPrimary
+                                    : isBooked
+                                        ? colors.colorBorderSubtle
+                                        : colors.colorBorderMedium,
+                                width: isSelected ? 1.0 : 0.5,
                               ),
                             ),
                             child: Center(
                               child: Text(
                                 '${slot.startTime} – ${slot.endTime}',
-                                style: AppTextStyles.bodyS(
+                                style: AppTextStyles.headingS(
                                   isSelected
-                                      ? AppColors.white
+                                      ? colors.colorTextOnAccent
                                       : isBooked
-                                          ? c.textTer
-                                          : c.text,
+                                          ? colors.colorTextTertiary
+                                          : colors.colorTextPrimary,
                                 ).copyWith(
                                   decoration: isBooked
                                       ? TextDecoration.lineThrough
                                       : null,
+                                  decorationColor:
+                                      colors.colorTextTertiary,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -302,7 +318,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     ),
                   ),
 
-                  // SUMMARY CARD — animates in when slot selected
+                  // ── BOOKING SUMMARY ────────────────────────────
                   AnimatedSwitcher(
                     duration: AppDuration.normal,
                     switchInCurve: Curves.easeOutCubic,
@@ -320,29 +336,32 @@ class _BookingScreenState extends State<BookingScreen> {
                         ? Padding(
                             key: const ValueKey('summary'),
                             padding: const EdgeInsets.fromLTRB(
-                                18, 24, 18, 0),
+                                AppSpacing.lg, AppSpacing.xxl,
+                                AppSpacing.lg, 0),
                             child: Container(
                               decoration: BoxDecoration(
-                                gradient: c.gradBrand,
+                                color: colors.colorSurfacePrimary,
                                 borderRadius:
                                     BorderRadius.circular(AppRadius.xl),
                                 border: Border.all(
-                                    color: c.border, width: 0.5),
+                                    color: colors.colorBorderSubtle,
+                                    width: 0.5),
                               ),
                               child: Column(
                                 children: [
                                   _SummaryRow(
-                                    icon:
-                                        Icons.calendar_today_rounded,
+                                    icon: Icons.calendar_today_rounded,
                                     label: 'Date',
                                     value:
                                         '${_selectedDate.day} ${_months[_selectedDate.month - 1]}, ${_selectedDate.year}',
+                                    colors: colors,
                                   ),
                                   _SummaryRow(
                                     icon: Icons.access_time_rounded,
                                     label: 'Time',
                                     value:
                                         '${_selectedSlot!.startTime} – ${_selectedSlot!.endTime}',
+                                    colors: colors,
                                   ),
                                   if (court != null)
                                     _SummaryRow(
@@ -351,6 +370,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                       value: '₹${court.pricePerSlot}',
                                       isLast: true,
                                       highlight: true,
+                                      colors: colors,
                                     ),
                                 ],
                               ),
@@ -359,35 +379,38 @@ class _BookingScreenState extends State<BookingScreen> {
                         : const SizedBox.shrink(key: ValueKey('empty')),
                   ),
 
-                  // Amenities
+                  // ── AMENITIES ──────────────────────────────────
                   if (venue != null && venue.amenities.isNotEmpty)
                     Padding(
-                      padding:
-                          const EdgeInsets.fromLTRB(18, 24, 18, 0),
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg, AppSpacing.xxl,
+                          AppSpacing.lg, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('AMENITIES',
-                              style:
-                                  AppTextStyles.overline(c.textSec)),
-                          const SizedBox(height: 10),
+                              style: AppTextStyles.overline(
+                                  colors.colorTextTertiary)),
+                          const SizedBox(height: AppSpacing.sm + 2),
                           Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
+                            spacing: AppSpacing.sm,
+                            runSpacing: AppSpacing.sm,
                             children: venue.amenities.map((a) {
                               return Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 5),
+                                    horizontal: AppSpacing.sm + 2,
+                                    vertical: AppSpacing.xs + 1),
                                 decoration: BoxDecoration(
-                                  color: c.surface,
+                                  color: colors.colorSurfaceElevated,
                                   borderRadius: BorderRadius.circular(
                                       AppRadius.pill),
                                   border: Border.all(
-                                      color: c.border, width: 0.5),
+                                      color: colors.colorBorderSubtle,
+                                      width: 0.5),
                                 ),
                                 child: Text(a,
-                                    style:
-                                        AppTextStyles.labelS(c.textSec)),
+                                    style: AppTextStyles.labelS(
+                                        colors.colorTextSecondary)),
                               );
                             }).toList(),
                           ),
@@ -395,28 +418,31 @@ class _BookingScreenState extends State<BookingScreen> {
                       ),
                     ),
 
-                  // Cancellation notice
+                  // ── CANCELLATION NOTICE ────────────────────────
                   Padding(
-                    padding:
-                        const EdgeInsets.fromLTRB(18, 20, 18, 8),
+                    padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg, AppSpacing.xl,
+                        AppSpacing.lg, AppSpacing.sm),
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: c.surface,
+                        color: colors.colorSurfacePrimary,
                         borderRadius:
                             BorderRadius.circular(AppRadius.md),
-                        border:
-                            Border.all(color: c.border, width: 0.5),
+                        border: Border.all(
+                            color: colors.colorBorderSubtle, width: 0.5),
                       ),
                       child: Row(
                         children: [
                           Icon(Icons.info_outline_rounded,
-                              size: 14, color: c.textTer),
-                          const SizedBox(width: 8),
+                              size: 14,
+                              color: colors.colorTextTertiary),
+                          const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: Text(
                               'Free cancellation up to 2 hours before booking.',
-                              style: AppTextStyles.bodyS(c.textSec),
+                              style: AppTextStyles.bodyS(
+                                  colors.colorTextSecondary),
                             ),
                           ),
                         ],
@@ -432,39 +458,27 @@ class _BookingScreenState extends State<BookingScreen> {
         ],
       ),
 
-      // ── Floating CTA ──────────────────────────────────────────
+      // ── CTA bar ────────────────────────────────────────────────
       bottomNavigationBar: Container(
-        padding: EdgeInsets.fromLTRB(18, 12, 18, botPad + 12),
+        padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.md,
+            AppSpacing.lg, botPad + AppSpacing.md),
         decoration: BoxDecoration(
-          color: c.surface,
-          border: Border(top: BorderSide(color: c.border, width: 0.5)),
+          color: colors.colorSurfacePrimary,
+          border: Border(
+              top: BorderSide(color: colors.colorBorderSubtle, width: 0.5)),
         ),
-        child: SizedBox(
-          height: 54,
-          child: ElevatedButton(
-            onPressed: canBook
-                ? () {
-                    // Booking confirmation — will wire to Supabase later
-                    Navigator.pop(context);
-                  }
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  canBook ? AppColors.red : c.surfaceHigh,
-              disabledBackgroundColor: c.surfaceHigh,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              elevation: 0,
-            ),
-            child: Text(
-              canBook
-                  ? 'Book & Pay ₹${court?.pricePerSlot ?? "—"}'
-                  : 'Select a time slot',
-              style: AppTextStyles.headingS(
-                  canBook ? AppColors.white : c.textTer),
-            ),
-          ),
+        child: CsButton.primary(
+          label: canBook
+              ? 'Book & Pay ₹${court?.pricePerSlot ?? "—"}'
+              : 'Select a time slot',
+          onTap: canBook
+              ? () {
+                  // Will wire to Supabase later
+                  Navigator.pop(context);
+                }
+              : null,
+          isDisabled: !canBook,
         ),
       ),
     );
@@ -474,25 +488,32 @@ class _BookingScreenState extends State<BookingScreen> {
 // ── Legend Dot ─────────────────────────────────────────────────
 
 class _LegendDot extends StatelessWidget {
-  const _LegendDot({required this.color, required this.label});
+  const _LegendDot({
+    required this.color,
+    required this.label,
+    required this.colors,
+  });
   final Color color;
   final String label;
+  final AppColorScheme colors;
 
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 8,
-          height: 8,
+          width: 8, height: 8,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
-            border: Border.all(color: context.col.border, width: 0.5),
+            border: Border.all(
+                color: colors.colorBorderSubtle, width: 0.5),
           ),
         ),
         const SizedBox(width: 4),
-        Text(label, style: AppTextStyles.overline(context.col.textSec)),
+        Text(label,
+            style: AppTextStyles.overline(colors.colorTextSecondary)),
       ],
     );
   }
@@ -505,6 +526,7 @@ class _SummaryRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    required this.colors,
     this.isLast = false,
     this.highlight = false,
   });
@@ -512,33 +534,38 @@ class _SummaryRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final AppColorScheme colors;
   final bool isLast;
   final bool highlight;
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg, vertical: AppSpacing.md),
       decoration: BoxDecoration(
         border: isLast
             ? null
             : Border(
-                bottom: BorderSide(color: c.border, width: 0.5)),
+                bottom: BorderSide(
+                    color: colors.colorBorderSubtle, width: 0.5)),
       ),
       child: Row(
         children: [
           Icon(icon,
               size: 16,
-              color: highlight ? AppColors.red : c.textSec),
-          const SizedBox(width: 10),
-          Text(label, style: AppTextStyles.bodyM(c.textSec)),
+              color: highlight
+                  ? colors.colorAccentPrimary
+                  : colors.colorTextSecondary),
+          const SizedBox(width: AppSpacing.sm + 2),
+          Text(label,
+              style: AppTextStyles.bodyM(colors.colorTextSecondary)),
           const Spacer(),
           Text(
             value,
             style: highlight
-                ? AppTextStyles.statM(AppColors.red)
-                : AppTextStyles.headingS(c.text),
+                ? AppTextStyles.statM(colors.colorAccentPrimary)
+                : AppTextStyles.headingS(colors.colorTextPrimary),
           ),
         ],
       ),

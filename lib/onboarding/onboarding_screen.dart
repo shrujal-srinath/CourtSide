@@ -1,13 +1,12 @@
-// courtside/lib/screens/onboarding/onboarding_screen.dart
+// lib/onboarding/onboarding_screen.dart
 // Shown to NEW users only — collect username + primary sport
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../core/theme.dart';
-import '../../core/constants.dart';
+import '../core/theme.dart';
+import '../core/constants.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -52,125 +51,164 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark  = Theme.of(context).brightness == Brightness.dark;
-    final bg      = isDark ? AppColors.black : AppColors.white;
-    final accent  = isDark ? AppColors.red   : AppColors.redDark;
-    final primary = isDark ? AppColors.textPrimaryDark  : AppColors.textPrimaryLight;
-    final muted   = isDark ? AppColors.textSecondaryDark: AppColors.textSecondaryLight;
-    final surf    = isDark ? AppColors.surface : AppColors.surfaceLight;
-    final border  = isDark ? AppColors.border  : AppColors.borderLight;
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: colors.colorBackgroundPrimary,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl + 4),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 56),
+                const SizedBox(height: AppSpacing.section + AppSpacing.lg),
 
-                Text('COURTSIDE', style: GoogleFonts.syne(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.5, color: accent)),
-                const SizedBox(height: 32),
+                // Brand wordmark
+                Text(
+                  'COURTSIDE',
+                  style: AppTextStyles.labelM(colors.colorAccentPrimary),
+                ),
+                const SizedBox(height: AppSpacing.xxxl),
 
-                Text('One last thing.', style: GoogleFonts.syne(fontSize: 34, fontWeight: FontWeight.w800, letterSpacing: -0.8, color: primary, height: 1.1)),
-                const SizedBox(height: 8),
-                Text('Set your player handle and primary sport.\nThis appears on all your stats and recap cards.', style: GoogleFonts.inter(fontSize: 14, color: muted, height: 1.55)),
+                // Headline
+                Text(
+                  'One last thing.',
+                  style: AppTextStyles.displayM(colors.colorTextPrimary),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Set your player handle and primary sport.\nThis appears on all your stats and recap cards.',
+                  style: AppTextStyles.bodyM(colors.colorTextSecondary),
+                ),
 
-                const SizedBox(height: 44),
+                const SizedBox(height: AppSpacing.section + AppSpacing.md),
 
                 // ── Username ───────────────────────────────
-                Text('Username', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: muted)),
-                const SizedBox(height: 8),
+                Text(
+                  'USERNAME',
+                  style: AppTextStyles.overline(colors.colorTextTertiary),
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 TextFormField(
                   controller: _usernameCtrl,
                   textInputAction: TextInputAction.done,
-                  style: GoogleFonts.inter(fontSize: 16, color: primary, fontWeight: FontWeight.w500),
+                  style: AppTextStyles.bodyL(colors.colorTextPrimary),
                   decoration: InputDecoration(
                     hintText: 'shrujal',
-                    hintStyle: GoogleFonts.inter(fontSize: 16, color: muted),
+                    hintStyle: AppTextStyles.bodyL(colors.colorTextTertiary),
                     prefixIcon: Padding(
-                      padding: const EdgeInsets.only(left: 16, right: 8),
-                      child: Text('@', style: GoogleFonts.syne(fontSize: 18, fontWeight: FontWeight.w600, color: muted)),
+                      padding: const EdgeInsets.only(
+                          left: AppSpacing.lg, right: AppSpacing.sm),
+                      child: Text(
+                        '@',
+                        style: AppTextStyles.headingM(
+                            colors.colorTextSecondary),
+                      ),
                     ),
-                    prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-                    filled: true, fillColor: surf,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border, width: 0.5)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border, width: 0.5)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: accent, width: 1.5)),
-                    errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AppColors.error, width: 0.5)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    prefixIconConstraints:
+                        const BoxConstraints(minWidth: 0, minHeight: 0),
+                    filled: true,
+                    fillColor: colors.colorSurfaceElevated,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderSide: BorderSide(
+                          color: colors.colorBorderSubtle, width: 0.5),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderSide: BorderSide(
+                          color: colors.colorBorderSubtle, width: 0.5),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderSide: BorderSide(
+                          color: colors.colorAccentPrimary, width: 1.5),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderSide: BorderSide(
+                          color: colors.colorError, width: 0.5),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderSide: BorderSide(
+                          color: colors.colorError, width: 1.0),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.lg),
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Choose a username';
                     if (v.length < 3) return 'Minimum 3 characters';
-                    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(v)) return 'Letters, numbers and _ only';
+                    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(v)) {
+                      return 'Letters, numbers and _ only';
+                    }
                     return null;
                   },
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: AppSpacing.xxxl),
 
                 // ── Sport picker ───────────────────────────
-                Text('Primary sport', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: muted)),
-                const SizedBox(height: 12),
+                Text(
+                  'PRIMARY SPORT',
+                  style: AppTextStyles.overline(colors.colorTextTertiary),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
-                    _sportTile(
+                    _SportTile(
                       emoji: '🏀',
                       label: 'Basketball',
                       value: AppConstants.sportBasketball,
-                      accent: accent, surf: surf, border: border,
-                      primary: primary, muted: muted,
+                      selected: _sport == AppConstants.sportBasketball,
+                      sportColor: colors.colorSportBasketball,
+                      onTap: () =>
+                          setState(() => _sport = AppConstants.sportBasketball),
                     ),
-                    const SizedBox(width: 12),
-                    _sportTile(
+                    const SizedBox(width: AppSpacing.md),
+                    _SportTile(
                       emoji: '🏏',
                       label: 'Cricket',
                       value: AppConstants.sportCricket,
-                      accent: accent, surf: surf, border: border,
-                      primary: primary, muted: muted,
+                      selected: _sport == AppConstants.sportCricket,
+                      sportColor: colors.colorSportCricket,
+                      onTap: () =>
+                          setState(() => _sport = AppConstants.sportCricket),
                     ),
                   ],
                 ),
 
                 if (_error != null) ...[
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.xl),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md + 2,
+                        vertical: AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 0.5),
+                      color: colors.colorError.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: Border.all(
+                          color: colors.colorError.withValues(alpha: 0.3),
+                          width: 0.5),
                     ),
-                    child: Text(_error!, style: GoogleFonts.inter(fontSize: 13, color: AppColors.error)),
+                    child: Text(
+                      _error!,
+                      style: AppTextStyles.bodyS(colors.colorError),
+                    ),
                   ),
                 ],
 
-                const SizedBox(height: 40),
+                const SizedBox(height: AppSpacing.section),
 
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: _loading ? null : _save,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: accent,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: accent.withValues(alpha: 0.5),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: _loading
-                        ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                        : Text("Let's go", style: GoogleFonts.syne(fontSize: 16, fontWeight: FontWeight.w700)),
-                  ),
-                ),
+                // ── CTA ────────────────────────────────────
+                _LetsGoButton(loading: _loading, onTap: _save),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: AppSpacing.section),
               ],
             ),
           ),
@@ -178,39 +216,119 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       ),
     );
   }
+}
 
-  Widget _sportTile({
-    required String emoji, required String label, required String value,
-    required Color accent, required Color surf, required Color border,
-    required Color primary, required Color muted,
-  }) {
-    final selected = _sport == value;
+// ── Sport Tile ────────────────────────────────────────────────
+
+class _SportTile extends StatelessWidget {
+  const _SportTile({
+    required this.emoji,
+    required this.label,
+    required this.value,
+    required this.selected,
+    required this.sportColor,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final String label;
+  final String value;
+  final bool selected;
+  final Color sportColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _sport = value),
+        onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          duration: AppDuration.fast,
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
           decoration: BoxDecoration(
-            color: selected ? accent.withValues(alpha: 0.08) : surf,
-            borderRadius: BorderRadius.circular(16),
+            color: selected
+                ? sportColor.withValues(alpha: 0.1)
+                : colors.colorSurfaceElevated,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
-              color: selected ? accent : border,
-              width: selected ? 1.5 : 0.5,
+              color: selected ? sportColor : colors.colorBorderSubtle,
+              width: selected ? 1.0 : 0.5,
             ),
           ),
           child: Column(
             children: [
               Text(emoji, style: const TextStyle(fontSize: 32)),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 label,
-                style: GoogleFonts.inter(
-                  fontSize: 13, fontWeight: FontWeight.w600,
-                  color: selected ? accent : muted,
+                style: AppTextStyles.labelM(
+                  selected ? sportColor : colors.colorTextSecondary,
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Let's Go Button ───────────────────────────────────────────
+
+class _LetsGoButton extends StatefulWidget {
+  const _LetsGoButton({required this.loading, required this.onTap});
+  final bool loading;
+  final VoidCallback onTap;
+
+  @override
+  State<_LetsGoButton> createState() => _LetsGoButtonState();
+}
+
+class _LetsGoButtonState extends State<_LetsGoButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        if (!widget.loading) widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 80),
+        child: AnimatedOpacity(
+          opacity: widget.loading ? 0.7 : 1.0,
+          duration: AppDuration.fast,
+          child: Container(
+            width: double.infinity,
+            height: 54,
+            decoration: BoxDecoration(
+              color: colors.colorAccentPrimary,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              boxShadow: AppShadow.fab,
+            ),
+            alignment: Alignment.center,
+            child: widget.loading
+                ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: colors.colorTextOnAccent,
+                    ),
+                  )
+                : Text(
+                    "Let's go",
+                    style:
+                        AppTextStyles.headingM(colors.colorTextOnAccent),
+                  ),
           ),
         ),
       ),

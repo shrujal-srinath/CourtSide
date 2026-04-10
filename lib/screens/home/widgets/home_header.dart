@@ -32,7 +32,7 @@ class HomeHeader extends ConsumerWidget {
                   children: [
                     Text(
                       'Hey $firstName 👋',
-                      style: GoogleFonts.syne(
+                      style: GoogleFonts.barlow(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: context.col.text,
@@ -41,7 +41,7 @@ class HomeHeader extends ConsumerWidget {
                     ),
                     Text(
                       'Find your next game',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.dmSans(
                         fontSize: 12,
                         color: context.col.textSec,
                         fontWeight: FontWeight.w400,
@@ -101,7 +101,7 @@ class _Avatar extends StatelessWidget {
       child: Center(
         child: Text(
           _initials,
-          style: GoogleFonts.syne(
+          style: GoogleFonts.barlow(
             fontSize: 14,
             fontWeight: FontWeight.w700,
             color: AppColors.red,
@@ -164,7 +164,7 @@ class _SearchBar extends StatelessWidget {
             const SizedBox(width: 10),
             Text(
               'Search venues, courts...',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.dmSans(
                 fontSize: 14,
                 color: context.col.textSec,
                 fontWeight: FontWeight.w400,

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme.dart';
-import '../../core/app_spacing.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  MODELS — temporary until Supabase is wired
@@ -71,10 +69,14 @@ class SportConfig {
 }
 
 const _sportConfigs = {
-  'basketball': SportConfig(id: 'basketball', label: 'Basketball', emoji: '🏀'),
-  'cricket':    SportConfig(id: 'cricket',    label: 'Box Cricket', emoji: '🏏'),
-  'badminton':  SportConfig(id: 'badminton',  label: 'Badminton',  emoji: '🏸'),
-  'football':   SportConfig(id: 'football',   label: 'Football',   emoji: '⚽'),
+  'basketball':
+      SportConfig(id: 'basketball', label: 'Basketball', emoji: '🏀'),
+  'cricket':
+      SportConfig(id: 'cricket', label: 'Box Cricket', emoji: '🏏'),
+  'badminton':
+      SportConfig(id: 'badminton', label: 'Badminton', emoji: '🏸'),
+  'football':
+      SportConfig(id: 'football', label: 'Football', emoji: '⚽'),
 };
 
 // ── Seed data — replace with Supabase later ─────────────────────
@@ -179,12 +181,12 @@ class _SportScreenState extends ConsumerState<SportScreen> {
 
   SportConfig get _sport =>
       _sportConfigs[widget.sportId] ??
-      const SportConfig(id: 'basketball', label: 'Basketball', emoji: '🏀');
+      const SportConfig(
+          id: 'basketball', label: 'Basketball', emoji: '🏀');
 
   List<VenueItem> get _filteredVenues {
-    var venues = _seedVenues
-        .where((v) => v.sport == widget.sportId)
-        .toList();
+    var venues =
+        _seedVenues.where((v) => v.sport == widget.sportId).toList();
     final q = _searchCtrl.text.trim().toLowerCase();
     if (q.isNotEmpty) {
       venues = venues
@@ -205,12 +207,14 @@ class _SportScreenState extends ConsumerState<SportScreen> {
     super.dispose();
   }
 
-  // ── Date sheet ───────────────────────────────────────────────
-
   void _showDateSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: context.colors.colorSurfacePrimary,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+      ),
       builder: (_) => _DateSheet(
         selected: _date,
         onSelected: (d) {
@@ -221,29 +225,31 @@ class _SportScreenState extends ConsumerState<SportScreen> {
     );
   }
 
-  // ── Filter sheet (secondary filters) ───────────────────────
-
   void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: context.colors.colorSurfacePrimary,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+      ),
+      isScrollControlled: true,
       builder: (_) => _FilterSheet(sportId: widget.sportId),
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
-    final venues = _filteredVenues;
-    final pickups = _pickupGames;
+    final colors    = context.colors;
+    final topPad    = MediaQuery.of(context).padding.top;
+    final venues    = _filteredVenues;
+    final pickups   = _pickupGames;
     final showPickups =
         pickups.isNotEmpty && _filter == SportFilter.all ||
         _filter == SportFilter.games;
 
     return Scaffold(
-      backgroundColor: context.col.bg,
+      backgroundColor: colors.colorBackgroundPrimary,
       body: Column(
         children: [
           SizedBox(height: topPad),
@@ -263,16 +269,15 @@ class _SportScreenState extends ConsumerState<SportScreen> {
                 ? _EmptyState(
                     emoji: '👥',
                     title: 'No groups yet',
-                    subtitle: 'Be the first to start a ${_sport.label} group',
+                    subtitle:
+                        'Be the first to start a ${_sport.label} group',
                   )
                 : ListView(
                     padding: EdgeInsets.zero,
                     children: [
-                      // Pickup games — conditional
                       if (showPickups && pickups.isNotEmpty)
                         _PickupSection(games: pickups),
 
-                      // Venue list
                       if (_filter == SportFilter.all ||
                           _filter == SportFilter.venues) ...[
                         _SectionHeader(
@@ -284,21 +289,23 @@ class _SportScreenState extends ConsumerState<SportScreen> {
                           _EmptyState(
                             emoji: '🏟️',
                             title: 'No courts found',
-                            subtitle: 'Try adjusting your search or filters',
+                            subtitle:
+                                'Try adjusting your search or filters',
                           )
                         else
                           ...venues.map((v) => _VenueCard(venue: v)),
                       ],
 
-                      // Games only view
-                      if (_filter == SportFilter.games && pickups.isEmpty)
+                      if (_filter == SportFilter.games &&
+                          pickups.isEmpty)
                         _EmptyState(
                           emoji: '🎮',
                           title: 'No pickup games today',
-                          subtitle: 'Host one and get players to join',
+                          subtitle:
+                              'Host one and get players to join',
                         ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xxl),
                     ],
                   ),
           ),
@@ -309,7 +316,7 @@ class _SportScreenState extends ConsumerState<SportScreen> {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  HEADER — compact, all in 3 rows
+//  HEADER
 // ═══════════════════════════════════════════════════════════════
 
 class _Header extends StatelessWidget {
@@ -337,48 +344,50 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
+    final colors = context.colors;
+
     return Container(
-      color: c.bg,
+      color: colors.colorBackgroundPrimary,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // ── Row 1: back · sport · date pill · filter icon ──
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md, AppSpacing.sm,
+                AppSpacing.md, AppSpacing.sm + 2),
             child: Row(
               children: [
                 // Back
                 GestureDetector(
                   onTap: onBack,
                   child: Container(
-                    width: 36, height: 36,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: c.surface,
-                      border: Border.all(color: c.border, width: 0.5),
+                      color: colors.colorSurfacePrimary,
+                      border: Border.all(
+                          color: colors.colorBorderSubtle, width: 0.5),
                     ),
                     child: Icon(
                       Icons.arrow_back_ios_new_rounded,
-                      color: c.text,
+                      color: colors.colorTextPrimary,
                       size: 16,
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppSpacing.sm + 2),
 
                 // Sport emoji + name
-                Text(sport.emoji, style: const TextStyle(fontSize: 20)),
-                const SizedBox(width: 8),
+                Text(sport.emoji,
+                    style: const TextStyle(fontSize: 20)),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     sport.label,
-                    style: GoogleFonts.syne(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: c.text,
-                      letterSpacing: -0.3,
-                    ),
+                    style: AppTextStyles.headingL(
+                        colors.colorTextPrimary),
                   ),
                 ),
 
@@ -387,27 +396,28 @@ class _Header extends StatelessWidget {
                   onTap: onDateTap,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 7),
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.xs + 3),
                     decoration: BoxDecoration(
-                      color: c.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: c.border, width: 0.5),
+                      color: colors.colorSurfacePrimary,
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(
+                          color: colors.colorBorderSubtle,
+                          width: 0.5),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           date.label,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: c.text,
-                          ),
+                          style: AppTextStyles.labelM(
+                              colors.colorTextPrimary),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: AppSpacing.xs),
                         Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color: c.textSec,
+                          color: colors.colorTextSecondary,
                           size: 16,
                         ),
                       ],
@@ -415,21 +425,24 @@ class _Header extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
 
                 // Filter icon
                 GestureDetector(
                   onTap: onFilterTap,
                   child: Container(
-                    width: 36, height: 36,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: c.surface,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: c.border, width: 0.5),
+                      color: colors.colorSurfacePrimary,
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.md),
+                      border: Border.all(
+                          color: colors.colorBorderSubtle, width: 0.5),
                     ),
                     child: Icon(
                       Icons.tune_rounded,
-                      color: c.text,
+                      color: colors.colorTextPrimary,
                       size: 18,
                     ),
                   ),
@@ -440,30 +453,27 @@ class _Header extends StatelessWidget {
 
           // ── Row 2: Search bar ─────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm + 2),
             child: Container(
               height: 44,
               decoration: BoxDecoration(
-                color: c.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: c.border, width: 0.5),
+                color: colors.colorSurfacePrimary,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(
+                    color: colors.colorBorderSubtle, width: 0.5),
               ),
               child: TextField(
                 controller: searchCtrl,
                 onChanged: onSearchChanged,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: c.text,
-                ),
+                style: AppTextStyles.bodyM(colors.colorTextPrimary),
                 decoration: InputDecoration(
                   hintText: 'Search ${sport.label} courts...',
-                  hintStyle: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: c.textSec,
-                  ),
+                  hintStyle:
+                      AppTextStyles.bodyM(colors.colorTextSecondary),
                   prefixIcon: Icon(
                     Icons.search_rounded,
-                    color: c.textSec,
+                    color: colors.colorTextSecondary,
                     size: 20,
                   ),
                   border: InputBorder.none,
@@ -479,38 +489,40 @@ class _Header extends StatelessWidget {
             height: 36,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 0),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md, 0, AppSpacing.md, 0),
               itemCount: SportFilter.values.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) =>
+                  const SizedBox(width: AppSpacing.sm),
               itemBuilder: (_, i) {
-                final f = SportFilter.values[i];
+                final f      = SportFilter.values[i];
                 final active = f == filter;
                 return GestureDetector(
                   onTap: () => onFilterChanged(f),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
+                    duration: AppDuration.fast,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 7),
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.xs + 3),
                     decoration: BoxDecoration(
                       color: active
-                          ? AppColors.red.withValues(alpha: 0.15)
-                          : c.surface,
-                      borderRadius: BorderRadius.circular(20),
+                          ? colors.colorAccentSubtle
+                          : colors.colorSurfacePrimary,
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.pill),
                       border: Border.all(
                         color: active
-                            ? AppColors.red.withValues(alpha: 0.5)
-                            : c.border,
+                            ? colors.colorAccentPrimary
+                            : colors.colorBorderSubtle,
                         width: 0.5,
                       ),
                     ),
                     child: Text(
                       f.label,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: active
-                            ? AppColors.red
-                            : c.textSec,
+                      style: AppTextStyles.labelM(
+                        active
+                            ? colors.colorAccentPrimary
+                            : colors.colorTextSecondary,
                       ),
                     ),
                   ),
@@ -519,9 +531,8 @@ class _Header extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 10),
-
-          Container(height: 0.5, color: c.border),
+          const SizedBox(height: AppSpacing.sm + 2),
+          Container(height: 0.5, color: colors.colorBorderSubtle),
         ],
       ),
     );
@@ -538,13 +549,16 @@ class _PickupSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Container(
-      margin: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+      margin: const EdgeInsets.fromLTRB(
+          AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xs),
       decoration: BoxDecoration(
-        color: AppColors.red.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
+        color: colors.colorAccentSubtle,
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: AppColors.red.withValues(alpha: 0.2),
+          color: colors.colorAccentPrimary.withValues(alpha: 0.2),
           width: 0.5,
         ),
       ),
@@ -552,19 +566,16 @@ class _PickupSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md, AppSpacing.sm + 2,
+                AppSpacing.md, AppSpacing.sm),
             child: Text(
               '🔥  Pickup games today',
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppColors.red,
-                letterSpacing: 0.3,
-              ),
+              style: AppTextStyles.labelM(colors.colorAccentPrimary),
             ),
           ),
           ...games.map((g) => _PickupGameRow(game: g)),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
         ],
       ),
     );
@@ -577,8 +588,11 @@ class _PickupGameRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
       child: Row(
         children: [
           Expanded(
@@ -587,18 +601,13 @@ class _PickupGameRow extends StatelessWidget {
               children: [
                 Text(
                   '${game.title} · ${game.time}',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: context.col.text,
-                  ),
+                  style: AppTextStyles.bodyS(colors.colorTextPrimary)
+                      .copyWith(fontWeight: FontWeight.w500),
                 ),
                 Text(
                   game.venue,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: context.col.textSec,
-                  ),
+                  style: AppTextStyles.overline(
+                      colors.colorTextTertiary),
                 ),
               ],
             ),
@@ -606,33 +615,21 @@ class _PickupGameRow extends StatelessWidget {
           // Spots left
           Text(
             '${game.spotsLeft} spot${game.spotsLeft == 1 ? '' : 's'}',
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFFF59E0B),
-            ),
+            style: AppTextStyles.labelS(colors.colorWarning),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.sm + 2),
           // Join button
-          GestureDetector(
-            onTap: () {
-              // TODO: join game flow
-            },
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.red,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Join',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.white,
-                ),
-              ),
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.xs + 2),
+            decoration: BoxDecoration(
+              color: colors.colorAccentPrimary,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Text(
+              'Join',
+              style: AppTextStyles.labelM(colors.colorTextOnAccent),
             ),
           ),
         ],
@@ -658,29 +655,26 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md, AppSpacing.md,
+          AppSpacing.md, AppSpacing.sm),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            title,
-            style: GoogleFonts.syne(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: context.col.text,
-            ),
+            title.toUpperCase(),
+            style: AppTextStyles.overline(colors.colorTextTertiary),
           ),
           if (trailing != null)
             GestureDetector(
               onTap: onTrailingTap,
               child: Text(
                 trailing!,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: AppColors.red,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppTextStyles.labelS(
+                    colors.colorAccentPrimary),
               ),
             ),
         ],
@@ -699,64 +693,64 @@ class _VenueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors    = context.colors;
     final available = venue.slotsAvailable > 0;
-    final scarce = const [1, 2, 3].contains(venue.slotsAvailable);
+    final scarce    = const [1, 2, 3].contains(venue.slotsAvailable);
 
     return GestureDetector(
       onTap: () {
         // TODO: navigate to venue detail
       },
       child: Container(
-        margin: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+        margin: const EdgeInsets.fromLTRB(
+            AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm + 2),
         decoration: BoxDecoration(
-          color: context.col.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.col.border, width: 0.5),
-          boxShadow: AppShadow.cardFor(context),
+          color: colors.colorSurfacePrimary,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(
+              color: colors.colorBorderSubtle, width: 0.5),
+          boxShadow: AppShadow.card,
         ),
         child: Row(
           children: [
             // ── Photo ─────────────────────────────────────
             ClipRRect(
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(15),
-                bottomLeft: Radius.circular(15),
+                topLeft: Radius.circular(AppRadius.card - 1),
+                bottomLeft: Radius.circular(AppRadius.card - 1),
               ),
               child: Stack(
                 children: [
                   Container(
                     width: 90,
                     height: 90,
-                    color: context.col.surfaceHigh,
+                    color: colors.colorSurfaceElevated,
                     child: venue.photoUrl != null
                         ? Image.network(
                             venue.photoUrl!,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
+                            errorBuilder: (_, _, _) =>
                                 _PlaceholderImage(venue: venue),
                           )
                         : _PlaceholderImage(venue: venue),
                   ),
-                  // THE BOX badge
                   if (venue.hasTheBox)
                     Positioned(
                       bottom: 6,
                       left: 6,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 2),
+                            horizontal: AppSpacing.xs + 1,
+                            vertical: AppSpacing.xs - 2),
                         decoration: BoxDecoration(
-                          color: AppColors.red,
-                          borderRadius: BorderRadius.circular(4),
+                          color: colors.colorAccentPrimary,
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.sm - 4),
                         ),
                         child: Text(
                           'THE BOX',
-                          style: GoogleFonts.inter(
-                            fontSize: 7,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.white,
-                            letterSpacing: 0.3,
-                          ),
+                          style: AppTextStyles.overline(
+                              colors.colorTextOnAccent),
                         ),
                       ),
                     ),
@@ -767,50 +761,38 @@ class _VenueCard extends StatelessWidget {
             // ── Info ───────────────────────────────────────
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Name
                     Text(
                       venue.name,
-                      style: GoogleFonts.syne(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: context.col.text,
-                      ),
+                      style: AppTextStyles.headingS(
+                          colors.colorTextPrimary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
 
-                    // Meta: distance · rating · surface
                     Text(
                       '${venue.distanceKm.toStringAsFixed(1)} km  ·  ${venue.rating} ★  ·  ${venue.surface} ${venue.isIndoor ? 'indoor' : 'outdoor'}',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: context.col.textSec,
-                      ),
+                      style: AppTextStyles.bodyS(
+                          colors.colorTextSecondary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.sm + 2),
 
-                    // Bottom row: price + slots + book
                     Row(
                       children: [
-                        // Price
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               '₹${venue.pricePerSlot}/slot',
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: context.col.text,
-                              ),
+                              style: AppTextStyles.headingS(
+                                  colors.colorTextPrimary),
                             ),
                             Text(
                               available
@@ -818,14 +800,12 @@ class _VenueCard extends StatelessWidget {
                                       ? '${venue.slotsAvailable} slots left'
                                       : 'Available now'
                                   : 'Fully booked',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: available
+                              style: AppTextStyles.labelS(
+                                available
                                     ? scarce
-                                        ? AppColors.warning
-                                        : AppColors.success
-                                    : context.col.textSec,
+                                        ? colors.colorWarning
+                                        : colors.colorSuccess
+                                    : colors.colorTextTertiary,
                               ),
                             ),
                           ],
@@ -833,32 +813,24 @@ class _VenueCard extends StatelessWidget {
 
                         const Spacer(),
 
-                        // Book button
-                        GestureDetector(
-                          onTap: available
-                              ? () {
-                                  // TODO: navigate to booking
-                                }
-                              : null,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 18, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: available
-                                  ? AppColors.red
-                                  : context.col.surfaceHigh,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              available ? 'Book' : 'Full',
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: available
-                                    ? AppColors.white
-                                    : context.col.textSec,
-                              ),
+                        AnimatedContainer(
+                          duration: AppDuration.fast,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                              vertical: AppSpacing.sm),
+                          decoration: BoxDecoration(
+                            color: available
+                                ? colors.colorAccentPrimary
+                                : colors.colorSurfaceElevated,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.md),
+                          ),
+                          child: Text(
+                            available ? 'Book' : 'Full',
+                            style: AppTextStyles.labelM(
+                              available
+                                  ? colors.colorTextOnAccent
+                                  : colors.colorTextTertiary,
                             ),
                           ),
                         ),
@@ -875,24 +847,20 @@ class _VenueCard extends StatelessWidget {
   }
 }
 
-// ── Placeholder image ─────────────────────────────────────────
-
 class _PlaceholderImage extends StatelessWidget {
   const _PlaceholderImage({required this.venue});
   final VenueItem venue;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Container(
-      color: context.col.surfaceHigh,
+      color: colors.colorSurfaceElevated,
       child: Center(
         child: Text(
           venue.name[0],
-          style: GoogleFonts.syne(
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            color: context.col.border,
-          ),
+          style: AppTextStyles.displayM(colors.colorBorderMedium),
         ),
       ),
     );
@@ -916,28 +884,25 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
+      padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.section + AppSpacing.sm,
+          horizontal: AppSpacing.xxxl),
       child: Column(
         children: [
           Text(emoji, style: const TextStyle(fontSize: 40)),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             title,
-            style: GoogleFonts.syne(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: context.col.text,
-            ),
+            style: AppTextStyles.headingM(colors.colorTextPrimary),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             subtitle,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: context.col.textSec,
-            ),
+            style: AppTextStyles.bodyS(colors.colorTextSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -957,83 +922,77 @@ class _DateSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
-    return Container(
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle
-          Container(
-            margin: const EdgeInsets.only(top: 10),
-            width: 36,
-            height: 3,
-            decoration: BoxDecoration(
-              color: c.border,
-              borderRadius: BorderRadius.circular(2),
-            ),
+    final colors = context.colors;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Handle
+        Container(
+          margin: const EdgeInsets.only(top: AppSpacing.sm + 2),
+          width: 36,
+          height: 4,
+          decoration: BoxDecoration(
+            color: colors.colorBorderMedium,
+            borderRadius: BorderRadius.circular(2),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
-            child: Text(
-              'Select date',
-              style: GoogleFonts.syne(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: c.text,
-              ),
-            ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, AppSpacing.lg,
+              AppSpacing.lg, AppSpacing.sm),
+          child: Text(
+            'SELECT DATE',
+            style: AppTextStyles.overline(colors.colorTextTertiary),
           ),
-          ...DateOption.values.map((d) {
-            final active = d == selected;
-            return GestureDetector(
-              onTap: () => onSelected(d),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 18, vertical: 14),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: c.border, width: 0.5),
-                  ),
-                  color: active
-                      ? AppColors.red.withValues(alpha: 0.08)
-                      : Colors.transparent,
+        ),
+        ...DateOption.values.map((d) {
+          final active = d == selected;
+          return GestureDetector(
+            onTap: () => onSelected(d),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                      color: colors.colorBorderSubtle, width: 0.5),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        d.label,
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: active
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                          color: active ? AppColors.red : c.textSec,
-                        ),
+                color: active ? colors.colorAccentSubtle : null,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      d.label,
+                      style: AppTextStyles.bodyM(
+                        active
+                            ? colors.colorAccentPrimary
+                            : colors.colorTextSecondary,
+                      ).copyWith(
+                        fontWeight: active
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                     ),
-                    if (active)
-                      const Icon(Icons.check_rounded,
-                          color: AppColors.red, size: 18),
-                  ],
-                ),
+                  ),
+                  if (active)
+                    Icon(Icons.check_rounded,
+                        color: colors.colorAccentPrimary, size: 18),
+                ],
               ),
-            );
-          }),
-          SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
-        ],
-      ),
+            ),
+          );
+        }),
+        SizedBox(height: MediaQuery.of(context).padding.bottom + AppSpacing.lg),
+      ],
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  FILTER SHEET — secondary filters
+//  FILTER SHEET
 // ═══════════════════════════════════════════════════════════════
 
 class _FilterSheet extends StatefulWidget {
@@ -1045,151 +1004,135 @@ class _FilterSheet extends StatefulWidget {
 }
 
 class _FilterSheetState extends State<_FilterSheet> {
-  bool _theBoxOnly = false;
-  bool _indoorOnly = false;
-  bool _outdoorOnly = false;
+  bool _theBoxOnly   = false;
+  bool _indoorOnly   = false;
+  bool _outdoorOnly  = false;
   double _maxDistance = 10;
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
-    return Container(
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle
-          Center(
+    final colors = context.colors;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Handle
+        Center(
+          child: Container(
+            margin:
+                const EdgeInsets.only(top: AppSpacing.sm + 2),
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colors.colorBorderMedium,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, AppSpacing.lg,
+              AppSpacing.lg, 0),
+          child: Text(
+            'FILTERS',
+            style: AppTextStyles.overline(colors.colorTextTertiary),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+
+        _FilterToggle(
+          label: 'THE BOX equipped only',
+          subtitle: 'Courts with live stat tracking',
+          value: _theBoxOnly,
+          onChanged: (v) => setState(() => _theBoxOnly = v),
+        ),
+
+        _FilterToggle(
+          label: 'Indoor courts only',
+          subtitle: 'Covered, climate-controlled',
+          value: _indoorOnly,
+          onChanged: (v) => setState(() {
+            _indoorOnly = v;
+            if (v) _outdoorOnly = false;
+          }),
+        ),
+
+        _FilterToggle(
+          label: 'Outdoor courts only',
+          subtitle: 'Open air venues',
+          value: _outdoorOnly,
+          onChanged: (v) => setState(() {
+            _outdoorOnly = v;
+            if (v) _indoorOnly = false;
+          }),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, AppSpacing.md,
+              AppSpacing.lg, AppSpacing.xs),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Max distance',
+                style: AppTextStyles.bodyM(colors.colorTextPrimary),
+              ),
+              Text(
+                '${_maxDistance.toInt()} km',
+                style: AppTextStyles.headingS(
+                    colors.colorAccentPrimary),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md),
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: colors.colorAccentPrimary,
+              inactiveTrackColor: colors.colorBorderSubtle,
+              thumbColor: colors.colorAccentPrimary,
+              overlayColor:
+                  colors.colorAccentPrimary.withValues(alpha: 0.1),
+            ),
+            child: Slider(
+              value: _maxDistance,
+              min: 1,
+              max: 20,
+              divisions: 19,
+              onChanged: (v) => setState(() => _maxDistance = v),
+            ),
+          ),
+        ),
+
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              MediaQuery.of(context).padding.bottom + AppSpacing.lg),
+          child: GestureDetector(
+            onTap: () => Navigator.pop(context),
             child: Container(
-              margin: const EdgeInsets.only(top: 10),
-              width: 36,
-              height: 3,
-              decoration: BoxDecoration(
-                color: c.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
-            child: Text(
-              'Filters',
-              style: GoogleFonts.syne(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: c.text,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // THE BOX toggle
-          _FilterToggle(
-            label: 'THE BOX equipped only',
-            subtitle: 'Courts with live stat tracking',
-            value: _theBoxOnly,
-            onChanged: (v) => setState(() => _theBoxOnly = v),
-          ),
-
-          // Indoor toggle
-          _FilterToggle(
-            label: 'Indoor courts only',
-            subtitle: 'Covered, climate-controlled',
-            value: _indoorOnly,
-            onChanged: (v) => setState(() {
-              _indoorOnly = v;
-              if (v) _outdoorOnly = false;
-            }),
-          ),
-
-          // Outdoor toggle
-          _FilterToggle(
-            label: 'Outdoor courts only',
-            subtitle: 'Open air venues',
-            value: _outdoorOnly,
-            onChanged: (v) => setState(() {
-              _outdoorOnly = v;
-              if (v) _indoorOnly = false;
-            }),
-          ),
-
-          // Distance slider
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Max distance',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: c.text,
-                  ),
-                ),
-                Text(
-                  '${_maxDistance.toInt()} km',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.red,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: AppColors.red,
-                inactiveTrackColor: context.col.border,
-                thumbColor: AppColors.red,
-                overlayColor: AppColors.red.withValues(alpha: 0.1),
-              ),
-              child: Slider(
-                value: _maxDistance,
-                min: 1,
-                max: 20,
-                divisions: 19,
-                onChanged: (v) => setState(() => _maxDistance = v),
-              ),
-            ),
-          ),
-
-          // Apply button
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-                18, 12, 18, MediaQuery.of(context).padding.bottom + 18),
-            child: SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.red,
-                  foregroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  'Apply filters',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+              height: 54,
+              decoration: BoxDecoration(
+                color: colors.colorAccentPrimary,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                boxShadow: AppShadow.fab,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                'Apply filters',
+                style: AppTextStyles.headingS(colors.colorTextOnAccent),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1209,13 +1152,17 @@ class _FilterToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return GestureDetector(
       onTap: () => onChanged(!value),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.md),
         decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: context.col.border, width: 0.5),
+            bottom: BorderSide(
+                color: colors.colorBorderSubtle, width: 0.5),
           ),
         ),
         child: Row(
@@ -1226,18 +1173,12 @@ class _FilterToggle extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: context.col.text,
-                    ),
+                    style: AppTextStyles.bodyM(colors.colorTextPrimary),
                   ),
                   Text(
                     subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: context.col.textSec,
-                    ),
+                    style:
+                        AppTextStyles.bodyS(colors.colorTextSecondary),
                   ),
                 ],
               ),
@@ -1245,9 +1186,10 @@ class _FilterToggle extends StatelessWidget {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeThumbColor: AppColors.red,
-              inactiveThumbColor: context.col.textSec,
-              inactiveTrackColor: context.col.border,
+              activeThumbColor: colors.colorAccentPrimary,
+              activeTrackColor: colors.colorAccentPrimary.withValues(alpha: 0.5),
+              inactiveThumbColor: colors.colorTextTertiary,
+              inactiveTrackColor: colors.colorBorderSubtle,
             ),
           ],
         ),

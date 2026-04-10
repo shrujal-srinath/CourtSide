@@ -1,14 +1,17 @@
+// lib/widgets/common/app_shell.dart
+//
+// AppShell — persistent scaffold with floating pill nav + center FAB.
+//
+// Nav active indicator: accentPrimary dot BELOW icon (not filled pill bg).
+// Tab label: overline style, appears ONLY on active tab.
+// FAB: 52px circle, accentPrimary, AppShadow.fab glow.
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
-import '../../core/app_spacing.dart';
-
-
-// ═══════════════════════════════════════════════════════════════
-//  APP SHELL — Floating nav + center FAB
-// ═══════════════════════════════════════════════════════════════
+import 'cs_bottom_sheet.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.child});
@@ -16,7 +19,7 @@ class AppShell extends StatelessWidget {
 
   static const _tabs = [
     _TabItem(icon: Icons.home_rounded,          label: 'Feed',     path: AppRoutes.home),
-    _TabItem(icon: Icons.stadium_outlined,         label: 'Venues',   path: AppRoutes.explore),
+    _TabItem(icon: Icons.stadium_outlined,       label: 'Venues',   path: AppRoutes.explore),
     _TabItem(icon: Icons.bar_chart_rounded,      label: 'Stats',    path: AppRoutes.stats),
     _TabItem(icon: Icons.calendar_today_rounded, label: 'Bookings', path: AppRoutes.bookings),
   ];
@@ -30,9 +33,10 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentIdx = _currentIndex(context);
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: context.col.bg,
+      backgroundColor: colors.colorBackgroundPrimary,
       extendBody: true,
       body: child,
       bottomNavigationBar: _FloatingNavBar(
@@ -45,10 +49,10 @@ class AppShell extends StatelessWidget {
   }
 
   void _showQuickActions(BuildContext context) {
-    showModalBottomSheet(
+    showCsBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _QuickActionSheet(
+      showHandle: true,
+      child: _QuickActionSheet(
         onBookCourt: () {
           Navigator.pop(context);
           context.go(AppRoutes.explore);
@@ -66,10 +70,10 @@ class AppShell extends StatelessWidget {
   }
 
   void _showSportPicker(BuildContext context) {
-    showModalBottomSheet(
+    showCsBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _SportPickerSheet(
+      title: 'SELECT SPORT',
+      child: _SportPickerSheet(
         onSelectSport: (sport) {
           Navigator.pop(context);
           if (sport == 'basketball') {
@@ -100,6 +104,8 @@ class _FloatingNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return SafeArea(
       top: false,
       child: SizedBox(
@@ -107,19 +113,19 @@ class _FloatingNavBar extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // Frosted glass background strip
+            // Frosted blur backing
             Positioned.fill(
               child: ClipRect(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                   child: Container(
-                    color: context.col.bg.withValues(alpha: 0.6),
+                    color: colors.colorBackgroundPrimary.withValues(alpha: 0.6),
                   ),
                 ),
               ),
             ),
 
-            // Pill nav bar
+            // Pill nav
             Positioned(
               bottom: 12,
               left: 20,
@@ -127,19 +133,16 @@ class _FloatingNavBar extends StatelessWidget {
               child: Container(
                 height: 56,
                 decoration: BoxDecoration(
-                  color: context.col.overlay.withValues(alpha: 0.95),
+                  color: colors.colorSurfaceOverlay.withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(color: context.col.border, width: 0.5),
-                  boxShadow: AppShadow.navFor(context),
+                  border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+                  boxShadow: AppShadow.navBar,
                 ),
                 child: Row(
                   children: [
-                    // Left 2 tabs
                     _buildTab(context, 0),
                     _buildTab(context, 1),
-                    // Center gap for FAB
-                    const SizedBox(width: 56),
-                    // Right 2 tabs
+                    const SizedBox(width: 56), // FAB gap
                     _buildTab(context, 2),
                     _buildTab(context, 3),
                   ],
@@ -147,36 +150,13 @@ class _FloatingNavBar extends StatelessWidget {
               ),
             ),
 
-            // Center FAB — elevated above pill
+            // Center FAB
             Positioned(
               bottom: 18,
               left: 0,
               right: 0,
               child: Center(
-                child: GestureDetector(
-                  onTap: onFabTap,
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: AppColors.red,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        const BoxShadow(
-                          color: Color(0x99E8112D),
-                          blurRadius: 20,
-                          offset: Offset(0, 4),
-                          spreadRadius: -4,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.add_rounded,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
-                ),
+                child: _FabButton(onTap: onFabTap),
               ),
             ),
           ],
@@ -187,9 +167,10 @@ class _FloatingNavBar extends StatelessWidget {
 
   Widget _buildTab(BuildContext context, int index) {
     final selected = index == currentIndex;
-    final tab = tabs[index];
-    const accent = AppColors.red;
-    final inactive = context.col.textTer;
+    final tab      = tabs[index];
+    final colors   = context.colors;
+    final accent   = colors.colorAccentPrimary;
+    final inactive = colors.colorTextTertiary;
 
     return Expanded(
       child: GestureDetector(
@@ -198,40 +179,42 @@ class _FloatingNavBar extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedContainer(
+            // Icon
+            AnimatedScale(
+              scale: selected ? 1.1 : 1.0,
               duration: AppDuration.fast,
-              curve: Curves.easeInOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: selected
-                    ? accent.withValues(alpha: 0.12)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
               child: Icon(
                 tab.icon,
                 size: 22,
                 color: selected ? accent : inactive,
               ),
             ),
+
+            const SizedBox(height: 4),
+
+            // Label — only on active
             AnimatedSize(
               duration: AppDuration.fast,
               curve: Curves.easeInOutCubic,
               child: selected
-                  ? Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        tab.label.toUpperCase(),
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 8,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                          color: accent,
-                        ),
-                      ),
+                  ? Text(
+                      tab.label.toUpperCase(),
+                      style: AppTextStyles.overline(accent),
                     )
                   : const SizedBox.shrink(),
+            ),
+
+            const SizedBox(height: 3),
+
+            // Dot indicator
+            AnimatedContainer(
+              duration: AppDuration.fast,
+              width: selected ? 4 : 0,
+              height: selected ? 4 : 0,
+              decoration: BoxDecoration(
+                color: accent,
+                shape: BoxShape.circle,
+              ),
             ),
           ],
         ),
@@ -240,7 +223,51 @@ class _FloatingNavBar extends StatelessWidget {
   }
 }
 
-// ── Quick Action Bottom Sheet ───────────────────────────────────
+class _FabButton extends StatefulWidget {
+  const _FabButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  State<_FabButton> createState() => _FabButtonState();
+}
+
+class _FabButtonState extends State<_FabButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 80),
+        child: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: colors.colorAccentPrimary,
+            shape: BoxShape.circle,
+            boxShadow: AppShadow.fab,
+          ),
+          child: Icon(
+            Icons.add_rounded,
+            color: colors.colorTextOnAccent,
+            size: 26,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Quick Action Sheet ─────────────────────────────────────────
 
 class _QuickActionSheet extends StatelessWidget {
   const _QuickActionSheet({
@@ -255,50 +282,31 @@ class _QuickActionSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-      decoration: BoxDecoration(
-        color: context.col.overlay,
-        borderRadius: BorderRadius.circular(AppRadius.xxl),
-        border: Border.all(color: context.col.border, width: 0.5),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: context.col.border,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-          ),
-          const SizedBox(height: 24),
-          _ActionTile(
-            icon: Icons.sports_basketball_rounded,
-            label: 'Book a Court',
-            subtitle: 'Find and reserve a court near you',
-            color: AppColors.basketball,
-            onTap: onBookCourt,
-          ),
-          _ActionTile(
-            icon: Icons.scoreboard_rounded,
-            label: 'Start Scoring',
-            subtitle: 'Track live game stats',
-            color: AppColors.red,
-            onTap: onStartScoring,
-          ),
-          _ActionTile(
-            icon: Icons.group_rounded,
-            label: 'Join a Game',
-            subtitle: 'Find pickup games near you',
-            color: AppColors.cricket,
-            onTap: onJoinGame,
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _ActionTile(
+          icon: Icons.sports_basketball_rounded,
+          label: 'Book a Court',
+          subtitle: 'Find and reserve a court near you',
+          color: AppColors.basketball,
+          onTap: onBookCourt,
+        ),
+        _ActionTile(
+          icon: Icons.scoreboard_rounded,
+          label: 'Start Scoring',
+          subtitle: 'Track live game stats',
+          color: AppColors.red,
+          onTap: onStartScoring,
+        ),
+        _ActionTile(
+          icon: Icons.group_rounded,
+          label: 'Join a Game',
+          subtitle: 'Find pickup games near you',
+          color: AppColors.cricket,
+          onTap: onJoinGame,
+        ),
+      ],
     );
   }
 }
@@ -320,10 +328,14 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.md),
         child: Row(
           children: [
             Container(
@@ -335,36 +347,21 @@ class _ActionTile extends StatelessWidget {
               ),
               child: Icon(icon, color: color, size: 22),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: context.col.text,
-                    ),
-                  ),
+                  Text(label,    style: AppTextStyles.headingS(colors.colorTextPrimary)),
                   const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      color: context.col.textSec,
-                    ),
-                  ),
+                  Text(subtitle, style: AppTextStyles.bodyS(colors.colorTextSecondary)),
                 ],
               ),
             ),
             Icon(
               Icons.arrow_forward_ios_rounded,
               size: 14,
-              color: context.col.textTer,
+              color: colors.colorTextTertiary,
             ),
           ],
         ),
@@ -381,79 +378,59 @@ class _SportPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-      decoration: BoxDecoration(
-        color: context.col.overlay,
-        borderRadius: BorderRadius.circular(AppRadius.xxl),
-        border: Border.all(color: context.col.border, width: 0.5),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: context.col.border,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              'SELECT SPORT',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.4,
-                color: context.col.textSec,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _SportTile(emoji: '🏀', label: 'Basketball', onTap: () => onSelectSport('basketball')),
-          _SportTile(emoji: '🏏', label: 'Cricket',    onTap: () => onSelectSport('cricket')),
-          const SizedBox(height: 16),
-        ],
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _SportTile(
+          emoji: '🏀',
+          label: 'Basketball',
+          onTap: () => onSelectSport('basketball'),
+        ),
+        _SportTile(
+          emoji: '🏏',
+          label: 'Cricket',
+          onTap: () => onSelectSport('cricket'),
+        ),
+      ],
     );
   }
 }
 
 class _SportTile extends StatelessWidget {
-  const _SportTile({required this.emoji, required this.label, required this.onTap});
+  const _SportTile({
+    required this.emoji,
+    required this.label,
+    required this.onTap,
+  });
+
   final String emoji;
   final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.md),
         child: Row(
           children: [
             Text(emoji, style: const TextStyle(fontSize: 28)),
-            const SizedBox(width: 16),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: context.col.text,
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTextStyles.headingM(colors.colorTextPrimary),
               ),
             ),
-            const Spacer(),
             Icon(
               Icons.arrow_forward_ios_rounded,
               size: 14,
-              color: context.col.textTer,
+              color: colors.colorTextTertiary,
             ),
           ],
         ),
@@ -463,7 +440,11 @@ class _SportTile extends StatelessWidget {
 }
 
 class _TabItem {
-  const _TabItem({required this.icon, required this.label, required this.path});
+  const _TabItem({
+    required this.icon,
+    required this.label,
+    required this.path,
+  });
   final IconData icon;
   final String label;
   final String path;

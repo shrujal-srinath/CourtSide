@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
-import '../../core/app_spacing.dart';
 import '../../models/fake_data.dart';
 import '../../providers/auth_provider.dart';
 
@@ -51,26 +50,29 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
-    final topPad = MediaQuery.of(context).padding.top;
-    final user = ref.watch(currentUserProvider);
-    final name = user?.userMetadata?['full_name'] as String? ?? 'Player';
+    final colors   = context.colors;
+    final topPad   = MediaQuery.of(context).padding.top;
+    final user     = ref.watch(currentUserProvider);
+    final name     = user?.userMetadata?['full_name'] as String? ?? 'Player';
     final activeStat = _sportStats[_activeSportIdx];
 
     return Scaffold(
-      backgroundColor: c.bg,
+      backgroundColor: colors.colorBackgroundPrimary,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/stats/share', extra: activeStat),
-        backgroundColor: AppColors.red,
-        icon: const Icon(Icons.ios_share_rounded, color: Colors.white, size: 18),
+        onPressed: () =>
+            context.push('/stats/share', extra: activeStat),
+        backgroundColor: colors.colorAccentPrimary,
+        icon: Icon(Icons.ios_share_rounded,
+            color: colors.colorTextOnAccent, size: 18),
         label: Text(
           'Share Stats',
-          style: AppTextStyles.labelM(AppColors.white),
+          style: AppTextStyles.labelM(colors.colorTextOnAccent),
         ),
+        elevation: 0,
       ),
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: SizedBox(height: topPad + 8)),
+          SliverToBoxAdapter(child: SizedBox(height: topPad + AppSpacing.sm)),
 
           // ── Profile Hero Banner ──────────────────────────────
           SliverToBoxAdapter(
@@ -80,15 +82,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           // ── Win Rate Ring ────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 24, 18, 8),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.xxl,
+                  AppSpacing.lg, AppSpacing.sm),
               child: _WinRateRing(
                 winRate: activeStat.winRate,
                 animation: _ringAnimation,
-                trackColor: c.surfaceHigh,
-                surfaceColor: c.surface,
-                borderColor: c.border,
-                textColor: c.text,
-                textSecColor: c.textSec,
               ),
             ),
           ),
@@ -96,7 +95,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           // ── Sport Segmented Control ──────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.xl,
+                  AppSpacing.lg, 0),
               child: _SportSegmentedControl(
                 stats: _sportStats,
                 activeIdx: _activeSportIdx,
@@ -105,25 +106,29 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             ),
           ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          const SliverToBoxAdapter(
+              child: SizedBox(height: AppSpacing.xl)),
 
           // ── Stat Grid ────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg),
               child: _StatGrid(stat: activeStat),
             ),
           ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          const SliverToBoxAdapter(
+              child: SizedBox(height: AppSpacing.xl)),
 
           // ── Performance section header ───────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
               child: Text(
                 'PERFORMANCE',
-                style: AppTextStyles.overline(c.textSec),
+                style: AppTextStyles.overline(colors.colorTextTertiary),
               ),
             ),
           ),
@@ -131,12 +136,14 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           // ── Performance Stats Card ───────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg),
               child: _PerformanceStatsCard(stat: activeStat),
             ),
           ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          const SliverToBoxAdapter(
+              child: SizedBox(height: AppSpacing.xl)),
 
           // ── Career Timeline ──────────────────────────────────
           SliverToBoxAdapter(
@@ -144,10 +151,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
                   child: Text(
                     'CAREER TIMELINE',
-                    style: AppTextStyles.overline(c.textSec),
+                    style:
+                        AppTextStyles.overline(colors.colorTextTertiary),
                   ),
                 ),
                 _CareerTimeline(
@@ -158,25 +167,29 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             ),
           ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          const SliverToBoxAdapter(
+              child: SizedBox(height: AppSpacing.xl)),
 
           // ── Streak Card ──────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg),
               child: const _StreakCard(),
             ),
           ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          const SliverToBoxAdapter(
+              child: SizedBox(height: AppSpacing.xl)),
 
           // ── Recent Games header ──────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
               child: Text(
                 'RECENT GAMES',
-                style: AppTextStyles.overline(c.textSec),
+                style: AppTextStyles.overline(colors.colorTextTertiary),
               ),
             ),
           ),
@@ -188,11 +201,13 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                 final games = _recentGames(activeStat.sport);
                 if (i >= games.length) return null;
                 return Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm + 2),
                   child: _RecentGameCard(
                     booking: games[i],
-                    onShare: () =>
-                        context.push('/stats/share', extra: activeStat),
+                    onShare: () => context.push(
+                        '/stats/share',
+                        extra: activeStat),
                   ),
                 );
               },
@@ -209,7 +224,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   List<BookingRecord> _recentGames(String sport) =>
       FakeData.bookingHistory
           .where((b) =>
-              b.sport == sport && b.status == BookingStatus.completed)
+              b.sport == sport &&
+              b.status == BookingStatus.completed)
           .toList();
 }
 
@@ -222,20 +238,24 @@ class _ProfileHeroBanner extends StatelessWidget {
 
   String get _initials {
     final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
     return parts[0][0].toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
+    final colors = context.colors;
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 18),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       height: 200,
       decoration: BoxDecoration(
-        gradient: c.gradProfile,
+        color: colors.colorSurfacePrimary,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: c.border, width: 0.5),
+        border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+        boxShadow: AppShadow.card,
       ),
       child: Stack(
         children: [
@@ -246,17 +266,20 @@ class _ProfileHeroBanner extends StatelessWidget {
             child: Container(
               width: 180,
               height: 180,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [Color(0x33E8112D), Colors.transparent],
+                  colors: [
+                    colors.colorAccentSubtle,
+                    colors.colorAccentSubtle.withValues(alpha: 0)
+                  ],
                 ),
               ),
             ),
           ),
           // Content
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -269,43 +292,49 @@ class _ProfileHeroBanner extends StatelessWidget {
                       height: 72,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.red.withValues(alpha: 0.15),
-                        border: Border.all(color: AppColors.red, width: 2),
+                        color: colors.colorAccentSubtle,
+                        border: Border.all(
+                            color: colors.colorAccentPrimary, width: 2),
                       ),
                       child: Center(
                         child: Text(
                           _initials,
-                          style: AppTextStyles.displayM(AppColors.red),
+                          style: AppTextStyles.displayM(
+                              colors.colorAccentPrimary),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 6),
+                          const SizedBox(height: AppSpacing.sm),
                           Text(
                             name,
-                            style: AppTextStyles.displayS(c.text).copyWith(
-                              letterSpacing: -0.5,
-                            ),
+                            style: AppTextStyles.displayS(
+                                    colors.colorTextPrimary)
+                                .copyWith(letterSpacing: -0.5),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: AppSpacing.sm),
                           // THE BOX VERIFIED badge
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
+                                horizontal: AppSpacing.sm,
+                                vertical: AppSpacing.xs),
                             decoration: BoxDecoration(
-                              color: AppColors.red.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(6),
+                              color: colors.colorAccentSubtle,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.sm),
                               border: Border.all(
-                                  color: AppColors.red.withValues(alpha: 0.4),
+                                  color: colors.colorAccentPrimary
+                                      .withValues(alpha: 0.4),
                                   width: 0.5),
                             ),
                             child: Text(
                               'THE BOX VERIFIED',
-                              style: AppTextStyles.overline(AppColors.red),
+                              style: AppTextStyles.overline(
+                                  colors.colorAccentPrimary),
                             ),
                           ),
                         ],
@@ -319,16 +348,20 @@ class _ProfileHeroBanner extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: stats.map((s) {
-                      final color = _sportColor(s.sport);
+                      final color = _sportColor(s.sport, colors);
                       return Container(
-                        margin: const EdgeInsets.only(right: 8),
+                        margin:
+                            const EdgeInsets.only(right: AppSpacing.sm),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
+                            horizontal: AppSpacing.sm + 2,
+                            vertical: AppSpacing.xs + 1),
                         decoration: BoxDecoration(
                           color: color.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.pill),
                           border: Border.all(
-                              color: color.withValues(alpha: 0.3), width: 0.5),
+                              color: color.withValues(alpha: 0.3),
+                              width: 0.5),
                         ),
                         child: Text(
                           '${_sportEmoji(s.sport)} ${_capitalize(s.sport)}',
@@ -346,21 +379,21 @@ class _ProfileHeroBanner extends StatelessWidget {
     );
   }
 
-  Color _sportColor(String sport) {
+  Color _sportColor(String sport, AppColorScheme colors) {
     switch (sport) {
-      case 'basketball': return AppColors.basketball;
-      case 'cricket': return AppColors.cricket;
-      case 'badminton': return AppColors.badminton;
-      default: return AppColors.football;
+      case 'basketball': return colors.colorSportBasketball;
+      case 'cricket':    return colors.colorSportCricket;
+      case 'badminton':  return colors.colorSportBadminton;
+      default:           return colors.colorSportFootball;
     }
   }
 
   String _sportEmoji(String sport) {
     switch (sport) {
       case 'basketball': return '🏀';
-      case 'cricket': return '🏏';
-      case 'badminton': return '🏸';
-      default: return '⚽';
+      case 'cricket':    return '🏏';
+      case 'badminton':  return '🏸';
+      default:           return '⚽';
     }
   }
 
@@ -374,30 +407,22 @@ class _WinRateRing extends StatelessWidget {
   const _WinRateRing({
     required this.winRate,
     required this.animation,
-    required this.trackColor,
-    required this.surfaceColor,
-    required this.borderColor,
-    required this.textColor,
-    required this.textSecColor,
   });
   final double winRate;
   final Animation<double> animation;
-  final Color trackColor;
-  final Color surfaceColor;
-  final Color borderColor;
-  final Color textColor;
-  final Color textSecColor;
 
   @override
   Widget build(BuildContext context) {
-    final pct = (winRate * 100).toStringAsFixed(0);
+    final colors = context.colors;
+    final pct    = (winRate * 100).toStringAsFixed(0);
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       decoration: BoxDecoration(
-        color: surfaceColor,
+        color: colors.colorSurfacePrimary,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: borderColor, width: 0.5),
-        boxShadow: AppShadow.cardFor(context),
+        border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+        boxShadow: AppShadow.card,
       ),
       child: Row(
         children: [
@@ -410,8 +435,8 @@ class _WinRateRing extends StatelessWidget {
                 child: CustomPaint(
                   painter: _RingPainter(
                     progress: animation.value * winRate,
-                    trackColor: trackColor,
-                    arcColor: AppColors.red,
+                    trackColor: colors.colorSurfaceElevated,
+                    arcColor: colors.colorAccentPrimary,
                   ),
                   child: Center(
                     child: Column(
@@ -419,11 +444,13 @@ class _WinRateRing extends StatelessWidget {
                       children: [
                         Text(
                           '$pct%',
-                          style: AppTextStyles.statL(textColor),
+                          style: AppTextStyles.statL(
+                              colors.colorTextPrimary),
                         ),
                         Text(
                           'WIN RATE',
-                          style: AppTextStyles.overline(textSecColor),
+                          style: AppTextStyles.overline(
+                              colors.colorTextTertiary),
                         ),
                       ],
                     ),
@@ -432,23 +459,29 @@ class _WinRateRing extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(width: 24),
+          const SizedBox(width: AppSpacing.xxl),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Overall Rating', style: AppTextStyles.headingS(textSecColor)),
-                const SizedBox(height: 8),
+                Text('Overall Rating',
+                    style: AppTextStyles.headingS(
+                        colors.colorTextSecondary)),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
-                  winRate >= 0.7 ? 'Elite' : winRate >= 0.5 ? 'Good' : 'Developing',
-                  style: AppTextStyles.displayS(textColor),
+                  winRate >= 0.7
+                      ? 'Elite'
+                      : winRate >= 0.5
+                          ? 'Good'
+                          : 'Developing',
+                  style: AppTextStyles.displayS(colors.colorTextPrimary),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 Text(
                   winRate >= 0.7
                       ? 'Top tier performance. Keep dominating.'
                       : 'Keep playing to improve your record.',
-                  style: AppTextStyles.bodyS(textSecColor),
+                  style: AppTextStyles.bodyS(colors.colorTextSecondary),
                 ),
               ],
             ),
@@ -520,20 +553,21 @@ class _SportSegmentedControl extends StatelessWidget {
 
   static const _icons = {
     'basketball': '🏀',
-    'cricket': '🏏',
-    'badminton': '🏸',
-    'football': '⚽',
+    'cricket':    '🏏',
+    'badminton':  '🏸',
+    'football':   '⚽',
   };
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
+    final colors = context.colors;
+
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: c.surface,
+        color: colors.colorSurfacePrimary,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: c.border, width: 0.5),
+        border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
       ),
       child: Stack(
         children: [
@@ -541,15 +575,17 @@ class _SportSegmentedControl extends StatelessWidget {
           AnimatedPositioned(
             duration: AppDuration.fast,
             curve: Curves.easeInOutCubic,
-            left: activeIdx * (MediaQuery.of(context).size.width - 36) /
+            left: activeIdx *
+                (MediaQuery.of(context).size.width - 36) /
                 stats.length,
             top: 4,
             bottom: 4,
-            width: (MediaQuery.of(context).size.width - 36) / stats.length,
+            width: (MediaQuery.of(context).size.width - 36) /
+                stats.length,
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 3),
               decoration: BoxDecoration(
-                color: AppColors.red,
+                color: colors.colorAccentPrimary,
                 borderRadius: BorderRadius.circular(AppRadius.lg),
               ),
             ),
@@ -567,7 +603,9 @@ class _SportSegmentedControl extends StatelessWidget {
                     child: Text(
                       '${_icons[s.sport] ?? ''} ${_capitalize(s.sport)}',
                       style: AppTextStyles.labelM(
-                        active ? AppColors.white : c.textSec,
+                        active
+                            ? colors.colorTextOnAccent
+                            : colors.colorTextSecondary,
                       ),
                     ),
                   ),
@@ -595,20 +633,14 @@ class _StatGrid extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _StatCell(
-            value: '${stat.gamesPlayed}',
-            label: 'GAMES',
-          ),
+          child: _StatCell(value: '${stat.gamesPlayed}', label: 'GAMES'),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppSpacing.sm + 2),
         Expanded(
           child: _StatCell(
-            value: '${stat.wins}',
-            label: 'WINS',
-            accent: true,
-          ),
+              value: '${stat.wins}', label: 'WINS', accent: true),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppSpacing.sm + 2),
         Expanded(
           child: _StatCell(
             value: '${(stat.winRate * 100).toStringAsFixed(0)}%',
@@ -633,21 +665,22 @@ class _StatCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
+    final colors = context.colors;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: accent
-            ? AppColors.red.withValues(alpha: 0.1)
-            : c.surface,
+            ? colors.colorAccentSubtle
+            : colors.colorSurfacePrimary,
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(
           color: accent
-              ? AppColors.red.withValues(alpha: 0.3)
-              : c.border,
+              ? colors.colorAccentPrimary.withValues(alpha: 0.3)
+              : colors.colorBorderSubtle,
           width: 0.5,
         ),
-        boxShadow: accent ? [] : AppShadow.cardFor(context),
+        boxShadow: accent ? [] : AppShadow.card,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -655,13 +688,15 @@ class _StatCell extends StatelessWidget {
           Text(
             value,
             style: AppTextStyles.statL(
-              accent ? AppColors.red : c.text,
+              accent
+                  ? colors.colorAccentPrimary
+                  : colors.colorTextPrimary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             label,
-            style: AppTextStyles.overline(c.textSec),
+            style: AppTextStyles.overline(colors.colorTextTertiary),
           ),
         ],
       ),
@@ -677,27 +712,29 @@ class _PerformanceStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
-    final rows = _buildRows(stat);
+    final colors = context.colors;
+    final rows   = _buildRows(stat);
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
+        crossAxisSpacing: AppSpacing.sm + 2,
+        mainAxisSpacing: AppSpacing.sm + 2,
         childAspectRatio: 1.6,
       ),
       itemCount: rows.length,
       itemBuilder: (_, i) {
         final row = rows[i];
         return Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: c.surface,
+            color: colors.colorSurfacePrimary,
             borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: c.border, width: 0.5),
-            boxShadow: AppShadow.cardFor(context),
+            border: Border.all(
+                color: colors.colorBorderSubtle, width: 0.5),
+            boxShadow: AppShadow.card,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -705,12 +742,13 @@ class _PerformanceStatsCard extends StatelessWidget {
             children: [
               Text(
                 row.value,
-                style: AppTextStyles.statM(c.text),
+                style: AppTextStyles.statM(colors.colorTextPrimary),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 row.key.toUpperCase(),
-                style: AppTextStyles.overline(c.textSec),
+                style:
+                    AppTextStyles.overline(colors.colorTextTertiary),
               ),
             ],
           ),
@@ -726,8 +764,10 @@ class _PerformanceStatsCard extends StatelessWidget {
         MapEntry('Rebounds / game', '${s.stats['rpg']}'),
         MapEntry('Assists / game', '${s.stats['apg']}'),
         MapEntry('Steals / game', '${s.stats['spg']}'),
-        MapEntry('FG %', '${((s.stats['fg_pct'] as double) * 100).toStringAsFixed(1)}%'),
-        MapEntry('3PT %', '${((s.stats['three_pct'] as double) * 100).toStringAsFixed(1)}%'),
+        MapEntry('FG %',
+            '${((s.stats['fg_pct'] as double) * 100).toStringAsFixed(1)}%'),
+        MapEntry('3PT %',
+            '${((s.stats['three_pct'] as double) * 100).toStringAsFixed(1)}%'),
       ];
     } else if (s.sport == 'cricket') {
       return [
@@ -751,33 +791,35 @@ class _CareerTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
+    final colors = context.colors;
+
     if (games.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         child: Text('No games yet',
-            style: AppTextStyles.bodyM(c.textSec)),
+            style: AppTextStyles.bodyM(colors.colorTextSecondary)),
       );
     }
     return SizedBox(
       height: 100,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         itemCount: games.length,
-        separatorBuilder: (_, i) => const SizedBox(width: 10),
+        separatorBuilder: (_, _) =>
+            const SizedBox(width: AppSpacing.sm + 2),
         itemBuilder: (_, i) {
-          final b = games[i];
+          final b    = games[i];
           final isWin = i % 2 == 0;
           return Container(
             width: 80,
             decoration: BoxDecoration(
-              color: c.surface,
+              color: colors.colorSurfacePrimary,
               borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(
                 color: isWin
-                    ? AppColors.success.withValues(alpha: 0.3)
-                    : AppColors.error.withValues(alpha: 0.2),
+                    ? colors.colorSuccess.withValues(alpha: 0.3)
+                    : colors.colorError.withValues(alpha: 0.2),
                 width: 0.5,
               ),
             ),
@@ -788,19 +830,22 @@ class _CareerTimeline extends StatelessWidget {
                   sport == 'basketball' ? '🏀' : '🏏',
                   style: const TextStyle(fontSize: 22),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSpacing.sm),
                 Container(
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isWin ? AppColors.success : AppColors.error,
+                    color: isWin
+                        ? colors.colorSuccess
+                        : colors.colorError,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   b.date.split(' ').take(2).join(' '),
-                  style: AppTextStyles.overline(c.textSec),
+                  style: AppTextStyles.overline(
+                      colors.colorTextTertiary),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -819,35 +864,36 @@ class _StreakCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
+    final colors = context.colors;
     const heights = [0.4, 0.7, 0.5, 1.0, 0.8, 0.6, 0.9];
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.08),
+        color: colors.colorWarning.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppRadius.xl),
         border: Border.all(
-          color: AppColors.warning.withValues(alpha: 0.2), width: 0.5),
+            color: colors.colorWarning.withValues(alpha: 0.2),
+            width: 0.5),
       ),
       child: Row(
         children: [
           const Text('🔥', style: TextStyle(fontSize: 32)),
-          const SizedBox(width: 14),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   '7 Week Streak',
-                  style: AppTextStyles.displayS(c.text),
+                  style: AppTextStyles.displayS(colors.colorTextPrimary),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   'Played every week for 7 weeks.',
-                  style: AppTextStyles.bodyS(c.textSec),
+                  style: AppTextStyles.bodyS(colors.colorTextSecondary),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 Row(
                   children: List.generate(7, (i) {
                     return Expanded(
@@ -855,8 +901,8 @@ class _StreakCard extends StatelessWidget {
                         margin: const EdgeInsets.symmetric(horizontal: 2),
                         height: 24 * heights[i],
                         decoration: BoxDecoration(
-                          color: AppColors.warning
-                              .withValues(alpha: 0.3 + heights[i] * 0.5),
+                          color: colors.colorWarning.withValues(
+                              alpha: 0.3 + heights[i] * 0.5),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -879,25 +925,18 @@ class _RecentGameCard extends StatelessWidget {
   final BookingRecord booking;
   final VoidCallback onShare;
 
-  Color _sportColor(String sport) {
-    switch (sport) {
-      case 'basketball': return AppColors.basketball;
-      case 'cricket': return AppColors.cricket;
-      default: return AppColors.red;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
-    final color = _sportColor(booking.sport);
+    final colors = context.colors;
+    final color  = _sportColor(booking.sport, colors);
 
     return Container(
       decoration: BoxDecoration(
-        color: c.surface,
+        color: colors.colorSurfacePrimary,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: c.border, width: 0.5),
-        boxShadow: AppShadow.cardFor(context),
+        border: Border.all(
+            color: colors.colorBorderSubtle, width: 0.5),
+        boxShadow: AppShadow.card,
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -913,12 +952,13 @@ class _RecentGameCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: AppSpacing.md),
             // Sport icon
             Container(
               width: 40,
               height: 40,
-              margin: const EdgeInsets.symmetric(vertical: 14),
+              margin: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.md),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppRadius.md),
@@ -930,24 +970,27 @@ class _RecentGameCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             // Info
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       booking.venueName,
-                      style: AppTextStyles.headingS(c.text),
+                      style: AppTextStyles.headingS(
+                          colors.colorTextPrimary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
                     Text(
                       booking.date,
-                      style: AppTextStyles.bodyS(c.textSec),
+                      style: AppTextStyles.bodyS(
+                          colors.colorTextSecondary),
                     ),
                   ],
                 ),
@@ -958,29 +1001,41 @@ class _RecentGameCard extends StatelessWidget {
               GestureDetector(
                 onTap: onShare,
                 child: Container(
-                  margin: const EdgeInsets.all(14),
+                  margin: const EdgeInsets.all(AppSpacing.md),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 6),
+                      horizontal: AppSpacing.sm + 2,
+                      vertical: AppSpacing.sm - 2),
                   decoration: BoxDecoration(
-                    color: AppColors.red.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    color: colors.colorAccentSubtle,
+                    borderRadius:
+                        BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.ios_share_rounded,
-                          size: 12, color: AppColors.red),
-                      const SizedBox(width: 4),
+                      Icon(Icons.ios_share_rounded,
+                          size: 12,
+                          color: colors.colorAccentPrimary),
+                      const SizedBox(width: AppSpacing.xs),
                       Text('Share',
-                          style: AppTextStyles.labelS(AppColors.red)),
+                          style: AppTextStyles.labelS(
+                              colors.colorAccentPrimary)),
                     ],
                   ),
                 ),
               ),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppSpacing.xs),
           ],
         ),
       ),
     );
+  }
+
+  Color _sportColor(String sport, AppColorScheme colors) {
+    switch (sport) {
+      case 'basketball': return colors.colorSportBasketball;
+      case 'cricket':    return colors.colorSportCricket;
+      default:           return colors.colorAccentPrimary;
+    }
   }
 }

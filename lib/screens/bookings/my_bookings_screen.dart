@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
-import '../../core/app_spacing.dart';
 import '../../models/fake_data.dart';
 
 class MyBookingsScreen extends StatefulWidget {
@@ -38,11 +37,11 @@ class _BookingsScreenState extends State<MyBookingsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
+    final colors = context.colors;
     final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: c.bg,
+      backgroundColor: colors.colorBackgroundPrimary,
       body: Column(
         children: [
           SizedBox(height: topPad),
@@ -50,28 +49,32 @@ class _BookingsScreenState extends State<MyBookingsScreen>
           // ── Header ────────────────────────────────────────────
           Container(
             decoration: BoxDecoration(
-              gradient: c.gradBrand,
+              color: colors.colorBackgroundPrimary,
               border: Border(
-                bottom: BorderSide(color: c.border, width: 0.5),
+                bottom: BorderSide(
+                    color: colors.colorBorderSubtle, width: 0.5),
               ),
             ),
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, AppSpacing.lg,
+                AppSpacing.lg, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Bookings',
-                  style: AppTextStyles.displayS(c.text),
+                  style: AppTextStyles.displayS(colors.colorTextPrimary),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
 
                 // Custom segmented control
                 Container(
                   height: 42,
                   decoration: BoxDecoration(
-                    color: c.surface,
+                    color: colors.colorSurfacePrimary,
                     borderRadius: BorderRadius.circular(AppRadius.xl),
-                    border: Border.all(color: c.border, width: 0.5),
+                    border: Border.all(
+                        color: colors.colorBorderSubtle, width: 0.5),
                   ),
                   child: Stack(
                     children: [
@@ -81,15 +84,19 @@ class _BookingsScreenState extends State<MyBookingsScreen>
                         curve: Curves.easeInOutCubic,
                         left: _tab.index == 0
                             ? 4
-                            : (MediaQuery.of(context).size.width - 36) / 2 + 4,
+                            : (MediaQuery.of(context).size.width - 36) /
+                                    2 +
+                                4,
                         top: 4,
                         bottom: 4,
-                        width:
-                            (MediaQuery.of(context).size.width - 36) / 2 - 8,
+                        width: (MediaQuery.of(context).size.width - 36) /
+                                2 -
+                            8,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: AppColors.red,
-                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            color: colors.colorAccentPrimary,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.lg),
                           ),
                         ),
                       ),
@@ -105,8 +112,8 @@ class _BookingsScreenState extends State<MyBookingsScreen>
                                   'Upcoming',
                                   style: AppTextStyles.labelM(
                                     _tab.index == 0
-                                        ? AppColors.white
-                                        : c.textSec,
+                                        ? colors.colorTextOnAccent
+                                        : colors.colorTextSecondary,
                                   ),
                                 ),
                               ),
@@ -121,8 +128,8 @@ class _BookingsScreenState extends State<MyBookingsScreen>
                                   'Past',
                                   style: AppTextStyles.labelM(
                                     _tab.index == 1
-                                        ? AppColors.white
-                                        : c.textSec,
+                                        ? colors.colorTextOnAccent
+                                        : colors.colorTextSecondary,
                                   ),
                                 ),
                               ),
@@ -134,7 +141,7 @@ class _BookingsScreenState extends State<MyBookingsScreen>
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
               ],
             ),
           ),
@@ -152,7 +159,8 @@ class _BookingsScreenState extends State<MyBookingsScreen>
                 _BookingList(
                   bookings: _past,
                   emptyTitle: 'No past bookings',
-                  emptySubtitle: 'Your booking history will appear here',
+                  emptySubtitle:
+                      'Your booking history will appear here',
                 ),
               ],
             ),
@@ -178,11 +186,11 @@ class _BookingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
+    final colors = context.colors;
     if (bookings.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(AppSpacing.xxxl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -190,35 +198,45 @@ class _BookingList extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: c.surfaceHigh,
+                  color: colors.colorSurfaceElevated,
                   borderRadius: BorderRadius.circular(AppRadius.xl),
-                  border: Border.all(color: c.border, width: 0.5),
+                  border: Border.all(
+                      color: colors.colorBorderSubtle, width: 0.5),
                 ),
                 child: const Center(
                   child: Text('📋', style: TextStyle(fontSize: 36)),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.xl),
               Text(
                 emptyTitle,
-                style: AppTextStyles.displayS(c.text),
+                style: AppTextStyles.displayS(colors.colorTextPrimary),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 emptySubtitle,
-                style: AppTextStyles.bodyM(c.textSec),
+                style: AppTextStyles.bodyM(colors.colorTextSecondary),
                 textAlign: TextAlign.center,
               ),
               if (onBookNow != null) ...[
-                const SizedBox(height: 28),
+                const SizedBox(height: AppSpacing.xxl + 4),
                 SizedBox(
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
                     onPressed: onBookNow,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colors.colorAccentPrimary,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.pill),
+                      ),
+                    ),
                     child: Text(
                       'Book a Court',
-                      style: AppTextStyles.headingS(AppColors.white),
+                      style: AppTextStyles.headingS(
+                          colors.colorTextOnAccent),
                     ),
                   ),
                 ),
@@ -230,10 +248,11 @@ class _BookingList extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: bookings.length,
-      separatorBuilder: (c, i) => const SizedBox(height: 10),
-      itemBuilder: (c, i) => _BookingCard(booking: bookings[i]),
+      separatorBuilder: (_, _) =>
+          const SizedBox(height: AppSpacing.sm + 2),
+      itemBuilder: (_, i) => _BookingCard(booking: bookings[i]),
     );
   }
 }
@@ -244,15 +263,9 @@ class _BookingCard extends StatelessWidget {
 
   static const _sportIcons = {
     'basketball': '🏀',
-    'cricket': '🏏',
-    'badminton': '🏸',
-    'football': '⚽',
-  };
-
-  static const _statusColors = {
-    BookingStatus.upcoming:  AppColors.info,
-    BookingStatus.completed: AppColors.success,
-    BookingStatus.cancelled: AppColors.error,
+    'cricket':    '🏏',
+    'badminton':  '🏸',
+    'football':   '⚽',
   };
 
   static const _statusLabels = {
@@ -261,26 +274,34 @@ class _BookingCard extends StatelessWidget {
     BookingStatus.cancelled: 'Cancelled',
   };
 
-  Color _sportColor(String sport) {
+  Color _statusColor(BookingStatus status, AppColorScheme colors) {
+    switch (status) {
+      case BookingStatus.upcoming:  return colors.colorInfo;
+      case BookingStatus.completed: return colors.colorSuccess;
+      case BookingStatus.cancelled: return colors.colorError;
+    }
+  }
+
+  Color _sportColor(String sport, AppColorScheme colors) {
     switch (sport) {
-      case 'basketball': return AppColors.basketball;
-      case 'cricket': return AppColors.cricket;
-      default: return AppColors.red;
+      case 'basketball': return colors.colorSportBasketball;
+      case 'cricket':    return colors.colorSportCricket;
+      default:           return colors.colorAccentPrimary;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final c = context.col;
-    final statusColor = _statusColors[booking.status]!;
-    final sportColor = _sportColor(booking.sport);
+    final colors = context.colors;
+    final statusColor = _statusColor(booking.status, colors);
+    final sportColor  = _sportColor(booking.sport, colors);
 
     return Container(
       decoration: BoxDecoration(
-        color: c.surface,
+        color: colors.colorSurfacePrimary,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: c.border, width: 0.5),
-        boxShadow: AppShadow.cardFor(context),
+        border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+        boxShadow: AppShadow.card,
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -299,7 +320,7 @@ class _BookingCard extends StatelessWidget {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -311,7 +332,8 @@ class _BookingCard extends StatelessWidget {
                           height: 40,
                           decoration: BoxDecoration(
                             color: sportColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.md),
                           ),
                           child: Center(
                             child: Text(
@@ -320,21 +342,23 @@ class _BookingCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: AppSpacing.sm + 2),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 booking.venueName,
-                                style: AppTextStyles.headingS(c.text),
+                                style: AppTextStyles.headingS(
+                                    colors.colorTextPrimary),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 '${booking.date}  ·  ${booking.timeSlot}',
-                                style: AppTextStyles.bodyS(c.textSec),
+                                style: AppTextStyles.bodyS(
+                                    colors.colorTextSecondary),
                               ),
                             ],
                           ),
@@ -342,10 +366,12 @@ class _BookingCard extends StatelessWidget {
                         // Status badge
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                              horizontal: AppSpacing.sm,
+                              vertical: AppSpacing.xs),
                           decoration: BoxDecoration(
                             color: statusColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.sm),
                           ),
                           child: Text(
                             _statusLabels[booking.status]!,
@@ -355,75 +381,89 @@ class _BookingCard extends StatelessWidget {
                       ],
                     ),
 
-                    const SizedBox(height: 12),
-                    Container(height: 0.5, color: c.borderMuted),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.md),
+                    Container(
+                        height: 0.5,
+                        color: colors.colorBorderMedium),
+                    const SizedBox(height: AppSpacing.sm + 2),
 
                     Row(
                       children: [
-                        // Amount
                         Text(
                           '₹${booking.amount}',
-                          style: AppTextStyles.statM(c.text),
+                          style: AppTextStyles.statM(
+                              colors.colorTextPrimary),
                         ),
                         const Spacer(),
 
-                        // Actions
-                        if (booking.status == BookingStatus.upcoming) ...[
+                        if (booking.status ==
+                            BookingStatus.upcoming) ...[
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
+                                horizontal: AppSpacing.md,
+                                vertical: AppSpacing.xs + 3),
                             decoration: BoxDecoration(
-                              color: c.surfaceHigh,
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                              border: Border.all(color: c.border, width: 0.5),
+                              color: colors.colorSurfaceElevated,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.md),
+                              border: Border.all(
+                                  color: colors.colorBorderSubtle,
+                                  width: 0.5),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.qr_code_rounded,
-                                    size: 12, color: c.textSec),
-                                const SizedBox(width: 4),
-                                Text('QR',
-                                    style: AppTextStyles.labelS(c.textSec)),
+                                    size: 14,
+                                    color: colors.colorTextSecondary),
+                                const SizedBox(width: 5),
+                                Text('QR Code',
+                                    style: AppTextStyles.labelM(
+                                        colors.colorTextSecondary)),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppSpacing.sm),
                           GestureDetector(
                             onTap: () {},
                             child: Text(
                               'Cancel',
-                              style: AppTextStyles.labelM(AppColors.error),
+                              style: AppTextStyles.labelM(
+                                  colors.colorError),
                             ),
                           ),
                         ],
 
-                        if (booking.hasStats && booking.status == BookingStatus.completed) ...[
+                        if (booking.hasStats &&
+                            booking.status ==
+                                BookingStatus.completed) ...[
                           GestureDetector(
                             onTap: () => context.push('/stats'),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.bar_chart_rounded,
-                                    color: AppColors.red, size: 14),
-                                const SizedBox(width: 4),
-                                Text('View',
-                                    style: AppTextStyles.labelM(AppColors.red)),
+                                Icon(Icons.bar_chart_rounded,
+                                    color: colors.colorAccentPrimary,
+                                    size: 16),
+                                const SizedBox(width: 5),
+                                Text('Stats',
+                                    style: AppTextStyles.labelM(
+                                        colors.colorAccentPrimary)),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: AppSpacing.md),
                           GestureDetector(
                             onTap: () => context.push('/stats/share'),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.ios_share_rounded,
-                                    color: AppColors.red, size: 14),
-                                const SizedBox(width: 4),
+                                Icon(Icons.ios_share_rounded,
+                                    color: colors.colorInfo, size: 16),
+                                const SizedBox(width: 5),
                                 Text('Share',
-                                    style: AppTextStyles.labelM(AppColors.red)),
+                                    style: AppTextStyles.labelM(
+                                        colors.colorInfo)),
                               ],
                             ),
                           ),

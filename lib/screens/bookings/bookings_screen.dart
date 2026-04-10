@@ -92,13 +92,13 @@ class _BookingScreenState extends State<BookingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Book a slot',
-                        style: GoogleFonts.syne(
+                        style: GoogleFonts.barlow(
                           fontSize: 17, fontWeight: FontWeight.w700,
                           color: AppColors.white,
                         ),
                       ),
                       Text('${_venue!.name} · ${_court!.name}',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.dmSans(
                           fontSize: 12, color: AppColors.textSecondaryDark),
                       ),
                     ],
@@ -119,7 +119,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
                     child: Text('Select date',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.dmSans(
                         fontSize: 11, fontWeight: FontWeight.w600,
                         color: AppColors.textSecondaryDark,
                         letterSpacing: 0.5,
@@ -132,7 +132,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 18),
                       itemCount: 7,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (_, i) {
                         final date = DateTime.now().add(Duration(days: i));
                         final active = date.day == _selectedDate.day &&
@@ -159,7 +159,7 @@ class _BookingScreenState extends State<BookingScreen> {
                               ),
                             ),
                             child: Text(_formatDate(date),
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.dmSans(
                                 fontSize: 13, fontWeight: FontWeight.w600,
                                 color: active
                                     ? AppColors.white
@@ -176,7 +176,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(18, 20, 18, 8),
                     child: Text('Available slots',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.dmSans(
                         fontSize: 11, fontWeight: FontWeight.w600,
                         color: AppColors.textSecondaryDark,
                         letterSpacing: 0.5,
@@ -246,14 +246,14 @@ class _BookingScreenState extends State<BookingScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(slot.startTime,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.dmSans(
                                     fontSize: 12, fontWeight: FontWeight.w600,
                                     color: textColor,
                                   ),
                                 ),
                                 if (booked)
                                   Text('Booked',
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.dmSans(
                                       fontSize: 9,
                                       color: AppColors.textSecondaryDark,
                                     ),
@@ -310,12 +310,12 @@ class _BookingScreenState extends State<BookingScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('${_selectedSlots.length} slot${_selectedSlots.length > 1 ? 's' : ''}  ·  ${_court!.slotDurationMin * _selectedSlots.length} min',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.dmSans(
                             fontSize: 12,
                             color: AppColors.textSecondaryDark),
                         ),
                         Text('₹$_totalAmount',
-                          style: GoogleFonts.syne(
+                          style: GoogleFonts.barlow(
                             fontSize: 22, fontWeight: FontWeight.w700,
                             color: AppColors.white,
                           ),
@@ -333,7 +333,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text('Confirm booking',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.dmSans(
                           fontSize: 14, fontWeight: FontWeight.w700,
                           color: AppColors.white,
                         ),
@@ -388,14 +388,14 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
               const SizedBox(height: 16),
               Text('Booking confirmed!',
-                style: GoogleFonts.syne(
+                style: GoogleFonts.barlow(
                   fontSize: 20, fontWeight: FontWeight.w700,
                   color: AppColors.white,
                 ),
               ),
               const SizedBox(height: 8),
               Text('${_venue!.name}\n${_selectedSlots.length} slot${_selectedSlots.length > 1 ? 's' : ''} · ₹$_totalAmount',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.dmSans(
                   fontSize: 14, color: AppColors.textSecondaryDark,
                   height: 1.5,
                 ),
@@ -446,7 +446,7 @@ class _Legend extends StatelessWidget {
         ),
         const SizedBox(width: 5),
         Text(label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.dmSans(
             fontSize: 11, color: AppColors.textSecondaryDark),
         ),
       ],
@@ -495,7 +495,7 @@ class _ConfirmSheet extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Confirm booking',
-                  style: GoogleFonts.syne(
+                  style: GoogleFonts.barlow(
                     fontSize: 18, fontWeight: FontWeight.w700,
                     color: AppColors.white,
                   ),
@@ -512,13 +512,13 @@ class _ConfirmSheet extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Total',
-                      style: GoogleFonts.syne(
+                      style: GoogleFonts.barlow(
                         fontSize: 16, fontWeight: FontWeight.w700,
                         color: AppColors.white,
                       ),
                     ),
                     Text('₹$total',
-                      style: GoogleFonts.syne(
+                      style: GoogleFonts.barlow(
                         fontSize: 20, fontWeight: FontWeight.w700,
                         color: AppColors.white,
                       ),
@@ -555,12 +555,12 @@ class _Row extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.dmSans(
               fontSize: 13, color: AppColors.textSecondaryDark),
           ),
           Flexible(
             child: Text(value,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.dmSans(
                 fontSize: 13, fontWeight: FontWeight.w500,
                 color: AppColors.white,
               ),

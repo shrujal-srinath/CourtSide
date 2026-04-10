@@ -12,7 +12,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/theme.dart';
-import '../../core/app_spacing.dart';
 import '../../core/constants.dart';
 import '../../models/fake_data.dart';
 

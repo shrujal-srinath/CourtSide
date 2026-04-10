@@ -125,7 +125,7 @@ class _FullPanel extends StatelessWidget {
             children: [
               Text(
                 'What are you booking?',
-                style: GoogleFonts.syne(
+                style: GoogleFonts.barlow(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: AppColors.white,
@@ -136,7 +136,7 @@ class _FullPanel extends StatelessWidget {
                 onTap: onViewAll,
                 child: Text(
                   'Skip',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.dmSans(
                     fontSize: 12,
                     color: AppColors.textSecondaryDark,
                   ),
@@ -178,7 +178,7 @@ class _FullPanel extends StatelessWidget {
                 children: [
                   Text(
                     'Show all venues',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.dmSans(
                       fontSize: 13,
                       color: AppColors.textSecondaryDark,
                       fontWeight: FontWeight.w500,
@@ -243,7 +243,7 @@ class _SportTile extends StatelessWidget {
                 children: [
                   Text(
                     sport.label,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.dmSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: AppColors.white,
@@ -252,7 +252,7 @@ class _SportTile extends StatelessWidget {
                   ),
                   Text(
                     '${sport.count} near you',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.dmSans(
                       fontSize: 10,
                       color: AppColors.textSecondaryDark,
                     ),
@@ -309,7 +309,7 @@ class _CollapsedStrip extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   sport.label,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.dmSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.white,
@@ -342,7 +342,7 @@ class _CollapsedStrip extends StatelessWidget {
               ),
               child: Text(
                 'View all',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.dmSans(
                   fontSize: 12,
                   color: AppColors.textSecondaryDark,
                   fontWeight: FontWeight.w500,

@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../providers/auth_provider.dart';
@@ -45,7 +44,6 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
     setState(() { _googleLoading = true; _error = null; });
     try {
       await ref.read(authServiceProvider).signInWithGoogle();
-      // GoRouter redirect handles navigation after OAuth callback
     } catch (e) {
       setState(() => _error = 'Google sign-in failed. Try again.');
     } finally {
@@ -55,55 +53,49 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final c       = context.col;
-    final bg      = c.bg;
-    final accent  = AppColors.red;
-    final primary = c.text;
-    final muted   = c.textSec;
-    final surf    = c.surface;
-    final border  = c.border;
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: colors.colorBackgroundPrimary,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeIn,
           child: SlideTransition(
             position: _slideUp,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xxl + 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 56),
+                  const SizedBox(height: AppSpacing.section + AppSpacing.lg),
 
                   // ── Logo block ─────────────────────────────
-                  _buildLogo(accent, muted),
+                  _buildLogo(colors),
 
                   const Spacer(),
 
                   // ── Hero text ──────────────────────────────
-                  _buildHero(primary, muted),
+                  _buildHero(colors),
 
-                  const SizedBox(height: 52),
+                  const SizedBox(height: AppSpacing.section + AppSpacing.md),
 
                   // ── Buttons ────────────────────────────────
-                  _buildGoogleButton(surf, border, primary),
-                  const SizedBox(height: 12),
-                  _buildPhoneButton(accent),
+                  _buildGoogleButton(colors),
+                  const SizedBox(height: AppSpacing.md),
+                  _buildPhoneButton(colors),
 
-                  // ── Error ──────────────────────────────────
                   if (_error != null) ...[
-                    const SizedBox(height: 16),
-                    _buildError(_error!),
+                    const SizedBox(height: AppSpacing.lg),
+                    _buildError(_error!, colors),
                   ],
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: AppSpacing.xxxl),
 
                   // ── Sign in link ───────────────────────────
-                  _buildSignInLink(muted, accent),
+                  _buildSignInLink(colors),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: AppSpacing.section),
                 ],
               ),
             ),
@@ -113,95 +105,70 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
     );
   }
 
-  // ── Logo ───────────────────────────────────────────────────
-  Widget _buildLogo(Color accent, Color muted) {
+  Widget _buildLogo(AppColorScheme colors) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'COURTSIDE',
-          style: GoogleFonts.syne(
-            fontSize: 30,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-            color: accent,
-          ),
+          style: AppTextStyles.displayS(colors.colorAccentPrimary),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           'BY THE BOX',
-          style: GoogleFonts.inter(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.22 * 10,
-            color: muted,
-          ),
+          style: AppTextStyles.overline(colors.colorTextTertiary),
         ),
       ],
     );
   }
 
-  // ── Hero ───────────────────────────────────────────────────
-  Widget _buildHero(Color primary, Color muted) {
+  Widget _buildHero(AppColorScheme colors) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Book the Court.\nOwn the Stats.',
-          style: GoogleFonts.syne(
-            fontSize: 38,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -1,
-            color: primary,
-            height: 1.1,
-          ),
+          style: AppTextStyles.displayL(colors.colorTextPrimary),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.md + 2),
         Text(
           'Your verified game stats, court bookings\nand player rank — all in one place.',
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            color: muted,
-            height: 1.55,
-          ),
+          style: AppTextStyles.bodyL(colors.colorTextSecondary),
         ),
       ],
     );
   }
 
-  // ── Google button ──────────────────────────────────────────
-  Widget _buildGoogleButton(Color surf, Color border, Color primary) {
+  Widget _buildGoogleButton(AppColorScheme colors) {
     return GestureDetector(
       onTap: _googleLoading ? null : _signInWithGoogle,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+        duration: AppDuration.fast,
         height: 54,
         decoration: BoxDecoration(
-          color: surf,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: border, width: 0.5),
+          color: colors.colorSurfaceElevated,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+              color: colors.colorBorderSubtle, width: 0.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (_googleLoading)
               SizedBox(
-                width: 20, height: 20,
+                width: 20,
+                height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: primary,
+                  color: colors.colorTextPrimary,
                 ),
               )
             else ...[
               _GoogleIcon(),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Text(
                 'Continue with Google',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: primary,
-                ),
+                style: AppTextStyles.headingS(colors.colorTextPrimary),
               ),
             ],
           ],
@@ -210,28 +177,24 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
     );
   }
 
-  // ── Phone button ───────────────────────────────────────────
-  Widget _buildPhoneButton(Color accent) {
+  Widget _buildPhoneButton(AppColorScheme colors) {
     return GestureDetector(
       onTap: () => context.go(AppRoutes.phoneAuth),
       child: Container(
         height: 54,
         decoration: BoxDecoration(
-          color: accent,
-          borderRadius: BorderRadius.circular(14),
+          color: colors.colorAccentPrimary,
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.phone_rounded, color: Colors.white, size: 20),
-            const SizedBox(width: 10),
+            Icon(Icons.phone_rounded,
+                color: colors.colorTextOnAccent, size: 20),
+            const SizedBox(width: AppSpacing.sm + 2),
             Text(
               'Continue with Phone',
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+              style: AppTextStyles.headingS(colors.colorTextOnAccent),
             ),
           ],
         ),
@@ -239,44 +202,36 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────
-  Widget _buildError(String message) {
+  Widget _buildError(String message, AppColorScheme colors) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md + 2, vertical: AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
+        color: colors.colorError.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: AppColors.error.withValues(alpha: 0.3),
-          width: 0.5,
-        ),
+            color: colors.colorError.withValues(alpha: 0.3), width: 0.5),
       ),
-      child: Text(
-        message,
-        style: GoogleFonts.inter(fontSize: 13, color: AppColors.error),
-      ),
+      child: Text(message, style: AppTextStyles.bodyS(colors.colorError)),
     );
   }
 
-  // ── Sign in link ───────────────────────────────────────────
-  Widget _buildSignInLink(Color muted, Color accent) {
+  Widget _buildSignInLink(AppColorScheme colors) {
     return Center(
       child: GestureDetector(
         onTap: () => context.go(AppRoutes.login),
         child: RichText(
           text: TextSpan(
-            style: GoogleFonts.inter(fontSize: 14, color: muted),
+            style: AppTextStyles.bodyM(colors.colorTextSecondary),
             children: [
               const TextSpan(text: 'Already have an account? '),
               TextSpan(
                 text: 'Sign in',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
+                style: AppTextStyles.bodyM(colors.colorAccentPrimary).copyWith(
                   fontWeight: FontWeight.w700,
-                  color: accent,
                   decoration: TextDecoration.underline,
-                  decorationColor: accent,
+                  decorationColor: colors.colorAccentPrimary,
                 ),
               ),
             ],
@@ -288,11 +243,13 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
 }
 
 // ── Google Icon ────────────────────────────────────────────────
+
 class _GoogleIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 22, height: 22,
+      width: 22,
+      height: 22,
       child: CustomPaint(painter: _GooglePainter()),
     );
   }
@@ -316,9 +273,7 @@ class _GooglePainter extends CustomPainter {
     canvas.drawArc(Rect.fromCircle(center: c, radius: r), 3.2, 1.0, false, p);
     p.color = const Color(0xFF34A853);
     canvas.drawArc(Rect.fromCircle(center: c, radius: r), 4.2, 1.2, false, p);
-    p
-      ..color      = const Color(0xFF4285F4)
-      ..strokeWidth = 2.5;
+    p.color = const Color(0xFF4285F4);
     canvas.drawLine(c, Offset(c.dx + r * 0.9, c.dy), p);
   }
 

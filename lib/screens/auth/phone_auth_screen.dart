@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
@@ -27,8 +26,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
   String?    _error;
   String     _phone    = '';
 
-  // Country code — default India
-  String _countryCode = '+91';
+  final String _countryCode = '+91';
 
   @override
   void dispose() {
@@ -47,7 +45,9 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
     try {
       _phone = '$_countryCode$number';
       await Supabase.instance.client.auth.signInWithOtp(phone: _phone);
-      if (mounted) setState(() { _step = _PhoneStep.enterOtp; _loading = false; });
+      if (mounted) {
+        setState(() { _step = _PhoneStep.enterOtp; _loading = false; });
+      }
     } catch (e) {
       setState(() {
         _error   = 'Could not send OTP. Check your number and try again.';
@@ -70,7 +70,6 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
         type: OtpType.sms,
       );
       if (res.user != null && mounted) {
-        // Check if new user — no username yet
         final profile = await Supabase.instance.client
             .from('profiles')
             .select('username')
@@ -96,54 +95,49 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final c       = context.col;
-    final bg      = c.bg;
-    final accent  = AppColors.red;
-    final primary = c.text;
-    final muted   = c.textSec;
-    final surf    = c.surface;
-    final border  = c.border;
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: colors.colorBackgroundPrimary,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xxl + 4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.xl),
 
               // ── Back ──────────────────────────────────────
               GestureDetector(
                 onTap: () {
                   if (_step == _PhoneStep.enterOtp) {
-                    setState(() { _step = _PhoneStep.enterPhone; _error = null; });
+                    setState(() {
+                      _step = _PhoneStep.enterPhone;
+                      _error = null;
+                    });
                   } else {
                     context.go(AppRoutes.landing);
                   }
                 },
-                child: Icon(Icons.arrow_back_rounded, color: primary, size: 24),
+                child: Icon(Icons.arrow_back_rounded,
+                    color: colors.colorTextPrimary, size: 24),
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: AppSpacing.section),
 
               // ── Logo ──────────────────────────────────────
               Text(
                 'COURTSIDE',
-                style: GoogleFonts.syne(
-                  fontSize: 22, fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5, color: accent,
-                ),
+                style: AppTextStyles.displayS(colors.colorAccentPrimary),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.xxxl),
 
-              if (_step == _PhoneStep.enterPhone) ...[
-                _buildPhoneStep(primary, muted, surf, border, accent),
-              ] else ...[
-                _buildOtpStep(primary, muted, surf, border, accent),
-              ],
+              if (_step == _PhoneStep.enterPhone)
+                _buildPhoneStep(colors)
+              else
+                _buildOtpStep(colors),
             ],
           ),
         ),
@@ -152,89 +146,88 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
   }
 
   // ── Step 1: Enter phone ────────────────────────────────────
-  Widget _buildPhoneStep(
-    Color primary, Color muted, Color surf, Color border, Color accent,
-  ) {
+  Widget _buildPhoneStep(AppColorScheme colors) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'What\'s your\nphone number?',
-          style: GoogleFonts.syne(
-            fontSize: 32, fontWeight: FontWeight.w800,
-            letterSpacing: -0.8, color: primary, height: 1.15,
-          ),
+          "What's your\nphone number?",
+          style: AppTextStyles.displayM(colors.colorTextPrimary),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Text(
-          'We\'ll send you a one-time code to verify.',
-          style: GoogleFonts.inter(fontSize: 14, color: muted),
+          "We'll send you a one-time code to verify.",
+          style: AppTextStyles.bodyM(colors.colorTextSecondary),
         ),
 
-        const SizedBox(height: 40),
+        const SizedBox(height: AppSpacing.section),
 
         // Phone input row
         Row(
           children: [
             // Country code pill
-            GestureDetector(
-              onTap: () {}, // expand country picker later
-              child: Container(
-                height: 54,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  color: surf,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: border, width: 0.5),
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      '🇮🇳',
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _countryCode,
-                      style: GoogleFonts.inter(
-                        fontSize: 15, fontWeight: FontWeight.w600,
-                        color: primary,
-                      ),
-                    ),
-                  ],
-                ),
+            Container(
+              height: 54,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md),
+              decoration: BoxDecoration(
+                color: colors.colorSurfaceElevated,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(
+                    color: colors.colorBorderSubtle, width: 0.5),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🇮🇳',
+                      style: TextStyle(fontSize: 18)),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    _countryCode,
+                    style: AppTextStyles.headingS(
+                        colors.colorTextPrimary),
+                  ),
+                ],
               ),
             ),
 
-            const SizedBox(width: 10),
+            const SizedBox(width: AppSpacing.sm + 2),
 
             // Number field
             Expanded(
               child: TextField(
                 controller: _phoneCtrl,
                 keyboardType: TextInputType.phone,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly
+                ],
                 maxLength: 10,
-                style: GoogleFonts.inter(fontSize: 20, color: primary, fontWeight: FontWeight.w600),
+                style: AppTextStyles.headingL(colors.colorTextPrimary),
                 decoration: InputDecoration(
                   hintText: '98765 43210',
-                  hintStyle: GoogleFonts.inter(fontSize: 20, color: muted, fontWeight: FontWeight.w400),
+                  hintStyle:
+                      AppTextStyles.headingL(colors.colorTextTertiary),
                   filled: true,
-                  fillColor: surf,
+                  fillColor: colors.colorSurfaceElevated,
                   counterText: '',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: border, width: 0.5),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderSide: BorderSide(
+                        color: colors.colorBorderSubtle, width: 0.5),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: border, width: 0.5),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderSide: BorderSide(
+                        color: colors.colorBorderSubtle, width: 0.5),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: accent, width: 1.5),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderSide: BorderSide(
+                        color: colors.colorAccentPrimary, width: 1.5),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.lg),
                 ),
                 onSubmitted: (_) => _sendOtp(),
               ),
@@ -243,16 +236,16 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
         ),
 
         if (_error != null) ...[
-          const SizedBox(height: 12),
-          _buildError(_error!),
+          const SizedBox(height: AppSpacing.md),
+          _buildError(_error!, colors),
         ],
 
-        const SizedBox(height: 28),
+        const SizedBox(height: AppSpacing.xxl + 4),
 
         _buildPrimaryButton(
           label: 'Send Code',
           loading: _loading,
-          accent: accent,
+          colors: colors,
           onTap: _sendOtp,
         ),
       ],
@@ -260,36 +253,30 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
   }
 
   // ── Step 2: Enter OTP ──────────────────────────────────────
-  Widget _buildOtpStep(
-    Color primary, Color muted, Color surf, Color border, Color accent,
-  ) {
+  Widget _buildOtpStep(AppColorScheme colors) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Enter the code.',
-          style: GoogleFonts.syne(
-            fontSize: 32, fontWeight: FontWeight.w800,
-            letterSpacing: -0.8, color: primary, height: 1.15,
-          ),
+          style: AppTextStyles.displayM(colors.colorTextPrimary),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         RichText(
           text: TextSpan(
-            style: GoogleFonts.inter(fontSize: 14, color: muted),
+            style: AppTextStyles.bodyM(colors.colorTextSecondary),
             children: [
               const TextSpan(text: 'Sent to '),
               TextSpan(
                 text: _phone,
-                style: GoogleFonts.inter(
-                  fontSize: 14, fontWeight: FontWeight.w600, color: primary,
-                ),
+                style: AppTextStyles.bodyM(colors.colorTextPrimary)
+                    .copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),
         ),
 
-        const SizedBox(height: 40),
+        const SizedBox(height: AppSpacing.section),
 
         // OTP field — large centered digits
         TextField(
@@ -298,51 +285,51 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           maxLength: 6,
           textAlign: TextAlign.center,
-          style: GoogleFonts.syne(
-            fontSize: 32, fontWeight: FontWeight.w700,
-            letterSpacing: 12, color: primary,
-          ),
+          style: AppTextStyles.statL(colors.colorTextPrimary)
+              .copyWith(letterSpacing: 12),
           decoration: InputDecoration(
             hintText: '------',
-            hintStyle: GoogleFonts.syne(
-              fontSize: 32, fontWeight: FontWeight.w400,
-              letterSpacing: 12, color: muted,
-            ),
+            hintStyle: AppTextStyles.statL(colors.colorTextTertiary)
+                .copyWith(letterSpacing: 12),
             filled: true,
-            fillColor: surf,
+            fillColor: colors.colorSurfaceElevated,
             counterText: '',
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: border, width: 0.5),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderSide: BorderSide(
+                  color: colors.colorBorderSubtle, width: 0.5),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: border, width: 0.5),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderSide: BorderSide(
+                  color: colors.colorBorderSubtle, width: 0.5),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: accent, width: 1.5),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderSide: BorderSide(
+                  color: colors.colorAccentPrimary, width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+            contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
           ),
           onChanged: (v) { if (v.length == 6) _verifyOtp(); },
         ),
 
         if (_error != null) ...[
-          const SizedBox(height: 12),
-          _buildError(_error!),
+          const SizedBox(height: AppSpacing.md),
+          _buildError(_error!, colors),
         ],
 
-        const SizedBox(height: 28),
+        const SizedBox(height: AppSpacing.xxl + 4),
 
         _buildPrimaryButton(
           label: 'Verify',
           loading: _loading,
-          accent: accent,
+          colors: colors,
           onTap: _verifyOtp,
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpacing.xl),
 
         // Resend
         Center(
@@ -350,10 +337,10 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
             onTap: _loading ? null : _sendOtp,
             child: Text(
               'Resend code',
-              style: GoogleFonts.inter(
-                fontSize: 14, fontWeight: FontWeight.w600,
-                color: accent, decoration: TextDecoration.underline,
-                decorationColor: accent,
+              style: AppTextStyles.labelM(colors.colorAccentPrimary)
+                  .copyWith(
+                decoration: TextDecoration.underline,
+                decorationColor: colors.colorAccentPrimary,
               ),
             ),
           ),
@@ -365,52 +352,54 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
   Widget _buildPrimaryButton({
     required String label,
     required bool loading,
-    required Color accent,
+    required AppColorScheme colors,
     required VoidCallback onTap,
   }) =>
-      SizedBox(
-        width: double.infinity,
-        height: 54,
-        child: ElevatedButton(
-          onPressed: loading ? null : onTap,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: accent,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: accent.withValues(alpha: 0.5),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+      GestureDetector(
+        onTap: loading ? null : onTap,
+        child: AnimatedOpacity(
+          opacity: loading ? 0.6 : 1.0,
+          duration: AppDuration.fast,
+          child: Container(
+            width: double.infinity,
+            height: 54,
+            decoration: BoxDecoration(
+              color: colors.colorAccentPrimary,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              boxShadow: AppShadow.fab,
             ),
+            alignment: Alignment.center,
+            child: loading
+                ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: colors.colorTextOnAccent,
+                    ),
+                  )
+                : Text(
+                    label,
+                    style:
+                        AppTextStyles.headingM(colors.colorTextOnAccent),
+                  ),
           ),
-          child: loading
-              ? const SizedBox(
-                  width: 22, height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5, color: Colors.white,
-                  ),
-                )
-              : Text(
-                  label,
-                  style: GoogleFonts.syne(
-                    fontSize: 16, fontWeight: FontWeight.w700,
-                  ),
-                ),
         ),
       );
 
-  Widget _buildError(String message) => Container(
+  Widget _buildError(String message, AppColorScheme colors) => Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md + 2, vertical: AppSpacing.md),
         decoration: BoxDecoration(
-          color: AppColors.error.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
+          color: colors.colorError.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
-            color: AppColors.error.withValues(alpha: 0.3), width: 0.5,
-          ),
+              color: colors.colorError.withValues(alpha: 0.3), width: 0.5),
         ),
         child: Text(
           message,
-          style: GoogleFonts.inter(fontSize: 13, color: AppColors.error),
+          style: AppTextStyles.bodyS(colors.colorError),
         ),
       );
 }

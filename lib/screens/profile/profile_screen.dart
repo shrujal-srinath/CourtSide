@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app.dart';
-import '../../core/app_spacing.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 

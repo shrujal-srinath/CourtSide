@@ -420,7 +420,7 @@ class _SplashPainter extends CustomPainter {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
-        style: GoogleFonts.spaceGrotesk(
+        style: GoogleFonts.barlow(
           color:         color,
           fontSize:      fontSize,
           fontWeight:    FontWeight.w800,

@@ -89,7 +89,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 Text(
                   'THE BOX',
-                  style: GoogleFonts.spaceGrotesk(
+                  style: GoogleFonts.barlow(
                     fontSize: 22, fontWeight: FontWeight.w800,
                     letterSpacing: 3, color: accent,
                   ),
@@ -97,7 +97,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Create your\nplayer profile.',
-                  style: GoogleFonts.spaceGrotesk(
+                  style: GoogleFonts.barlow(
                     fontSize: 30, fontWeight: FontWeight.w700,
                     letterSpacing: -0.5, color: primary, height: 1.15,
                   ),
@@ -105,7 +105,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 6),
                 Text(
                   'Your stats live here forever.',
-                  style: GoogleFonts.inter(fontSize: 15, color: muted),
+                  style: GoogleFonts.dmSans(fontSize: 15, color: muted),
                 ),
 
                 const SizedBox(height: 40),
@@ -131,7 +131,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   action: TextInputAction.next,
                   surf: surf, border: border, accent: accent,
                   muted: muted, primary: primary,
-                  prefix: Text('@', style: GoogleFonts.inter(fontSize: 15, color: muted)),
+                  prefix: Text('@', style: GoogleFonts.dmSans(fontSize: 15, color: muted)),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Choose a username';
                     if (v.length < 3) return 'Minimum 3 characters';
@@ -168,7 +168,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   obscureText: _obscure,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _register(),
-                  style: GoogleFonts.inter(fontSize: 15, color: primary),
+                  style: GoogleFonts.dmSans(fontSize: 15, color: primary),
                   decoration: _deco(
                     hint: 'Min. 6 characters',
                     surf: surf, border: border, accent: accent, muted: muted,
@@ -199,7 +199,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 0.5),
                     ),
-                    child: Text(_error!, style: GoogleFonts.inter(fontSize: 13, color: AppColors.error)),
+                    child: Text(_error!, style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.error)),
                   ),
                 ],
 
@@ -225,7 +225,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           )
                         : Text(
                             'Create Account',
-                            style: GoogleFonts.spaceGrotesk(
+                            style: GoogleFonts.barlow(
                               fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 0.3,
                             ),
                           ),
@@ -237,7 +237,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // ── Terms note ────────────────────────────────
                 Text(
                   'By creating an account you agree to our Terms of Service and Privacy Policy.',
-                  style: GoogleFonts.inter(fontSize: 11, color: muted, height: 1.5),
+                  style: GoogleFonts.dmSans(fontSize: 11, color: muted, height: 1.5),
                   textAlign: TextAlign.center,
                 ),
 
@@ -248,11 +248,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text('Already have an account? ',
-                        style: GoogleFonts.inter(fontSize: 14, color: muted)),
+                        style: GoogleFonts.dmSans(fontSize: 14, color: muted)),
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.login),
                       child: Text('Sign in',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.dmSans(
                               fontSize: 14, fontWeight: FontWeight.w600, color: accent)),
                     ),
                   ],
@@ -269,7 +269,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Widget _label(String text, Color color) => Text(
     text,
-    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: color),
+    style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w500, color: color),
   );
 
   Widget _field({
@@ -285,7 +285,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     controller: ctrl,
     keyboardType: type,
     textInputAction: action,
-    style: GoogleFonts.inter(fontSize: 15, color: primary),
+    style: GoogleFonts.dmSans(fontSize: 15, color: primary),
     decoration: _deco(
       hint: hint, surf: surf, border: border, accent: accent, muted: muted,
     ).copyWith(prefixIcon: prefix != null ? Padding(padding: const EdgeInsets.only(left: 14, right: 4), child: prefix) : null,
@@ -300,7 +300,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     required Color accent, required Color muted,
   }) => InputDecoration(
     hintText: hint,
-    hintStyle: GoogleFonts.inter(fontSize: 15, color: muted),
+    hintStyle: GoogleFonts.dmSans(fontSize: 15, color: muted),
     filled: true,
     fillColor: surf,
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
