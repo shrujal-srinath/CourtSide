@@ -261,6 +261,77 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _selectSport(String sport) => context.push(AppRoutes.sportById(sport));
 
+  Widget _buildScoringBanner(BuildContext context) {
+    final colors = context.colors;
+    final now = DateTime.now();
+    
+    // Find upcoming booking within 1h before or 3h after
+    final windowBooking = FakeData.bookingHistory.where((b) {
+      if (b.status != BookingStatus.upcoming) return false;
+      final time = FakeData.parseBookingTime(b.date, b.timeSlot);
+      if (time == null) return false;
+      final diff = time.difference(now);
+      return diff.inHours <= 1 && diff.inHours >= -3;
+    }).firstOrNull;
+
+    if (windowBooking == null) return const SizedBox.shrink();
+
+    return GestureDetector(
+      onTap: () {
+        if (windowBooking.sport.toLowerCase().contains('basketball')) {
+          context.push(AppRoutes.bballMode);
+        } else {
+          context.push('/score/${windowBooking.sport}');
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [colors.colorAccentPrimary, colors.colorAccentPrimary.withValues(alpha: 0.8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: [
+            BoxShadow(
+              color: colors.colorAccentPrimary.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48, height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.scoreboard_rounded, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('READY TO SCORE?', style: AppTextStyles.overline(Colors.white70)),
+                  Text(
+                    'Start scoring for your ${windowBooking.sport} match at ${windowBooking.venueName}',
+                    style: AppTextStyles.bodyS(Colors.white).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 14),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ── Location picker ──────────────────────────────────────────
 
   void _showLocationPicker(BuildContext ctx) {
@@ -391,6 +462,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       ),
 
+                      _buildScoringBanner(context),
+
                       const SizedBox(height: AppSpacing.md),
 
                       _SectionHeader(
@@ -417,6 +490,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         activeSport: _activeSport,
                         onSelect: _selectSport,
                       ),
+
+                      const SizedBox(height: AppSpacing.xl),
+
+                      _SectionHeader(
+                        title: 'SHOP ESSENTIALS',
+                        onSeeAll: () => context.push(AppRoutes.marketplace),
+                      ),
+
+                      _ShopEssentialsRow(),
 
                       const SizedBox(height: AppSpacing.xl),
 
@@ -733,7 +815,7 @@ class _HomeSearchBar extends StatelessWidget {
 }
 
 class _AnimatedSearchHint extends StatefulWidget {
-  const _AnimatedSearchHint({super.key});
+  const _AnimatedSearchHint();
 
   @override
   State<_AnimatedSearchHint> createState() => _AnimatedSearchHintState();
@@ -1812,7 +1894,7 @@ class _CourtsNearYou extends StatelessWidget {
 }
 
 class _VenueCard extends StatelessWidget {
-  const _VenueCard({required this.venue, required this.onTap, super.key});
+  const _VenueCard({required this.venue, required this.onTap});
   final Venue venue;
   final VoidCallback onTap;
 
@@ -1935,6 +2017,71 @@ class _VenueCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SHOP ESSENTIALS
+// ═══════════════════════════════════════════════════════════════
+
+class _ShopEssentialsRow extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final products = FakeData.products.take(4).toList();
+
+    return SizedBox(
+      height: 140,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        scrollDirection: Axis.horizontal,
+        itemCount: products.length,
+        separatorBuilder: (c, i) => const SizedBox(width: AppSpacing.md),
+        itemBuilder: (context, index) {
+          final p = products[index];
+          return GestureDetector(
+            onTap: () => context.push(AppRoutes.productDetail(p.id)),
+            child: Container(
+              width: 120,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: colors.colorSurfacePrimary,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colors.colorBorderSubtle, width: 1),
+                boxShadow: AppShadow.card,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: colors.colorBackgroundPrimary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(_getCategoryIcon(p.category), color: colors.colorAccentPrimary, size: 24),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(p.name, style: AppTextStyles.labelM(colors.colorTextPrimary), maxLines: 1),
+                  Text('₹${p.price}', style: AppTextStyles.headingS(colors.colorAccentPrimary)),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Football': return Icons.sports_soccer_rounded;
+      case 'Basketball': return Icons.sports_basketball_rounded;
+      case 'Badminton': return Icons.sports_tennis_rounded;
+      case 'Nutrition': return Icons.bolt_rounded;
+      default: return Icons.shopping_bag_outlined;
+    }
   }
 }
 

@@ -2,6 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/constants.dart';
+import '../../providers/booking_draft_provider.dart';
 
 import '../../core/theme.dart';
 import '../../models/fake_data.dart';
@@ -155,7 +158,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               if (morningSlots.isNotEmpty) _buildSlotGroup('Morning', morningSlots, colors, court.pricePerSlot),
               if (eveningSlots.isNotEmpty) _buildSlotGroup('Evening', eveningSlots, colors, court.pricePerSlot),
 
-              SliverToBoxAdapter(child: SizedBox(height: botPad + 280)), // large bottom padding for sticky summary
+              SliverToBoxAdapter(child: SizedBox(height: botPad + 320)), // large bottom padding for sticky summary
             ],
           ),
 
@@ -235,6 +238,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     );
   }
 
+
   Widget _buildStickyFooter(AppColorScheme colors, bool canBook, Court court) {
     if (!canBook) return const SizedBox.shrink();
 
@@ -248,7 +252,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // SUMMARY
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
@@ -269,32 +272,31 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                         style: AppTextStyles.labelM(colors.colorTextPrimary)),
                   ],
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('Total', style: AppTextStyles.bodyS(colors.colorTextSecondary)),
-                    const SizedBox(height: 2),
-                    Text('₹${court.pricePerSlot}',
-                        style: AppTextStyles.headingM(colors.colorTextPrimary)),
-                  ],
-                ),
+                Text('₹${court.pricePerSlot}',
+                    style: AppTextStyles.headingM(colors.colorTextPrimary)),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          // CTA 
           SizedBox(
             width: double.infinity,
             height: 54,
             child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                ref.read(bookingDraftProvider.notifier).setBooking(
+                  widget.venue!, 
+                  court, 
+                  _selectedSlot!,
+                );
+                context.push(AppRoutes.bookingSummary);
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: colors.colorAccentPrimary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
               ),
               child: Text(
-                'Book Now · ₹${court.pricePerSlot}',
+                'Confirm Slot',
                 style: AppTextStyles.labelM(Colors.white),
               ),
             ),

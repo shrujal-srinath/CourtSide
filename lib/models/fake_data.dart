@@ -159,22 +159,54 @@ class BookingRecord {
   const BookingRecord({
     required this.id,
     required this.venueName,
+    this.courtName,
     required this.sport,
     required this.date,
     required this.timeSlot,
     required this.amount,
     required this.status,
     this.hasStats = false,
+    this.addons = const [],
   });
 
   final String id;
   final String venueName;
+  final String? courtName;
   final String sport;
   final String date;
   final String timeSlot;
   final int amount;
   final BookingStatus status;
   final bool hasStats;
+  final List<String> addons;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PRODUCT
+// ═══════════════════════════════════════════════════════════════
+
+class Product {
+  const Product({
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.originalPrice,
+    required this.rating,
+    required this.image,
+    required this.category,
+    required this.description,
+  });
+
+  final String id;
+  final String name;
+  final int price;
+  final int originalPrice;
+  final double rating;
+  final String image;
+  final String category;
+  final String description;
+
+  int get discountPercent => ((originalPrice - price) / originalPrice * 100).round();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -350,8 +382,50 @@ class FakeData {
       sports: ['basketball', 'football'],
       rating: 4.6, reviewCount: 134,
       closingTime: '10 PM',
-      photoUrl: '',
+      photoUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80',
       amenities: ['Parking', 'Changing Rooms', 'Cafeteria', 'Water'],
+      isIndoor: true,
+      hasTheBox: true,
+    ),
+    Venue(
+      id: 'v13',
+      name: 'Indiranagar Sports Club',
+      address: 'Near ESI Hospital, Indiranagar',
+      area: 'Indiranagar',
+      lat: 12.9780, lng: 77.6440,
+      sports: ['badminton', 'gym'],
+      rating: 4.5, reviewCount: 210,
+      closingTime: '10 PM',
+      photoUrl: 'https://images.unsplash.com/photo-1626224580195-f23912418175?w=800&q=80',
+      amenities: ['Parking', 'Shower', 'AC', 'Locker'],
+      isIndoor: true,
+      hasTheBox: false,
+    ),
+    Venue(
+      id: 'v14',
+      name: 'Whitefield Stadium',
+      address: 'ITPL Main Rd, Whitefield',
+      area: 'Whitefield',
+      lat: 12.9840, lng: 77.7280,
+      sports: ['cricket', 'football'],
+      rating: 4.7, reviewCount: 540,
+      closingTime: '11 PM',
+      photoUrl: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=800&q=80',
+      amenities: ['Ample Parking', 'Floodlights', 'Medical Support'],
+      isIndoor: false,
+      hasTheBox: false,
+    ),
+    Venue(
+      id: 'v15',
+      name: 'Bannerghatta Sports Hub',
+      address: 'Hulimavu, Bannerghatta Rd',
+      area: 'Bannerghatta Road',
+      lat: 12.8750, lng: 77.5950,
+      sports: ['basketball', 'football', 'badminton'],
+      rating: 4.4, reviewCount: 165,
+      closingTime: '11 PM',
+      photoUrl: 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=800&q=80',
+      amenities: ['Parking', 'Floodlights', 'Water'],
       isIndoor: true,
       hasTheBox: true,
     ),
@@ -484,7 +558,7 @@ class FakeData {
 
   // ── Booking history ────────────────────────────────────────────
 
-  static const bookingHistory = [
+  static final List<BookingRecord> bookingHistory = [
     BookingRecord(id: 'b1', venueName: 'Game Theory Koramangala',
       sport: 'basketball', date: 'Today', timeSlot: '7:00 PM',
       amount: 400, status: BookingStatus.upcoming, hasStats: false),
@@ -529,6 +603,159 @@ class FakeData {
     ),
   ];
 
+  static const products = [
+    Product(
+      id: 'p1',
+      name: 'NIVIA Storm Football',
+      price: 899,
+      originalPrice: 1200,
+      rating: 4.5,
+      image: 'sports_football', // identifier for local asset
+      category: 'Football',
+      description: 'High-quality synthetic leather football for all-weather play. Hand-stitched for durability and shape retention.',
+    ),
+    Product(
+      id: 'p2',
+      name: 'Gatorade Blue Bolt',
+      price: 50,
+      originalPrice: 60,
+      rating: 4.8,
+      image: 'nutrition_gatorade',
+      category: 'Nutrition',
+      description: 'Isotonic sports drink for rapid rehydration and carbohydrate energy. Stay hydrated during intense matches.',
+    ),
+    Product(
+      id: 'p3',
+      name: 'NIVIA Basketball',
+      price: 999,
+      originalPrice: 1499,
+      rating: 4.7,
+      image: 'sports_basketball',
+      category: 'Basketball',
+      description: 'Pro-grade basketball with enhanced grip and consistent bounce. Suitable for both indoor and outdoor courts.',
+    ),
+    Product(
+      id: 'p4',
+      name: 'Yonex Badminton Racket',
+      price: 2499,
+      originalPrice: 3500,
+      rating: 4.9,
+      image: 'sports_badminton',
+      category: 'Badminton',
+      description: 'Lightweight graphite frame for fast swings and powerful smashes. Perfect for intermediate to advanced players.',
+    ),
+    Product(
+      id: 'p5',
+      name: 'Optimum Nutrition Whey',
+      price: 5999,
+      originalPrice: 7500,
+      rating: 4.6,
+      image: 'https://images.unsplash.com/photo-1593095199912-2d17bb46bd5a?w=400&q=80',
+      category: 'Nutrition',
+      description: 'Gold Standard 100% Whey protein for muscle recovery. 24g of protein per serving with BCAAs and glutamine.',
+    ),
+    Product(
+      id: 'p6',
+      name: 'Red Bull Energy Drink',
+      price: 110,
+      originalPrice: 125,
+      rating: 4.7,
+      image: 'https://images.unsplash.com/photo-1622543953491-017a9435303b?w=400&q=80',
+      category: 'Nutrition',
+      description: 'Vitalizes body and mind. High caffeine content for increased focus and performance.',
+    ),
+    Product(
+      id: 'p7',
+      name: 'Raw Whey Protein',
+      price: 1899,
+      originalPrice: 2200,
+      rating: 4.4,
+      image: 'https://images.unsplash.com/photo-1593095199912-2d17bb46bd5a?w=400&q=80',
+      category: 'Nutrition',
+      description: 'Zero carb whey protein for lean muscle building. No added flavors.',
+    ),
+    Product(
+      id: 'p8',
+      name: 'Premium Basketball Jersey',
+      price: 1499,
+      originalPrice: 2499,
+      rating: 4.8,
+      image: 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?w=400&q=80',
+      category: 'Clothing',
+      description: 'Moisture-wicking fabric with athletic cut. Lightweight and breathable for summer games.',
+    ),
+    Product(
+      id: 'p9',
+      name: 'Cricket Performance Tee',
+      price: 799,
+      originalPrice: 1599,
+      rating: 4.6,
+      image: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=400&q=80',
+      category: 'Clothing',
+      description: 'Built for long overs in the sun. SPF 50+ protection with quick-dry technology.',
+    ),
+    Product(
+      id: 'p10',
+      name: 'Nike Compression Pants',
+      price: 2999,
+      originalPrice: 3999,
+      rating: 4.9,
+      image: 'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400&q=80',
+      category: 'Clothing',
+      description: 'Pro-level compression for muscle stability and recovery. Flatlock seams for zero irritation.',
+    ),
+    Product(
+      id: 'p11',
+      name: 'Training Gym Shorts',
+      price: 499,
+      originalPrice: 999,
+      rating: 4.5,
+      image: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400&q=80',
+      category: 'Clothing',
+      description: 'Lightweight mesh shorts with four-way stretch. Ideal for explosive movements.',
+    ),
+    Product(
+      id: 'p12',
+      name: 'Neoprene Shoulder Support',
+      price: 1299,
+      originalPrice: 1999,
+      rating: 4.4,
+      image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
+      category: 'Accessories',
+      description: 'Adjustable pressure plate for AC joint stability. Breathable neoprene for all-day comfort.',
+    ),
+    Product(
+      id: 'p13',
+      name: 'Pro Knee Sleeves (Pair)',
+      price: 1800,
+      originalPrice: 2500,
+      rating: 4.8,
+      image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
+      category: 'Accessories',
+      description: '7mm SBR/Neoprene for heavy lifting and impact protection. Anatomical fit.',
+    ),
+    Product(
+      id: 'p14',
+      name: 'Sports Water Bottle 1L',
+      price: 299,
+      originalPrice: 499,
+      rating: 4.6,
+      image: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400&q=80',
+      category: 'Accessories',
+      description: 'BPA-free tritan material with one-click opening. Leak-proof design.',
+    ),
+    Product(
+      id: 'p15',
+      name: 'Antigravity Wrist Bands',
+      price: 199,
+      originalPrice: 399,
+      rating: 4.7,
+      image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
+      category: 'Accessories',
+      description: 'Super absorbent cotton blend. Standard size for elite performance.',
+    ),
+  ];
+
   // ── Helpers ────────────────────────────────────────────────────
 
   static List<Venue> venuesBySport(String sport) =>
@@ -554,4 +781,70 @@ class FakeData {
 
   static List<PickupGame> pickupGamesBySport(String sport) =>
       pickupGames.where((g) => g.sport == sport).toList();
+
+  static List<Product> productsByCategory(String category) =>
+      category == 'All' ? products : products.where((p) => p.category == category).toList();
+
+  static Product? productById(String id) =>
+      products.where((p) => p.id == id).firstOrNull;
+
+  static DateTime? parseBookingTime(String dateStr, String timeSlot) {
+    try {
+      final now = DateTime.now();
+      final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      
+      String cleanDate = dateStr.trim();
+      if (cleanDate.toLowerCase() == 'today') {
+        cleanDate = '${now.day} ${months[now.month - 1]}';
+      } else if (cleanDate.toLowerCase() == 'yesterday') {
+        final yest = now.subtract(const Duration(days: 1));
+        cleanDate = '${yest.day} ${months[yest.month - 1]}';
+      } else if (cleanDate.toLowerCase().contains('ago')) {
+        int days = int.parse(cleanDate.split(' ')[0]);
+        final ago = now.subtract(Duration(days: days));
+        cleanDate = '${ago.day} ${months[ago.month - 1]}';
+      }
+
+      final dateParts = cleanDate.split(' ');
+      if (dateParts.length < 2) return null;
+      
+      final day = int.parse(dateParts[0]);
+      final month = months.indexWhere((m) => dateParts[1].startsWith(m)) + 1;
+      if (month == 0) return null;
+      
+      final timeParts = timeSlot.split(' - ');
+      final startTimePart = timeParts[0]; 
+      
+      final parts = startTimePart.split(' ');
+      final hhmm = parts[0].split(':');
+      int h = int.parse(hhmm[0]);
+      int m = hhmm.length > 1 ? int.parse(hhmm[1]) : 0;
+      if (parts[1].toUpperCase() == 'PM' && h != 12) h += 12;
+      if (parts[1].toUpperCase() == 'AM' && h == 12) h = 0;
+      
+      return DateTime(now.year, month, day, h, m);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static void completeBooking(String? bookingId) {
+    final idx = bookingHistory.indexWhere((b) => 
+      (bookingId != null && b.id == bookingId) || 
+      (bookingId == null && b.status == BookingStatus.upcoming)
+    );
+    if (idx != -1) {
+      final old = bookingHistory[idx];
+      bookingHistory[idx] = BookingRecord(
+        id: old.id,
+        venueName: old.venueName,
+        sport: old.sport,
+        date: old.date,
+        timeSlot: old.timeSlot,
+        amount: old.amount,
+        status: BookingStatus.completed,
+        hasStats: true,
+      );
+    }
+  }
 }

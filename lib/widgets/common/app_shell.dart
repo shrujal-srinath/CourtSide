@@ -26,7 +26,7 @@ class AppShell extends StatelessWidget {
     _TabItem(icon: Icons.home_rounded,          label: 'Feed',     path: AppRoutes.home),
     _TabItem(icon: Icons.stadium_outlined,         label: 'Explore',  path: AppRoutes.explore),
     _TabItem(icon: Icons.bar_chart_rounded,      label: 'Stats',    path: AppRoutes.stats),
-    _TabItem(icon: Icons.calendar_today_rounded, label: 'Book',     path: AppRoutes.bookings),
+    _TabItem(icon: Icons.shopping_bag_outlined,  label: 'Shop',     path: AppRoutes.marketplace),
   ];
 
   int _currentIndex(BuildContext context) {
@@ -62,30 +62,9 @@ class AppShell extends StatelessWidget {
           Navigator.pop(context);
           context.go(AppRoutes.explore);
         },
-        onStartScoring: () {
-          Navigator.pop(context);
-          _showSportPicker(context);
-        },
         onJoinGame: () {
           Navigator.pop(context);
           context.push(AppRoutes.explore);
-        },
-      ),
-    );
-  }
-
-  void _showSportPicker(BuildContext context) {
-    showCsBottomSheet(
-      context: context,
-      title: 'SELECT SPORT',
-      child: _SportPickerSheet(
-        onSelectSport: (sport) {
-          Navigator.pop(context);
-          if (sport == 'basketball') {
-            context.push(AppRoutes.bballMode);
-          } else {
-            context.push('/score/$sport');
-          }
         },
       ),
     );
@@ -236,12 +215,10 @@ class _FloatingNavBar extends StatelessWidget {
 class _QuickActionSheet extends StatelessWidget {
   const _QuickActionSheet({
     required this.onBookCourt,
-    required this.onStartScoring,
     required this.onJoinGame,
   });
 
   final VoidCallback onBookCourt;
-  final VoidCallback onStartScoring;
   final VoidCallback onJoinGame;
 
   @override
@@ -274,13 +251,6 @@ class _QuickActionSheet extends StatelessWidget {
             subtitle: 'Find and reserve a court near you',
             color: colors.colorSportBasketball,
             onTap: onBookCourt,
-          ),
-          _ActionTile(
-            icon: Icons.scoreboard_rounded,
-            label: 'Start Scoring',
-            subtitle: 'Track live game stats',
-            color: colors.colorAccentPrimary,
-            onTap: onStartScoring,
           ),
           _ActionTile(
             icon: Icons.group_rounded,
@@ -356,94 +326,6 @@ class _ActionTile extends StatelessWidget {
 }
 
 // ── Sport Picker Sheet ─────────────────────────────────────────
-
-class _SportPickerSheet extends StatelessWidget {
-  const _SportPickerSheet({required this.onSelectSport});
-  final ValueChanged<String> onSelectSport;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-      decoration: BoxDecoration(
-        color: colors.colorSurfacePrimary,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.colorBorderSubtle, width: 1),
-        boxShadow: AppShadow.card,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: colors.colorBorderMedium,
-              borderRadius: BorderRadius.circular(100),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              'SELECT SPORT',
-              style: AppTextStyles.overline(colors.colorTextTertiary),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _SportTile(emoji: '🏀', label: 'Basketball', onTap: () => onSelectSport('basketball')),
-          _SportTile(emoji: '🏏', label: 'Cricket',    onTap: () => onSelectSport('cricket')),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-}
-
-class _SportTile extends StatelessWidget {
-  const _SportTile({
-    required this.emoji,
-    required this.label,
-    required this.onTap,
-  });
-
-  final String emoji;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-        child: Row(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 28)),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text(
-                label,
-                style: AppTextStyles.headingM(colors.colorTextPrimary),
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 14,
-              color: colors.colorTextTertiary,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _TabItem {
   const _TabItem({

@@ -14,6 +14,7 @@ import '../screens/home/home_screen.dart';
 import '../screens/sport/sport_screen.dart';
 import '../screens/venue/venue_detail_screen.dart';
 import '../screens/booking/booking_screen.dart';
+import '../screens/booking/booking_summary_screen.dart';
 import '../screens/venue/venue_screen.dart';
 import '../screens/stats/stats_screen.dart';
 import '../screens/bookings/my_bookings_screen.dart';
@@ -23,6 +24,10 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/scoring/basketball/basketball_setup_screen.dart';
 import '../screens/scoring/basketball/basketball_players_screen.dart';
 import '../screens/scoring/cricket/cricket_scorer.dart';
+import '../screens/marketplace/marketplace_screen.dart';
+import '../screens/marketplace/product_detail_screen.dart';
+import '../screens/marketplace/cart_screen.dart';
+import '../screens/marketplace/checkout_screen.dart';
 import '../widgets/common/app_shell.dart';
 import '../widgets/stat_share/stat_share_preview_screen.dart';
 import 'constants.dart';
@@ -131,6 +136,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // ── Booking Summary ──────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.bookingSummary,
+        pageBuilder: (context, state) => slideUpPage(
+          key: state.pageKey,
+          child: const BookingSummaryScreen(),
+        ),
+      ),
+
       // ── Stat Share ───────────────────────────────────────────
       GoRoute(
         path: '/stats/share',
@@ -209,11 +223,46 @@ final routerProvider = Provider<GoRouter>((ref) {
                 const NoTransitionPage(child: StatsScreen()),
           ),
           GoRoute(
-            path: AppRoutes.bookings,
+            path: AppRoutes.marketplace,
             pageBuilder: (context, _) =>
-                const NoTransitionPage(child: MyBookingsScreen()),
+                const NoTransitionPage(child: MarketplaceScreen()),
           ),
         ],
+      ),
+
+      // ── Marketplace Details & Checkout ───────────────────────
+      GoRoute(
+        path: '/product/:productId',
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['productId'] ?? '';
+          return slideUpPage(
+            key: state.pageKey,
+            child: ProductDetailScreen(productId: id),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.cart,
+        pageBuilder: (context, state) => bottomSheetPage(
+          key: state.pageKey,
+          child: const CartScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.checkout,
+        pageBuilder: (context, state) => slideUpPage(
+          key: state.pageKey,
+          child: const CheckoutScreen(),
+        ),
+      ),
+
+      // ── Bookings (Moved out of shell) ────────────────────────
+      GoRoute(
+        path: AppRoutes.bookings,
+        pageBuilder: (context, state) => slideUpPage(
+          key: state.pageKey,
+          child: const MyBookingsScreen(),
+        ),
       ),
 
       // ── Stub routes ──────────────────────────────────────────
