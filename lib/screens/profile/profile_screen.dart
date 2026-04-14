@@ -61,6 +61,16 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
 
+          // ── My Bookings ─────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              child: _MyBookingsSection(),
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.xl),
+
           // ── Sport badges ────────────────────────────────────────
           const SliverToBoxAdapter(child: _SportBadges()),
 
@@ -473,6 +483,51 @@ class _Segment extends StatelessWidget {
           icon,
           size: 14,
           color: selected ? Colors.white : colors.colorTextTertiary,
+        ),
+      ),
+    );
+  }
+}
+
+class _MyBookingsSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.bookings),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: colors.colorSurfacePrimary,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.colorBorderSubtle, width: 1),
+          boxShadow: AppShadow.card,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: colors.colorAccentPrimary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.calendar_today_rounded, color: colors.colorAccentPrimary, size: 20),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('My Bookings', style: AppTextStyles.headingS(colors.colorTextPrimary)),
+                  const SizedBox(height: 2),
+                  Text('View and manage your upcoming games', style: AppTextStyles.bodyS(colors.colorTextSecondary)),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: colors.colorTextTertiary),
+          ],
         ),
       ),
     );

@@ -35,6 +35,12 @@ class AppRoutes {
   static const String bookings = '/bookings';
 
   static const String profile     = '/profile';
+  static const String marketplace = '/marketplace';
+  static const String cart        = '/cart';
+  static const String bookingSummary = '/booking-summary';
+  static const String checkout    = '/checkout';
+  static String productDetail(String id) => '/product/$id';
+
   static const String wallet      = '/wallet';
   static const String settings    = '/settings';
   static const String leaderboard = '/leaderboard';

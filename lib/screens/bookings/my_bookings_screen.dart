@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
+import '../../core/constants.dart';
 import '../../models/fake_data.dart';
 import '../../providers/confirmed_bookings_provider.dart';
 
@@ -405,31 +406,7 @@ class _BookingCard extends StatelessWidget {
 
                         if (booking.status ==
                             BookingStatus.upcoming) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.md,
-                                vertical: AppSpacing.xs + 3),
-                            decoration: BoxDecoration(
-                              color: colors.colorSurfaceElevated,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.md),
-                              border: Border.all(
-                                  color: colors.colorBorderSubtle,
-                                  width: 0.5),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.qr_code_rounded,
-                                    size: 14,
-                                    color: colors.colorTextSecondary),
-                                const SizedBox(width: 5),
-                                Text('QR Code',
-                                    style: AppTextStyles.labelM(
-                                        colors.colorTextSecondary)),
-                              ],
-                            ),
-                          ),
+                          _ScoringButton(booking: booking),
                           const SizedBox(width: AppSpacing.sm),
                           GestureDetector(
                             onTap: () {},
@@ -481,6 +458,69 @@ class _BookingCard extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ScoringButton extends StatelessWidget {
+  final BookingRecord booking;
+  const _ScoringButton({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final bookingTime = FakeData.parseBookingTime(booking.date, booking.timeSlot);
+    final now = DateTime.now();
+    
+    // Default to true for demo if parsing fails
+    bool canScore = true;
+    if (bookingTime != null) {
+      final diff = bookingTime.difference(now);
+      canScore = diff.inHours <= 1 && diff.inHours >= -3; // 1h before to 3h after
+    }
+    
+    return GestureDetector(
+      onTap: () {
+        if (!canScore) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Available 1 hour before your slot'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+        
+        if (booking.sport.toLowerCase().contains('basketball')) {
+          context.push(AppRoutes.bballMode);
+        } else {
+          context.push('/score/${booking.sport}');
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.xs + 3),
+        decoration: BoxDecoration(
+          color: canScore ? colors.colorAccentPrimary : colors.colorSurfaceElevated,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+              color: canScore ? colors.colorAccentPrimary : colors.colorBorderSubtle,
+              width: 0.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.scoreboard_rounded,
+                size: 14,
+                color: canScore ? Colors.white : colors.colorTextTertiary),
+            const SizedBox(width: 5),
+            Text('Start Scoring',
+                style: AppTextStyles.labelM(
+                    canScore ? Colors.white : colors.colorTextTertiary)),
           ],
         ),
       ),

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme.dart';
 import '../../../core/constants.dart';
 import 'models/basketball_models.dart';
+import '../../../models/fake_data.dart';
 
 export 'models/basketball_models.dart';
 
@@ -555,7 +556,10 @@ class _BasketballScorerScreenState
       backgroundColor: context.colors.colorBackgroundPrimary,
       body: SafeArea(
         child: state.isGameOver
-            ? _GameOverPanel(state: state, onBack: () => context.go(AppRoutes.home))
+            ? _GameOverPanel(state: state, onBack: () {
+                FakeData.completeBooking(null);
+                context.go(AppRoutes.home);
+              })
             : Row(
                 children: [
                   // Team A panel

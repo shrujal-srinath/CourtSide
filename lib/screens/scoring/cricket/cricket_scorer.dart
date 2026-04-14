@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme.dart';
 import '../../../core/app_gradients.dart';
+import '../../../models/fake_data.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  DELIVERY MODEL
@@ -761,6 +762,18 @@ class _GameOverSheet extends StatelessWidget {
               },
               icon: const Icon(Icons.ios_share_rounded, color: Colors.white, size: 18),
               label: Text('Share Stats', style: AppTextStyles.headingS(Colors.white)),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity, height: 48,
+            child: TextButton(
+              onPressed: () {
+                FakeData.completeBooking(null);
+                Navigator.pop(context);
+                context.go('/home');
+              },
+              child: Text('DONE', style: AppTextStyles.headingS(context.colors.colorTextSecondary)),
             ),
           ),
         ],

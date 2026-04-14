@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants.dart';
+import '../../providers/booking_draft_provider.dart';
 
 import '../../core/theme.dart';
 import '../../core/constants.dart';
@@ -277,7 +279,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               if (eveningSlots.isNotEmpty)
                 _buildSlotGroup('Evening', eveningSlots, colors, displayCourt.pricePerSlot, displayCourt),
 
-              SliverToBoxAdapter(child: SizedBox(height: botPad + 280)),
+              SliverToBoxAdapter(child: SizedBox(height: botPad + 320)), // large bottom padding for sticky summary
             ],
           ),
 
@@ -358,6 +360,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     );
   }
 
+
   Widget _buildStickyFooter(AppColorScheme colors, bool canBook, Court court) {
     final slot = _selectedSlot;
     final needsCourtPick = _courts.length > 1 && _selectedCourt == null;
@@ -409,7 +412,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // SUMMARY
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
@@ -432,25 +434,24 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     ),
                   ],
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('Total', style: AppTextStyles.bodyS(colors.colorTextSecondary)),
-                    const SizedBox(height: 2),
-                    Text('₹${court.pricePerSlot}',
-                        style: AppTextStyles.headingM(colors.colorTextPrimary)),
-                  ],
-                ),
+                Text('₹${court.pricePerSlot}',
+                    style: AppTextStyles.headingM(colors.colorTextPrimary)),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          // CTA
           SizedBox(
             width: double.infinity,
             height: 54,
             child: ElevatedButton(
-              onPressed: _proceed,
+              onPressed: () {
+                ref.read(bookingDraftProvider.notifier).setBooking(
+                  widget.venue!, 
+                  court, 
+                  _selectedSlot!,
+                );
+                context.push(AppRoutes.bookingSummary);
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: colors.colorAccentPrimary,
                 shape: RoundedRectangleBorder(
@@ -458,261 +459,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 elevation: 0,
               ),
               child: Text(
-                'Next · ₹${court.pricePerSlot}',
-                style: AppTextStyles.headingS(colors.colorTextOnAccent),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Court Selector Row (inline tabs, multiple courts) ───────────
-
-class _CourtSelectorRow extends StatelessWidget {
-  const _CourtSelectorRow({
-    required this.courts,
-    required this.selected,
-    required this.colors,
-    required this.onSelect,
-  });
-
-  final List<Court> courts;
-  final Court? selected;
-  final AppColorScheme colors;
-  final ValueChanged<Court> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('SELECT COURT', style: AppTextStyles.overline(colors.colorTextTertiary)),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: courts.map((court) {
-              final isSelected = selected?.id == court.id;
-              return Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                      right: courts.last.id == court.id ? 0 : AppSpacing.sm),
-                  child: GestureDetector(
-                    onTap: () => onSelect(court),
-                    child: AnimatedContainer(
-                      duration: AppDuration.fast,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? colors.colorAccentPrimary.withValues(alpha: 0.08)
-                            : colors.colorSurfacePrimary,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        border: Border.all(
-                          color: isSelected ? colors.colorAccentPrimary : colors.colorBorderSubtle,
-                          width: isSelected ? 1.0 : 0.5,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            court.name,
-                            style: AppTextStyles.headingS(isSelected
-                                ? colors.colorAccentPrimary
-                                : colors.colorTextPrimary),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            court.surface + (court.hasTheBox ? ' · THE BOX' : ''),
-                            style: AppTextStyles.bodyS(colors.colorTextTertiary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Court Picker Bottom Sheet ────────────────────────────────────
-
-class _CourtPickerSheet extends StatefulWidget {
-  const _CourtPickerSheet({
-    required this.slot,
-    required this.courts,
-    required this.selectedCourt,
-    required this.onConfirm,
-  });
-
-  final Slot slot;
-  final List<Court> courts;
-  final Court? selectedCourt;
-  final ValueChanged<Court> onConfirm;
-
-  @override
-  State<_CourtPickerSheet> createState() => _CourtPickerSheetState();
-}
-
-class _CourtPickerSheetState extends State<_CourtPickerSheet> {
-  late Court? _selected;
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = widget.selectedCourt ?? widget.courts.first;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final botPad = MediaQuery.of(context).padding.bottom;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.colorSurfacePrimary,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 12),
-          Center(
-            child: Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(
-                color: colors.colorBorderMedium,
-                borderRadius: BorderRadius.circular(100),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Row(
-              children: [
-                Text('CHOOSE COURT', style: AppTextStyles.overline(colors.colorTextTertiary)),
-                const Spacer(),
-                Text(
-                  '· ${widget.slot.startTime}',
-                  style: AppTextStyles.labelM(colors.colorAccentPrimary),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          ...widget.courts.map((court) {
-            final isSelected = _selected?.id == court.id;
-            return GestureDetector(
-              onTap: () => setState(() => _selected = court),
-              behavior: HitTestBehavior.opaque,
-              child: AnimatedContainer(
-                duration: AppDuration.fast,
-                margin: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? colors.colorAccentPrimary.withValues(alpha: 0.06)
-                      : colors.colorSurfaceElevated,
-                  borderRadius: BorderRadius.circular(AppRadius.card),
-                  border: Border.all(
-                    color: isSelected ? colors.colorAccentPrimary : colors.colorBorderSubtle,
-                    width: isSelected ? 1.0 : 0.5,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(court.name,
-                                  style: AppTextStyles.headingS(colors.colorTextPrimary)),
-                              if (court.hasTheBox) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: colors.colorAccentPrimary.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                                  ),
-                                  child: Text('THE BOX',
-                                      style: AppTextStyles.labelS(colors.colorAccentPrimary)),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${court.surface} · ${court.isIndoor ? 'Indoor' : 'Outdoor'} · ${court.slotsAvailableToday} slots left',
-                            style: AppTextStyles.bodyS(colors.colorTextSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text('₹${court.pricePerSlot}',
-                            style: AppTextStyles.headingS(colors.colorTextPrimary)),
-                        Text('/ slot', style: AppTextStyles.bodyS(colors.colorTextTertiary)),
-                      ],
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    AnimatedContainer(
-                      duration: AppDuration.fast,
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isSelected ? colors.colorAccentPrimary : Colors.transparent,
-                        border: Border.all(
-                          color: isSelected ? colors.colorAccentPrimary : colors.colorBorderMedium,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: isSelected
-                          ? const Icon(Icons.check_rounded, size: 12, color: Colors.white)
-                          : null,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-          const SizedBox(height: AppSpacing.lg),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-                AppSpacing.lg, 0, AppSpacing.lg, botPad + AppSpacing.lg),
-            child: SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: ElevatedButton(
-                onPressed: _selected != null
-                    ? () => widget.onConfirm(_selected!)
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colors.colorAccentPrimary,
-                  disabledBackgroundColor: colors.colorSurfaceElevated,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.pill)),
-                  elevation: 0,
-                ),
-                child: Text('Confirm Court',
-                    style: AppTextStyles.headingS(colors.colorTextOnAccent)),
+                'Confirm Slot',
+                style: AppTextStyles.labelM(Colors.white),
               ),
             ),
           ),
