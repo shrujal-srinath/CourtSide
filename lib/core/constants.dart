@@ -29,8 +29,14 @@ class AppRoutes {
   static const String phoneAuth  = '/phone-auth';
   static const String onboarding = '/onboarding';
 
+  static const String modeGate = '/mode-gate';
+
   static const String home     = '/home';
   static const String explore  = '/explore';
+
+  // ── Play shell ────────────────────────────────────────────────
+  static const String playHome = '/play';
+  static const String hostGame = '/host-game';
   static const String stats    = '/stats';
   static const String bookings = '/bookings';
 

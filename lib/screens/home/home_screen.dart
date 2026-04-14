@@ -435,6 +435,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         onSeeAll: () => context.go(AppRoutes.explore),
                       ),
 
+                      const SizedBox(height: AppSpacing.lg),
+                      _HostGameBanner(),
                       const SizedBox(height: AppSpacing.xl),
 
                       _SectionHeader(
@@ -2399,6 +2401,64 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ── Host Game Banner ──────────────────────────────────────────────
+
+class _HostGameBanner extends StatelessWidget {
+  const _HostGameBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.hostGame),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        height: 72,
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0D0D0D),
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(
+              color: const Color(0xFF1A2030), width: 0.5),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Host a game',
+                    style: AppTextStyles.headingS(colors.colorTextOnAccent)
+                        .copyWith(fontSize: 17),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Create a public or private match at any court',
+                    style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: colors.colorAccentPrimary,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.arrow_forward_rounded,
+                  color: Colors.white, size: 15),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _CommunityFeed extends StatelessWidget {
   const _CommunityFeed({required this.bookings});
   final List<BookingRecord> bookings;

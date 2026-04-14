@@ -29,7 +29,10 @@ import '../screens/marketplace/marketplace_screen.dart';
 import '../screens/marketplace/product_detail_screen.dart';
 import '../screens/marketplace/cart_screen.dart';
 import '../screens/marketplace/checkout_screen.dart';
+import '../screens/mode_gate/mode_gate_screen.dart';
+import '../screens/play/play_home_screen.dart';
 import '../widgets/common/app_shell.dart';
+import '../widgets/common/play_shell.dart';
 import '../widgets/stat_share/stat_share_preview_screen.dart';
 import 'constants.dart';
 import 'theme.dart';
@@ -96,6 +99,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.onboarding,
         builder: (c, s) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.modeGate,
+        pageBuilder: (_, state) => fadeScalePage(
+          key: state.pageKey,
+          child: const ModeGateScreen(),
+        ),
       ),
 
       // ── Sport screen ─────────────────────────────────────────
@@ -257,12 +267,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // ── Bookings (Moved out of shell) ────────────────────────
+      // ── Play shell with bottom nav ───────────────────────────
+      ShellRoute(
+        builder: (context, state, child) => PlayShell(child: child),
+        routes: [
+          GoRoute(
+            path: AppRoutes.playHome,
+            pageBuilder: (ctx, s) =>
+                const NoTransitionPage(child: PlayHomeScreen()),
+          ),
+          GoRoute(
+            path: AppRoutes.bookings,
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: MyBookingsScreen()),
+          ),
+        ],
+      ),
+
+      // ── Host game (stub) ─────────────────────────────────────
       GoRoute(
-        path: AppRoutes.bookings,
-        pageBuilder: (context, state) => slideUpPage(
+        path: AppRoutes.hostGame,
+        pageBuilder: (_, state) => slideUpPage(
           key: state.pageKey,
-          child: const MyBookingsScreen(),
+          child: const _Soon('Host a Game'),
         ),
       ),
 

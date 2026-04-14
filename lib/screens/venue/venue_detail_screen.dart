@@ -466,7 +466,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
 
       // ── Fixed CTA Button ────────────────────────────────────
       bottomNavigationBar: Container(
-        padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + botPad),
+        padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + botPad),
         decoration: BoxDecoration(
           color: colors.colorSurfacePrimary,
           border: Border(
@@ -479,9 +479,36 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
             ),
           ],
         ),
-        child: CsButton.primary(
-          label: bookLabel,
-          onTap: bookEnabled ? _handleBookTap : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CsButton.primary(
+              label: bookLabel,
+              onTap: bookEnabled ? _handleBookTap : null,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            // ── Create game CTA ─────────────────────────────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Want to organise a game here?  ',
+                  style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                ),
+                GestureDetector(
+                  onTap: () => context.push(
+                    AppRoutes.hostGame,
+                    extra: {'venueId': _venue.id, 'venueName': _venue.name},
+                  ),
+                  child: Text(
+                    'Create game →',
+                    style: AppTextStyles.bodyS(colors.colorAccentPrimary)
+                        .copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

@@ -12,7 +12,7 @@ class OnboardingScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Onboarding')),
       body: Center(
         child: ElevatedButton(
-          onPressed: () => context.go(AppRoutes.home),
+          onPressed: () => context.go(AppRoutes.modeGate),
           child: const Text('Finish Onboarding'),
         ),
       ),
