@@ -1899,9 +1899,8 @@ class _CourtsNearYou extends StatelessWidget {
   }
 }
 
-class _VenueCard extends StatelessWidget {
-  const _VenueCard({required this.venue, required this.onTap});
-  final Venue venue;
+class _SeeAllCard extends StatelessWidget {
+  const _SeeAllCard({required this.onTap});
   final VoidCallback onTap;
 
   @override
