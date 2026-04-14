@@ -1,5 +1,6 @@
 // lib/core/router.dart
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +24,10 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/scoring/basketball/basketball_setup_screen.dart';
 import '../screens/scoring/basketball/basketball_players_screen.dart';
 import '../screens/scoring/cricket/cricket_scorer.dart';
+import '../screens/booking/booking_invite_screen.dart';
+import '../screens/booking/booking_shop_screen.dart';
+import '../screens/booking/booking_hardware_screen.dart';
+import '../screens/booking/booking_cart_screen.dart';
 import '../widgets/common/app_shell.dart';
 import '../widgets/stat_share/stat_share_preview_screen.dart';
 import 'constants.dart';
@@ -38,7 +43,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: false,
 
     redirect: (context, state) {
-      if (isDevAccess) {
+      if (kDebugMode && isDevAccess) {
         final publicRoutes = [
           AppRoutes.landing,
           AppRoutes.login,
@@ -129,6 +134,36 @@ final routerProvider = Provider<GoRouter>((ref) {
             child: BookingScreen(venueId: venueId, sport: sport, venue: venue),
           );
         },
+      ),
+
+      // ── Booking wizard steps ─────────────────────────────────
+      GoRoute(
+        path: '/book/:venueId/invite',
+        pageBuilder: (_, state) => slideUpPage(
+          key: state.pageKey,
+          child: const BookingInviteScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/book/:venueId/shop',
+        pageBuilder: (_, state) => slideUpPage(
+          key: state.pageKey,
+          child: const BookingShopScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/book/:venueId/hardware',
+        pageBuilder: (_, state) => slideUpPage(
+          key: state.pageKey,
+          child: const BookingHardwareScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/book/:venueId/cart',
+        pageBuilder: (_, state) => slideUpPage(
+          key: state.pageKey,
+          child: const BookingCartScreen(),
+        ),
       ),
 
       // ── Stat Share ───────────────────────────────────────────
@@ -236,15 +271,47 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
 
-    errorBuilder: (context, state) => Scaffold(
-      backgroundColor: AppColors.black,
-      body: Center(
-        child: Text(
-          'Page not found',
-          style: TextStyle(color: AppColors.white),
+    errorBuilder: (context, state) {
+      final colors = Theme.of(context).extension<AppColorScheme>()!;
+      return Scaffold(
+        backgroundColor: colors.colorBackgroundPrimary,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline_rounded,
+                  size: 48, color: colors.colorTextTertiary),
+              const SizedBox(height: 16),
+              Text('Page not found',
+                  style: TextStyle(
+                      color: colors.colorTextPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Text(state.matchedLocation,
+                  style: TextStyle(
+                      color: colors.colorTextTertiary, fontSize: 12)),
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () => context.go(AppRoutes.home),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: colors.colorAccentPrimary,
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child: Text('Go Home',
+                      style: TextStyle(
+                          color: colors.colorTextOnAccent,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
 });
 
@@ -256,17 +323,18 @@ class _Soon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorScheme>()!;
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: colors.colorBackgroundPrimary,
       appBar: AppBar(
-        title: Text(name, style: TextStyle(color: AppColors.white)),
-        backgroundColor: AppColors.black,
-        iconTheme: const IconThemeData(color: AppColors.white),
+        title: Text(name, style: TextStyle(color: colors.colorTextPrimary)),
+        backgroundColor: colors.colorBackgroundPrimary,
+        iconTheme: IconThemeData(color: colors.colorTextPrimary),
       ),
       body: Center(
         child: Text(
           '$name — coming soon',
-          style: TextStyle(color: AppColors.textSecondaryDark),
+          style: TextStyle(color: colors.colorTextSecondary),
         ),
       ),
     );

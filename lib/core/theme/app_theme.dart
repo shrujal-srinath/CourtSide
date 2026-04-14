@@ -14,8 +14,8 @@ import 'void_fire_theme.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get dark  => _build(VoidFireTheme.scheme, Brightness.dark);
-  static ThemeData get light => _build(VoidFireTheme.scheme, Brightness.light);
+  static ThemeData get dark  => _build(VoidFireTheme.darkScheme,  Brightness.dark);
+  static ThemeData get light => _build(VoidFireTheme.lightScheme, Brightness.light);
 
   static ThemeData _build(AppColorScheme scheme, Brightness brightness) {
     final bg      = scheme.colorBackgroundPrimary;

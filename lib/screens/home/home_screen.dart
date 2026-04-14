@@ -13,6 +13,7 @@ import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../models/fake_data.dart';
 import '../../providers/auth_provider.dart';
+import '../../../app.dart' show themeModeProvider;
 
 // ── Sport config ────────────────────────────────────────────────
 
@@ -23,14 +24,6 @@ class _Sport {
   final String emoji;
   final Color color;
 }
-
-// ignore: unused_element
-const _sports = [
-  _Sport('basketball', 'Basketball', '🏀', AppColors.basketball),
-  _Sport('cricket',    'Box Cricket', '🏏', AppColors.cricket),
-  _Sport('badminton',  'Badminton',   '🏸', AppColors.badminton),
-  _Sport('football',   'Football',    '⚽', AppColors.football),
-];
 
 Color _sportColor(String sport) {
   switch (sport) {
@@ -126,7 +119,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         CameraUpdate.newLatLngZoom(cameraTarget, 13),
       );
     } catch (e) {
-      _useFallback();
+      if (mounted) _useFallback();
     }
   }
 
@@ -184,7 +177,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     List<Venue> candidates;
     if (filter == 'pickup' || filter == 'community') {
       candidates = FakeData.pickupGames
-          .map((g) => FakeData.venues.firstWhere((v) => v.id == g.venueId))
+          .map((g) {
+            try { return FakeData.venues.firstWhere((v) => v.id == g.venueId); }
+            catch (_) { return null; }
+          })
+          .whereType<Venue>()
           .toSet()
           .toList();
     } else {
@@ -264,94 +261,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ── Location picker ──────────────────────────────────────────
 
   void _showLocationPicker(BuildContext ctx) {
-    final colors = ctx.colors;
     showModalBottomSheet<void>(
       context: ctx,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => StatefulBuilder(
-        builder: (sheetCtx, setSheetState) => Container(
-          decoration: BoxDecoration(
-            color: colors.colorSurfacePrimary,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppRadius.xxl),
-            ),
-            border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
-          ),
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            MediaQuery.of(ctx).padding.bottom + AppSpacing.xxl,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colors.colorBorderMedium,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Text(
-                'CHOOSE AREA',
-                style: AppTextStyles.overline(colors.colorTextTertiary),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              ..._neighborhoods.map((hood) {
-                final fullLabel = '$hood, Bengaluru';
-                final isActive = _locationLabel == fullLabel;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => _locationLabel = fullLabel);
-                    Navigator.of(sheetCtx).pop();
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: Container(
-                    height: 44,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xs),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.location_on_rounded,
-                          size: 16,
-                          color: isActive
-                              ? colors.colorAccentPrimary
-                              : colors.colorTextTertiary,
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Text(
-                            hood,
-                            style: isActive
-                                ? AppTextStyles.headingS(
-                                        colors.colorTextPrimary)
-                                    .copyWith(fontWeight: FontWeight.w700)
-                                : AppTextStyles.bodyM(
-                                    colors.colorTextSecondary),
-                          ),
-                        ),
-                        if (isActive)
-                          Icon(
-                            Icons.check_rounded,
-                            size: 16,
-                            color: colors.colorAccentPrimary,
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
-        ),
+      builder: (_) => _LocationPickerSheet(
+        neighborhoods: _neighborhoods,
+        current: _locationLabel,
+        onSelect: (label) {
+          setState(() => _locationLabel = label);
+          Navigator.of(ctx).pop();
+        },
       ),
     );
   }
@@ -360,7 +280,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
     final user = ref.watch(currentUserProvider);
-    final name = user?.userMetadata?['full_name'] as String? ?? 'Player';
+    final rawName = user?.userMetadata?['full_name'];
+    final name = rawName is String && rawName.isNotEmpty ? rawName : 'Player';
     final firstName = name.split(' ').first;
     final colors = context.colors;
 
@@ -429,6 +350,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         venues: FakeData.venues,
                         onVenueTap: (v) =>
                             context.push(AppRoutes.venueById(v.id)),
+                        onSeeAll: () => context.go(AppRoutes.explore),
                       ),
 
                       const SizedBox(height: AppSpacing.xl),
@@ -509,7 +431,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 //  HOME HEADER
 // ═══════════════════════════════════════════════════════════════
 
-class _HomeHeader extends StatelessWidget {
+class _HomeHeader extends ConsumerWidget {
   const _HomeHeader({
     required this.firstName,
     required this.topPad,
@@ -521,6 +443,13 @@ class _HomeHeader extends StatelessWidget {
   final double topPad;
   final String locationLabel;
   final VoidCallback onLocationTap;
+
+  static String _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
 
   void _showNotificationsSheet(BuildContext context) {
     final colors = context.colors;
@@ -575,97 +504,162 @@ class _HomeHeader extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final initials = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'P';
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors    = context.colors;
+    final themeMode = ref.watch(themeModeProvider);
+    final isDark    = themeMode == ThemeMode.dark;
+    final initials  = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'P';
+    final locLabel  = locationLabel.length > 18
+        ? '${locationLabel.substring(0, 15)}…'
+        : locationLabel;
 
     return Container(
       color: colors.colorBackgroundPrimary,
       padding: EdgeInsets.fromLTRB(
           AppSpacing.lg, topPad + AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Avatar
-              GestureDetector(
-                onTap: () => context.push(AppRoutes.profile),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: colors.colorBorderSubtle,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Center(
-                    child: Text(
-                      initials,
-                      style: AppTextStyles.labelM(colors.colorTextPrimary),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Location
-              GestureDetector(
-                onTap: onLocationTap,
-                behavior: HitTestBehavior.opaque,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      locationLabel.length > 20
-                          ? '${locationLabel.substring(0, 17)}...'
-                          : locationLabel,
-                      style: AppTextStyles.headingS(colors.colorTextPrimary),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 14,
-                      color: colors.colorTextTertiary,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          // Notification bell
-          GestureDetector(
-            onTap: () => _showNotificationsSheet(context),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-              ),
-              child: Stack(
-                alignment: Alignment.center,
+              // ── Left: avatar + greeting + location ──────────────
+              Row(
                 children: [
-                  Icon(
-                    Icons.notifications_none_rounded,
-                    color: colors.colorTextPrimary,
-                    size: 24,
-                  ),
-                  Positioned(
-                    top: 10,
-                    right: 10,
+                  // Avatar with accent ring
+                  GestureDetector(
+                    onTap: () => context.push(AppRoutes.profile),
                     child: Container(
-                      width: 8,
-                      height: 8,
+                      width: 42,
+                      height: 42,
                       decoration: BoxDecoration(
-                        color: colors.colorAccentPrimary,
                         shape: BoxShape.circle,
                         border: Border.all(
-                            color: colors.colorBackgroundPrimary, width: 1.5),
+                            color: colors.colorAccentPrimary, width: 2),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(2),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: colors.colorSurfaceElevated,
+                          ),
+                          child: Center(
+                            child: Text(
+                              initials,
+                              style: AppTextStyles.labelM(colors.colorTextPrimary),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  // Greeting + location
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${_greeting()}, $firstName',
+                        style: AppTextStyles.headingS(colors.colorTextPrimary),
+                      ),
+                      const SizedBox(height: 1),
+                      GestureDetector(
+                        onTap: onLocationTap,
+                        behavior: HitTestBehavior.opaque,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.location_on_rounded,
+                                size: 12,
+                                color: colors.colorAccentPrimary),
+                            const SizedBox(width: 3),
+                            Text(
+                              locLabel,
+                              style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                            ),
+                            const SizedBox(width: 3),
+                            Icon(Icons.keyboard_arrow_down_rounded,
+                                size: 12,
+                                color: colors.colorTextTertiary),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              // ── Right: theme toggle + bell ───────────────────────
+              Row(
+                children: [
+                  // Theme toggle
+                  GestureDetector(
+                    onTap: () => ref
+                        .read(themeModeProvider.notifier)
+                        .setMode(isDark ? ThemeMode.light : ThemeMode.dark),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: colors.colorSurfacePrimary,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: colors.colorBorderSubtle, width: 0.5),
+                      ),
+                      child: Icon(
+                        isDark
+                            ? Icons.light_mode_rounded
+                            : Icons.dark_mode_rounded,
+                        color: colors.colorTextSecondary,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  // Notification bell
+                  GestureDetector(
+                    onTap: () => _showNotificationsSheet(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: colors.colorSurfacePrimary,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: colors.colorBorderSubtle, width: 0.5),
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Icon(
+                            Icons.notifications_none_rounded,
+                            color: colors.colorTextPrimary,
+                            size: 20,
+                          ),
+                          Positioned(
+                            top: 9,
+                            right: 9,
+                            child: Container(
+                              width: 7,
+                              height: 7,
+                              decoration: BoxDecoration(
+                                color: colors.colorAccentPrimary,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: colors.colorBackgroundPrimary,
+                                    width: 1.5),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -733,7 +727,7 @@ class _HomeSearchBar extends StatelessWidget {
 }
 
 class _AnimatedSearchHint extends StatefulWidget {
-  const _AnimatedSearchHint({super.key});
+  const _AnimatedSearchHint();
 
   @override
   State<_AnimatedSearchHint> createState() => _AnimatedSearchHintState();
@@ -1791,29 +1785,41 @@ class _SportChipRow extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════
 
 class _CourtsNearYou extends StatelessWidget {
-  const _CourtsNearYou({required this.venues, required this.onVenueTap});
+  const _CourtsNearYou({
+    required this.venues,
+    required this.onVenueTap,
+    required this.onSeeAll,
+  });
   final List<Venue> venues;
   final ValueChanged<Venue> onVenueTap;
+  final VoidCallback onSeeAll;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      itemCount: math.min(venues.length, 5),
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (ctx, i) => _VenueCard(
-        venue: venues[i],
-        onTap: () => onVenueTap(venues[i]),
+    return SizedBox(
+      height: 230,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        itemCount: venues.length + 1, // +1 for "See all" card
+        separatorBuilder: (ctx, i) => const SizedBox(width: AppSpacing.md),
+        itemBuilder: (ctx, i) {
+          if (i == venues.length) {
+            return _SeeAllCard(onTap: onSeeAll);
+          }
+          return _VenueCard(
+            venue: venues[i],
+            onTap: () => onVenueTap(venues[i]),
+          );
+        },
       ),
     );
   }
 }
 
-class _VenueCard extends StatelessWidget {
-  const _VenueCard({required this.venue, required this.onTap, super.key});
-  final Venue venue;
+// "See all" trailing card
+class _SeeAllCard extends StatelessWidget {
+  const _SeeAllCard({required this.onTap});
   final VoidCallback onTap;
 
   @override
@@ -1822,109 +1828,212 @@ class _VenueCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 110,
+        width: 80,
         decoration: BoxDecoration(
-          color: colors.colorSurfacePrimary,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black.withValues(alpha: 0.05), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+          color: colors.colorSurfaceElevated,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: colors.colorAccentSubtle,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.arrow_forward_rounded,
+                  color: colors.colorAccentPrimary, size: 18),
             ),
+            const SizedBox(height: AppSpacing.sm),
+            Text('See\nAll',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.labelS(colors.colorTextSecondary)),
           ],
         ),
-        child: Row(
+      ),
+    );
+  }
+}
+
+class _VenuePhotoPlaceholder extends StatelessWidget {
+  const _VenuePhotoPlaceholder({required this.venue, required this.colors});
+  final Venue venue;
+  final AppColorScheme colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final sport = venue.sports.isNotEmpty ? venue.sports.first : 'basketball';
+    final color = _sportColor(sport);
+    return Container(
+      color: colors.colorSurfaceElevated,
+      child: Center(
+        child: Icon(Icons.stadium_rounded,
+            color: color.withValues(alpha: 0.4), size: 28),
+      ),
+    );
+  }
+}
+
+class _VenueCard extends StatelessWidget {
+  const _VenueCard({required this.venue, required this.onTap});
+  final Venue venue;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final court  = FakeData.courts.where((c) => c.venueId == venue.id).firstOrNull;
+    final slots  = court?.slotsAvailableToday ?? 0;
+    final price  = court?.pricePerSlot ?? 0;
+    final primarySport = venue.sports.isNotEmpty ? venue.sports.first : 'basketball';
+    final sportColor = _sportColor(primarySport);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 200,
+        decoration: BoxDecoration(
+          color: colors.colorSurfacePrimary,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+          boxShadow: AppShadow.card,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
-            Container(
-              width: 100,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
-                image: DecorationImage(
-                  image: NetworkImage(venue.photoUrl),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            // Details
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // ── Photo ──────────────────────────────────────────
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppRadius.card - 1)),
+              child: SizedBox(
+                height: 110,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          venue.name,
-                          style: AppTextStyles.headingS(colors.colorTextPrimary)
-                              .copyWith(fontSize: 14, fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(Icons.location_on_rounded, size: 10, color: colors.colorTextTertiary),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${venue.address.split(',').first} · 1.2km',
-                              style: AppTextStyles.bodyS(colors.colorTextSecondary)
-                                  .copyWith(fontSize: 10),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.star_rounded, size: 12, color: colors.colorWarning),
-                                const SizedBox(width: 2),
-                                Text(
-                                  '4.8',
-                                  style: AppTextStyles.labelS(colors.colorTextPrimary)
-                                      .copyWith(fontSize: 11),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              'Active Now',
-                              style: AppTextStyles.labelS(colors.colorSuccess)
-                                  .copyWith(fontSize: 9),
-                            ),
-                          ],
-                        ),
-                        // Book Button
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: colors.colorAccentPrimary,
-                            borderRadius: BorderRadius.circular(100),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Book',
-                                style: AppTextStyles.labelS(Colors.white),
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.arrow_forward_rounded, size: 10, color: Colors.white),
+                    venue.photoUrl.isNotEmpty
+                        ? Image.network(venue.photoUrl, fit: BoxFit.cover,
+                            errorBuilder: (c, e, s) =>
+                                _VenuePhotoPlaceholder(venue: venue, colors: colors))
+                        : _VenuePhotoPlaceholder(venue: venue, colors: colors),
+                    // Gradient overlay
+                    Positioned(
+                      bottom: 0, left: 0, right: 0,
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [
+                              colors.colorBackgroundPrimary.withValues(alpha: 0.85),
+                              colors.colorBackgroundPrimary.withValues(alpha: 0),
                             ],
                           ),
                         ),
+                      ),
+                    ),
+                    // Slots badge
+                    Positioned(
+                      top: 8, right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: slots > 0
+                              ? colors.colorSuccess.withValues(alpha: 0.9)
+                              : colors.colorError.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Text(
+                          slots > 0 ? '$slots slots' : 'Full',
+                          style: AppTextStyles.overline(colors.colorTextOnAccent),
+                        ),
+                      ),
+                    ),
+                    // Indoor/outdoor tag
+                    if (venue.isIndoor)
+                      Positioned(
+                        top: 8, left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: colors.colorSurfaceOverlay.withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Text('INDOOR',
+                              style: AppTextStyles.overline(colors.colorTextPrimary)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ── Details ────────────────────────────────────────
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(venue.name,
+                        style: AppTextStyles.headingS(colors.colorTextPrimary),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 2),
+                    Row(children: [
+                      Icon(Icons.location_on_rounded, size: 10,
+                          color: colors.colorTextTertiary),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(venue.area,
+                            style: AppTextStyles.bodyS(colors.colorTextTertiary),
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                    ]),
+                    const Spacer(),
+                    // Sport chips
+                    Row(children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: sportColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Text(primarySport,
+                            style: AppTextStyles.overline(sportColor)),
+                      ),
+                      if (venue.sports.length > 1) ...[
+                        const SizedBox(width: 4),
+                        Text('+${venue.sports.length - 1}',
+                            style: AppTextStyles.labelS(colors.colorTextTertiary)),
+                      ],
+                    ]),
+                    const SizedBox(height: AppSpacing.sm),
+                    // Rating + price row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(children: [
+                          Icon(Icons.star_rounded, size: 12,
+                              color: colors.colorWarning),
+                          const SizedBox(width: 3),
+                          Text('${venue.rating}',
+                              style: AppTextStyles.labelS(
+                                  colors.colorTextPrimary)),
+                          const SizedBox(width: 3),
+                          Text('(${venue.reviewCount})',
+                              style: AppTextStyles.labelS(
+                                  colors.colorTextTertiary)),
+                        ]),
+                        if (price > 0)
+                          Text('₹$price/slot',
+                              style: AppTextStyles.labelS(
+                                  colors.colorAccentPrimary)),
                       ],
                     ),
                   ],
@@ -1942,6 +2051,208 @@ class _VenueCard extends StatelessWidget {
 //  COMMUNITY FEED
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+//  LOCATION PICKER SHEET — real search
+// ═══════════════════════════════════════════════════════════════
+
+class _LocationPickerSheet extends StatefulWidget {
+  const _LocationPickerSheet({
+    required this.neighborhoods,
+    required this.current,
+    required this.onSelect,
+  });
+  final List<String> neighborhoods;
+  final String current;
+  final ValueChanged<String> onSelect;
+
+  @override
+  State<_LocationPickerSheet> createState() => _LocationPickerSheetState();
+}
+
+class _LocationPickerSheetState extends State<_LocationPickerSheet> {
+  final _searchCtrl = TextEditingController();
+  List<String> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.neighborhoods;
+    _searchCtrl.addListener(() {
+      final q = _searchCtrl.text.trim().toLowerCase();
+      setState(() {
+        _filtered = q.isEmpty
+            ? widget.neighborhoods
+            : widget.neighborhoods
+                .where((n) => n.toLowerCase().contains(q))
+                .toList();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors  = context.colors;
+    final botPad  = MediaQuery.of(context).padding.bottom;
+    final kbPad   = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.75,
+      ),
+      decoration: BoxDecoration(
+        color: colors.colorSurfacePrimary,
+        borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xxl)),
+        border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+      ),
+      padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.md,
+          AppSpacing.lg, botPad + kbPad + AppSpacing.lg),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Handle
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: colors.colorBorderMedium,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text('SEARCH AREA',
+              style: AppTextStyles.overline(colors.colorTextTertiary)),
+          const SizedBox(height: AppSpacing.sm),
+          // Search field
+          Container(
+            height: 46,
+            decoration: BoxDecoration(
+              color: colors.colorSurfaceElevated,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: AppSpacing.md),
+                Icon(Icons.search_rounded,
+                    size: 18, color: colors.colorTextTertiary),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: TextField(
+                    controller: _searchCtrl,
+                    autofocus: true,
+                    style: AppTextStyles.bodyM(colors.colorTextPrimary),
+                    decoration: InputDecoration(
+                      hintText: 'Search Bengaluru areas…',
+                      hintStyle: AppTextStyles.bodyM(colors.colorTextTertiary),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
+                if (_searchCtrl.text.isNotEmpty)
+                  GestureDetector(
+                    onTap: () => _searchCtrl.clear(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm),
+                      child: Icon(Icons.close_rounded,
+                          size: 16, color: colors.colorTextTertiary),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          // Use current location row
+          GestureDetector(
+            onTap: () => widget.onSelect('Bengaluru (Current)'),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: Row(
+                children: [
+                  Icon(Icons.my_location_rounded,
+                      size: 16, color: colors.colorAccentPrimary),
+                  const SizedBox(width: AppSpacing.md),
+                  Text('Use my current location',
+                      style: AppTextStyles.bodyM(colors.colorAccentPrimary)),
+                ],
+              ),
+            ),
+          ),
+          Divider(height: AppSpacing.md,
+              color: colors.colorBorderSubtle, thickness: 0.5),
+          // Results
+          Flexible(
+            child: _filtered.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+                    child: Center(
+                      child: Text('No areas match "${_searchCtrl.text}"',
+                          style: AppTextStyles.bodyM(colors.colorTextTertiary)),
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _filtered.length,
+                    itemBuilder: (context, i) {
+                      final hood = _filtered[i];
+                      final fullLabel = '$hood, Bengaluru';
+                      final isActive = widget.current == fullLabel;
+                      return GestureDetector(
+                        onTap: () => widget.onSelect(fullLabel),
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          height: 48,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.xs),
+                          child: Row(
+                            children: [
+                              Icon(Icons.location_on_outlined,
+                                  size: 16,
+                                  color: isActive
+                                      ? colors.colorAccentPrimary
+                                      : colors.colorTextTertiary),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Text(hood,
+                                    style: isActive
+                                        ? AppTextStyles.headingS(
+                                                colors.colorTextPrimary)
+                                        : AppTextStyles.bodyM(
+                                                colors.colorTextSecondary)),
+                              ),
+                              if (isActive)
+                                Icon(Icons.check_rounded,
+                                    size: 16,
+                                    color: colors.colorAccentPrimary),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 class _CommunityFeed extends StatelessWidget {
   const _CommunityFeed({required this.bookings});
   final List<BookingRecord> bookings;

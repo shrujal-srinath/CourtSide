@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/constants.dart';
 import '../../core/theme.dart';
+import '../../models/fake_data.dart' as fd;
 
 // ═══════════════════════════════════════════════════════════════
 //  MODELS — temporary until Supabase is wired
@@ -36,23 +39,6 @@ class VenueItem {
   final String? photoUrl;
 }
 
-class PickupGame {
-  const PickupGame({
-    required this.id,
-    required this.title,
-    required this.venue,
-    required this.time,
-    required this.spotsLeft,
-    required this.sport,
-  });
-
-  final String id;
-  final String title;
-  final String venue;
-  final String time;
-  final int spotsLeft;
-  final String sport;
-}
 
 // ── Sport config ────────────────────────────────────────────────
 
@@ -79,58 +65,6 @@ const _sportConfigs = {
       SportConfig(id: 'football', label: 'Football', emoji: '⚽'),
 };
 
-// ── Seed data — replace with Supabase later ─────────────────────
-
-const _seedVenues = [
-  VenueItem(
-    id: '1', name: 'Koramangala Sports Hub',
-    address: '5th Block, Koramangala',
-    distanceKm: 1.2, rating: 4.7, pricePerSlot: 400,
-    sport: 'basketball', surface: 'Hardwood', isIndoor: true,
-    hasTheBox: true, slotsAvailable: 5,
-  ),
-  VenueItem(
-    id: '2', name: 'Indiranagar Court',
-    address: '12th Main, Indiranagar',
-    distanceKm: 2.1, rating: 4.5, pricePerSlot: 350,
-    sport: 'basketball', surface: 'Concrete', isIndoor: false,
-    hasTheBox: false, slotsAvailable: 3,
-  ),
-  VenueItem(
-    id: '3', name: 'HSR Sports Arena',
-    address: 'Sector 6, HSR Layout',
-    distanceKm: 3.4, rating: 4.8, pricePerSlot: 500,
-    sport: 'basketball', surface: 'Hardwood', isIndoor: true,
-    hasTheBox: true, slotsAvailable: 8,
-  ),
-  VenueItem(
-    id: '4', name: 'Whitefield Box Arena',
-    address: 'ITPL Main Rd, Whitefield',
-    distanceKm: 6.1, rating: 4.3, pricePerSlot: 450,
-    sport: 'basketball', surface: 'Rubber', isIndoor: true,
-    hasTheBox: true, slotsAvailable: 2,
-  ),
-  VenueItem(
-    id: '5', name: 'BTM Sports Complex',
-    address: 'BTM 2nd Stage',
-    distanceKm: 4.2, rating: 4.1, pricePerSlot: 300,
-    sport: 'basketball', surface: 'Concrete', isIndoor: false,
-    hasTheBox: false, slotsAvailable: 0,
-  ),
-];
-
-const _seedPickupGames = [
-  PickupGame(
-    id: 'p1', title: '3v3 Pickup',
-    venue: 'Koramangala Sports Hub',
-    time: '5:00 PM', spotsLeft: 2, sport: 'basketball',
-  ),
-  PickupGame(
-    id: 'p2', title: 'Full Court Run',
-    venue: 'HSR Sports Arena',
-    time: '7:00 PM', spotsLeft: 1, sport: 'basketball',
-  ),
-];
 
 // ── Date option ─────────────────────────────────────────────────
 
@@ -185,8 +119,24 @@ class _SportScreenState extends ConsumerState<SportScreen> {
           id: 'basketball', label: 'Basketball', emoji: '🏀');
 
   List<VenueItem> get _filteredVenues {
-    var venues =
-        _seedVenues.where((v) => v.sport == widget.sportId).toList();
+    final fdVenues = fd.FakeData.venuesBySport(widget.sportId);
+    var venues = fdVenues.map((v) {
+      final court = fd.FakeData.courtByVenueAndSport(v.id, widget.sportId);
+      return VenueItem(
+        id: v.id,
+        name: v.name,
+        address: v.address,
+        distanceKm: v.distanceFromKm(12.9716, 77.5946),
+        rating: v.rating,
+        pricePerSlot: court?.pricePerSlot ?? 0,
+        sport: widget.sportId,
+        surface: court?.surface ?? 'Hardwood',
+        isIndoor: court?.isIndoor ?? v.isIndoor,
+        hasTheBox: v.hasTheBox,
+        slotsAvailable: court?.slotsAvailableToday ?? 0,
+        photoUrl: v.photoUrl.isNotEmpty ? v.photoUrl : null,
+      );
+    }).toList();
     final q = _searchCtrl.text.trim().toLowerCase();
     if (q.isNotEmpty) {
       venues = venues
@@ -198,8 +148,8 @@ class _SportScreenState extends ConsumerState<SportScreen> {
     return venues;
   }
 
-  List<PickupGame> get _pickupGames =>
-      _seedPickupGames.where((g) => g.sport == widget.sportId).toList();
+  List<fd.PickupGame> get _pickupGames =>
+      fd.FakeData.pickupGamesBySport(widget.sportId);
 
   @override
   void dispose() {
@@ -544,7 +494,7 @@ class _Header extends StatelessWidget {
 
 class _PickupSection extends StatelessWidget {
   const _PickupSection({required this.games});
-  final List<PickupGame> games;
+  final List<fd.PickupGame> games;
 
   @override
   Widget build(BuildContext context) {
@@ -583,7 +533,7 @@ class _PickupSection extends StatelessWidget {
 
 class _PickupGameRow extends StatelessWidget {
   const _PickupGameRow({required this.game});
-  final PickupGame game;
+  final fd.PickupGame game;
 
   @override
   Widget build(BuildContext context) {
@@ -604,7 +554,7 @@ class _PickupGameRow extends StatelessWidget {
                       .copyWith(fontWeight: FontWeight.w500),
                 ),
                 Text(
-                  game.venue,
+                  game.venueName,
                   style: AppTextStyles.overline(
                       colors.colorTextTertiary),
                 ),
@@ -697,9 +647,7 @@ class _VenueCard extends StatelessWidget {
     final scarce    = const [1, 2, 3].contains(venue.slotsAvailable);
 
     return GestureDetector(
-      onTap: () {
-        // TODO: navigate to venue detail
-      },
+      onTap: () => context.push(AppRoutes.venueById(venue.id)),
       child: Container(
         margin: const EdgeInsets.fromLTRB(
             AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm + 2),

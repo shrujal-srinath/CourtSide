@@ -554,4 +554,147 @@ class FakeData {
 
   static List<PickupGame> pickupGamesBySport(String sport) =>
       pickupGames.where((g) => g.sport == sport).toList();
+
+  // ── Shop helpers ───────────────────────────────────────────────
+
+  static List<ShopItem> get shopItemsByCategory {
+    final order = ['equipment', 'apparel', 'accessories'];
+    return [...shopItems]..sort((a, b) =>
+        order.indexOf(a.category).compareTo(order.indexOf(b.category)));
+  }
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  SHOP ITEM
+// ═══════════════════════════════════════════════════════════════
+
+class ShopItem {
+  const ShopItem({
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.category,
+    required this.icon,
+    this.description = '',
+    this.sport,
+  });
+
+  final String id;
+  final String name;
+  final int price;
+  final String category; // 'equipment' | 'apparel' | 'accessories'
+  final String icon;     // emoji fallback until real images exist
+  final String description;
+  final String? sport;   // null = any sport
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  HARDWARE OPTION
+// ═══════════════════════════════════════════════════════════════
+
+class HardwareOption {
+  const HardwareOption({
+    required this.id,
+    required this.name,
+    required this.pricePerGame,
+    required this.description,
+    required this.icon,
+    this.isPopular = false,
+  });
+
+  final String id;
+  final String name;
+  final int pricePerGame;
+  final String description;
+  final String icon;
+  final bool isPopular;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FRIEND (for invite step)
+// ═══════════════════════════════════════════════════════════════
+
+class FriendProfile {
+  const FriendProfile({
+    required this.id,
+    required this.name,
+    required this.username,
+    required this.sport,
+    required this.gamesPlayed,
+    this.avatarInitials = '',
+  });
+
+  final String id;
+  final String name;
+  final String username;
+  final String sport;
+  final int gamesPlayed;
+  final String avatarInitials;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SHOP + HARDWARE + FRIENDS FAKE DATA
+// ═══════════════════════════════════════════════════════════════
+
+const shopItems = <ShopItem>[
+  ShopItem(id: 'si1', name: 'Basketball (Size 7)', price: 299,
+    category: 'equipment', icon: '🏀', sport: 'basketball',
+    description: 'Spalding rubber outdoor ball'),
+  ShopItem(id: 'si2', name: 'Basketball (Premium)', price: 599,
+    category: 'equipment', icon: '🏀', sport: 'basketball',
+    description: 'Molten leather indoor game ball'),
+  ShopItem(id: 'si3', name: 'Cricket Ball', price: 149,
+    category: 'equipment', icon: '🏏', sport: 'cricket',
+    description: 'SG leather practice ball'),
+  ShopItem(id: 'si4', name: 'Training Bib Set (10)', price: 399,
+    category: 'equipment', icon: '🦺',
+    description: '10 mesh training bibs, 2 colours'),
+  ShopItem(id: 'si5', name: 'Grip Socks', price: 199,
+    category: 'apparel', icon: '🧦',
+    description: 'Anti-slip performance socks'),
+  ShopItem(id: 'si6', name: 'Wristband Pair', price: 99,
+    category: 'accessories', icon: '💪',
+    description: 'Sweat-absorbing cotton wristbands'),
+  ShopItem(id: 'si7', name: 'Water Bottle (1L)', price: 149,
+    category: 'accessories', icon: '💧',
+    description: 'Stainless steel insulated bottle'),
+  ShopItem(id: 'si8', name: 'Sports Tape Roll', price: 79,
+    category: 'accessories', icon: '🩹',
+    description: 'Rigid athletic support tape'),
+];
+
+const hardwareOptions = <HardwareOption>[
+  HardwareOption(
+    id: 'hw1',
+    name: 'Courtside Scorer',
+    pricePerGame: 99,
+    description: 'Wireless scoreboard synced to the app. Live score updates for all players.',
+    icon: '📟',
+    isPopular: true,
+  ),
+  HardwareOption(
+    id: 'hw2',
+    name: 'Camera Mount + Recording',
+    pricePerGame: 149,
+    description: 'Clip-on 1080p camera with post-game highlight reel in your stats.',
+    icon: '📹',
+  ),
+  HardwareOption(
+    id: 'hw3',
+    name: 'Scorer + Camera Bundle',
+    pricePerGame: 199,
+    description: 'Both hardware units. Best value — save ₹49 vs individual rental.',
+    icon: '🎬',
+  ),
+];
+
+const fakeFriends = <FriendProfile>[
+  FriendProfile(id: 'f1', name: 'Arjun Mehta',    username: '@arjunm',   sport: 'basketball', gamesPlayed: 31, avatarInitials: 'AM'),
+  FriendProfile(id: 'f2', name: 'Priya Sharma',   username: '@priyasb',  sport: 'basketball', gamesPlayed: 18, avatarInitials: 'PS'),
+  FriendProfile(id: 'f3', name: 'Karan Nair',     username: '@knair99',  sport: 'cricket',    gamesPlayed: 24, avatarInitials: 'KN'),
+  FriendProfile(id: 'f4', name: 'Rohan Kapoor',   username: '@rohanK',   sport: 'basketball', gamesPlayed: 45, avatarInitials: 'RK'),
+  FriendProfile(id: 'f5', name: 'Sneha Pillai',   username: '@snehap',   sport: 'badminton',  gamesPlayed: 12, avatarInitials: 'SP'),
+  FriendProfile(id: 'f6', name: 'Dev Krishnan',   username: '@devkr',    sport: 'basketball', gamesPlayed: 27, avatarInitials: 'DK'),
+  FriendProfile(id: 'f7', name: 'Aisha Iyer',     username: '@aishaiyr', sport: 'cricket',    gamesPlayed: 9,  avatarInitials: 'AI'),
+  FriendProfile(id: 'f8', name: 'Vikram Bose',    username: '@vikramb',  sport: 'football',   gamesPlayed: 38, avatarInitials: 'VB'),
+];

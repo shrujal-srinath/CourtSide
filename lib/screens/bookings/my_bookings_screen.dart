@@ -1,18 +1,20 @@
 // lib/screens/bookings/my_bookings_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
 import '../../models/fake_data.dart';
+import '../../providers/confirmed_bookings_provider.dart';
 
-class MyBookingsScreen extends StatefulWidget {
+class MyBookingsScreen extends ConsumerStatefulWidget {
   const MyBookingsScreen({super.key});
 
   @override
-  State<MyBookingsScreen> createState() => _BookingsScreenState();
+  ConsumerState<MyBookingsScreen> createState() => _BookingsScreenState();
 }
 
-class _BookingsScreenState extends State<MyBookingsScreen>
+class _BookingsScreenState extends ConsumerState<MyBookingsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tab;
 
@@ -29,14 +31,19 @@ class _BookingsScreenState extends State<MyBookingsScreen>
     super.dispose();
   }
 
-  List<BookingRecord> get _upcoming => FakeData.bookingHistory
-      .where((b) => b.status == BookingStatus.upcoming).toList();
+  List<BookingRecord> _upcoming(List<BookingRecord> confirmed) {
+    final all = [...confirmed, ...FakeData.bookingHistory];
+    return all.where((b) => b.status == BookingStatus.upcoming).toList();
+  }
 
-  List<BookingRecord> get _past => FakeData.bookingHistory
-      .where((b) => b.status != BookingStatus.upcoming).toList();
+  List<BookingRecord> _past(List<BookingRecord> confirmed) {
+    final all = [...confirmed, ...FakeData.bookingHistory];
+    return all.where((b) => b.status != BookingStatus.upcoming).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final confirmed = ref.watch(confirmedBookingsProvider);
     final colors = context.colors;
     final topPad = MediaQuery.of(context).padding.top;
 
@@ -151,13 +158,13 @@ class _BookingsScreenState extends State<MyBookingsScreen>
               controller: _tab,
               children: [
                 _BookingList(
-                  bookings: _upcoming,
+                  bookings: _upcoming(confirmed),
                   emptyTitle: 'No upcoming bookings',
                   emptySubtitle: 'Book a court to get started',
                   onBookNow: () => context.go('/home'),
                 ),
                 _BookingList(
-                  bookings: _past,
+                  bookings: _past(confirmed),
                   emptyTitle: 'No past bookings',
                   emptySubtitle:
                       'Your booking history will appear here',

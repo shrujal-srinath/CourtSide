@@ -83,9 +83,10 @@ class AppShell extends StatelessWidget {
           Navigator.pop(context);
           if (sport == 'basketball') {
             context.push(AppRoutes.bballMode);
-          } else {
-            context.push('/score/$sport');
+          } else if (sport == 'cricket') {
+            context.push(AppRoutes.scoreCricket);
           }
+          // badminton / football scorer not yet built — no-op
         },
       ),
     );

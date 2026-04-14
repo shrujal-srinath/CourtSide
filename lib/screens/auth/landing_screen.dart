@@ -1,5 +1,6 @@
 // courtside/lib/screens/auth/landing_screen.dart
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -87,7 +88,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                   const SizedBox(height: 12),
                   _buildPhoneButton(),
                   const SizedBox(height: 12),
-                  _buildDevButton(c),
+                  if (kDebugMode) _buildDevButton(c),
 
                   // ── Error ──────────────────────────────────────
                   if (_error != null) ...[

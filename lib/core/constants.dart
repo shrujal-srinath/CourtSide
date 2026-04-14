@@ -47,10 +47,14 @@ class AppRoutes {
   static const String bballPlayers = '/score/basketball/players';
   static const String bballScorer  = '/score/basketball/game';
 
-  static String venueById(String id) => '/venue/$id';
-  static String sportById(String id) => '/sport/$id';
-  static String bookCourt(String id) => '/book/$id';
-  static String bookVenue(String venueId) => '/book/$venueId';
-  static String gameById(String id) => '/game/$id';
-  static String playerById(String id) => '/player/$id';
+  static String venueById(String id)   => '/venue/$id';
+  static String sportById(String id)   => '/sport/$id';
+  static String bookCourt(String id)   => '/book/$id';
+  static String bookVenue(String id)   => '/book/$id';
+  static String bookInvite(String id)  => '/book/$id/invite';
+  static String bookShop(String id)    => '/book/$id/shop';
+  static String bookHardware(String id)=> '/book/$id/hardware';
+  static String bookCart(String id)    => '/book/$id/cart';
+  static String gameById(String id)    => '/game/$id';
+  static String playerById(String id)  => '/player/$id';
 }

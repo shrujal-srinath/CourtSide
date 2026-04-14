@@ -9,34 +9,61 @@ import 'package:flutter/material.dart';
 class ColorTokens {
   ColorTokens._();
 
-  // ── Backgrounds & Surfaces ─────────────────────────────────────
-  static const Color backgroundPrimary = Color(0xFFF6F7F9); // Light gray background
-  static const Color surfacePrimary    = Color(0xFFFFFFFF); // White cards
-  static const Color surfaceElevated   = Color(0xFFFFFFFF); // elevated cards
-  static const Color surfaceOverlay    = Color(0xFFFFFFFF); // modals, sheets
+  // ── LIGHT MODE ────────────────────────────────────────────────
+  static const Color backgroundPrimary = Color(0xFFF6F7F9);
+  static const Color surfacePrimary    = Color(0xFFFFFFFF);
+  static const Color surfaceElevated   = Color(0xFFF0F2F5);
+  static const Color surfaceOverlay    = Color(0xFFE8EAED);
 
-  // ── Brand accent — CourtSide Red ───────────────────────────────
-  static const Color accentPrimary   = Color(0xFFFF2D2D); // Vibrant red CTA
-  static const Color accentSecondary = Color(0xFFE52E2E); // Pressed variant
-  static const Color accentSubtle    = Color(0x14FF2D2D); // 8% alpha red
+  static const Color accentPrimary   = Color(0xFFE8112D);
+  static const Color accentSecondary = Color(0xFFB50022);
+  static const Color accentSubtle    = Color(0x14E8112D);
 
-  // ── Text — Light mode hierarchy ───────────────────────────────
-  static const Color textPrimary   = Color(0xFF111827); // Charcoal dark
-  static const Color textSecondary = Color(0xFF6B7280); // Medium gray
-  static const Color textTertiary  = Color(0xFF9CA3AF); // Light gray / Disabled
-  static const Color textOnAccent  = Color(0xFFFFFFFF); // White text on red
+  static const Color textPrimary   = Color(0xFF111827);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color textTertiary  = Color(0xFF9CA3AF);
+  static const Color textOnAccent  = Color(0xFFFFFFFF);
 
-  // ── Borders & Dividers ────────────────────────────────────────
-  static const Color borderSubtle = Color(0xFFE5E7EB); // Dividers, light borders
-  static const Color borderMedium  = Color(0xFFD1D5DB); // Focused states
+  static const Color borderSubtle = Color(0xFFE5E7EB);
+  static const Color borderMedium = Color(0xFFD1D5DB);
 
-  // ── Semantic ──────────────────────────────────────────────────
   static const Color success = Color(0xFF22C55E);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error   = Color(0xFFEF4444);
   static const Color info    = Color(0xFF3B82F6);
 
-  // ── Sport accents ─────────────────────────────────────────────
+  static const Color sportBasketball = Color(0xFFFF6B35);
+  static const Color sportCricket    = Color(0xFF00C9A7);
+  static const Color sportBadminton  = Color(0xFFFFC107);
+  static const Color sportFootball   = Color(0xFF4CAF50);
+}
+
+// ── DARK MODE primitives (Void Fire) ──────────────────────────────
+class DarkColorTokens {
+  DarkColorTokens._();
+
+  static const Color backgroundPrimary = Color(0xFF080A0F);
+  static const Color surfacePrimary    = Color(0xFF0F1117);
+  static const Color surfaceElevated   = Color(0xFF161B24);
+  static const Color surfaceOverlay    = Color(0xFF1E2535);
+
+  static const Color accentPrimary   = Color(0xFFE8112D);
+  static const Color accentSecondary = Color(0xFFB50022);
+  static const Color accentSubtle    = Color(0xFF3D000A);
+
+  static const Color textPrimary   = Color(0xFFF8F9FA);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color textTertiary  = Color(0xFF374151);
+  static const Color textOnAccent  = Color(0xFFFFFFFF);
+
+  static const Color borderSubtle = Color(0xFF1A2030);
+  static const Color borderMedium = Color(0xFF2A3040);
+
+  static const Color success = Color(0xFF22C55E);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color error   = Color(0xFFEF4444);
+  static const Color info    = Color(0xFF3B82F6);
+
   static const Color sportBasketball = Color(0xFFFF6B35);
   static const Color sportCricket    = Color(0xFF00C9A7);
   static const Color sportBadminton  = Color(0xFFFFC107);

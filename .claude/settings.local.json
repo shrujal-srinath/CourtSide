@@ -7,7 +7,9 @@
       "Bash(dart analyze:*)",
       "mcp__ide__getDiagnostics",
       "Bash(flutter pub:*)",
-      "Bash(flutter build:*)"
+      "Bash(flutter build:*)",
+      "Bash(find /Users/shrujalsrinath/Desktop/courtside -name \".gitignore\" -exec cat {} \\\\;)",
+      "Bash(flutter clean:*)"
     ]
   }
 }

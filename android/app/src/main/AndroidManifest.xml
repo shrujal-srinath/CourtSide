@@ -44,6 +44,13 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2"/>
+
+        <!-- Razorpay checkout activity -->
+        <activity
+            android:name="com.razorpay.CheckoutActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/CheckoutTheme"/>
     </application>
 
     <queries>

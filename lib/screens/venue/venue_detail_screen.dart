@@ -236,10 +236,22 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                 height: 280 + topPad,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(_venue.photoUrl),
-                    fit: BoxFit.cover,
-                  ),
+                  image: _venue.photoUrl.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(_venue.photoUrl),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                  gradient: _venue.photoUrl.isEmpty
+                      ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colors.colorSurfaceOverlay,
+                            colors.colorSurfacePrimary,
+                          ],
+                        )
+                      : null,
                 ),
                 child: Container(
                   decoration: BoxDecoration(
@@ -247,9 +259,9 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withValues(alpha: 0.4),
+                        colors.colorBackgroundPrimary.withValues(alpha: 0.3),
                         Colors.transparent,
-                        Colors.black.withValues(alpha: 0.6),
+                        colors.colorBackgroundPrimary.withValues(alpha: 0.82),
                       ],
                     ),
                   ),
@@ -266,13 +278,13 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
+                      color: colors.colorSurfaceOverlay.withValues(alpha: 0.7),
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.2), width: 0.5),
+                          color: colors.colorBorderSubtle, width: 0.5),
                     ),
-                    child: const Icon(Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white, size: 18),
+                    child: Icon(Icons.arrow_back_ios_new_rounded,
+                        color: colors.colorTextPrimary, size: 18),
                   ),
                 ),
               ),
@@ -285,23 +297,24 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: colors.colorAccentPrimary,
-                        borderRadius: BorderRadius.circular(4),
+                    if (_venue.hasTheBox)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: colors.colorAccentPrimary,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'THE BOX',
+                          style: AppTextStyles.labelS(colors.colorTextOnAccent)
+                              .copyWith(letterSpacing: 1),
+                        ),
                       ),
-                      child: Text(
-                        'FEATURED VENUE',
-                        style: AppTextStyles.labelS(Colors.white)
-                            .copyWith(letterSpacing: 1),
-                      ),
-                    ),
                     const SizedBox(height: 12),
                     Text(
                       _venue.name,
-                      style: AppTextStyles.displayM(Colors.white),
+                      style: AppTextStyles.displayM(colors.colorTextPrimary),
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -311,24 +324,29 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                         const SizedBox(width: 4),
                         Text(
                           _venue.area,
-                          style: AppTextStyles.bodyM(Colors.white.withValues(alpha: 0.9)),
+                          style: AppTextStyles.bodyM(colors.colorTextSecondary),
                         ),
                         const Spacer(),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            color: colors.colorSurfaceOverlay
+                                .withValues(alpha: 0.6),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.pill),
+                            border: Border.all(
+                                color: colors.colorBorderSubtle, width: 0.5),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.star_rounded,
-                                  color: Colors.amber, size: 16),
+                              Icon(Icons.star_rounded,
+                                  color: colors.colorWarning, size: 16),
                               const SizedBox(width: 4),
                               Text(
                                 '${_venue.rating}',
-                                style: AppTextStyles.labelS(Colors.white),
+                                style: AppTextStyles.labelS(
+                                    colors.colorTextPrimary),
                               ),
                             ],
                           ),
@@ -455,7 +473,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
               top: BorderSide(color: colors.colorBorderSubtle, width: 0.5)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: colors.colorBackgroundPrimary.withValues(alpha: 0.5),
               blurRadius: 10,
               offset: const Offset(0, -4),
             ),
