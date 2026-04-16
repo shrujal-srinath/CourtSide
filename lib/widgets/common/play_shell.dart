@@ -1,8 +1,8 @@
 // lib/widgets/common/play_shell.dart
 //
-// PlayShell — dark-mode nav shell for the Play side of the app.
-// 3 items: Bookings | + (FAB) | Home
-// Background: #0D0D0D. Active: #E8112D. Inactive: rgba(255,255,255,0.3).
+// PlayShell — nav shell for the Play section.
+// 3 items: Bookings | + FAB | Home
+// Uses semantic tokens — adapts to both dark and light themes.
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -10,13 +10,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../screens/play/play_action_sheet.dart';
-
-// ── Palette (locally scoped — dark shell) ─────────────────────────
-const _kNavBg       = Color(0xFF0D0D0D);
-const _kNavBorder   = Color(0xFF1F1F1F);
-const _kActive      = Color(0xFFE8112D);
-const _kInactive    = Color(0x4DFFFFFF); // rgba(255,255,255,0.30)
-const _kFab         = Color(0xFFE8112D);
 
 class PlayShell extends StatefulWidget {
   const PlayShell({super.key, required this.child});
@@ -30,63 +23,71 @@ class _PlayShellState extends State<PlayShell> {
   bool _fabPressed = false;
 
   static const _tabs = [
-    _Tab(icon: Icons.calendar_today_outlined, path: AppRoutes.bookings),
-    _Tab(icon: Icons.home_outlined,           path: AppRoutes.playHome),
+    _Tab(icon: Icons.home_outlined,           label: 'Home',     path: AppRoutes.playHome),
+    _Tab(icon: Icons.calendar_today_outlined, label: 'Bookings', path: AppRoutes.playBookings),
   ];
-
-  String _activePath(BuildContext context) {
-    return GoRouterState.of(context).matchedLocation;
-  }
 
   @override
   Widget build(BuildContext context) {
-    final loc     = _activePath(context);
-    final botPad  = MediaQuery.of(context).padding.bottom;
+    final loc    = GoRouterState.of(context).matchedLocation;
+    final botPad = MediaQuery.of(context).padding.bottom;
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: _kNavBg,
+      backgroundColor: colors.colorBackgroundPrimary,
       extendBody: true,
       body: widget.child,
-      bottomNavigationBar: _buildNavBar(context, loc, botPad),
+      bottomNavigationBar: _buildNavBar(context, loc, botPad, colors),
     );
   }
 
-  Widget _buildNavBar(BuildContext context, String loc, double botPad) {
+  Widget _buildNavBar(
+      BuildContext context, String loc, double botPad, AppColorScheme colors) {
     return Container(
-      decoration: const BoxDecoration(
-        color: _kNavBg,
-        border: Border(top: BorderSide(color: _kNavBorder, width: 0.5)),
+      decoration: BoxDecoration(
+        color: colors.colorSurfacePrimary,
+        border: Border(
+            top: BorderSide(color: colors.colorBorderSubtle, width: 0.5)),
+        boxShadow: AppShadow.navFor(context),
       ),
-      padding: EdgeInsets.only(bottom: botPad),
-      child: SizedBox(
-        height: 64,
-        child: Row(
-          children: [
-            // ── Left: Bookings ──────────────────────────────────
-            Expanded(child: _NavItem(
-              icon: _tabs[0].icon,
-              active: loc.startsWith(_tabs[0].path),
-              onTap: () => context.go(_tabs[0].path),
-            )),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: [
+              // Left: Home
+              Expanded(
+                child: _NavItem(
+                  icon: _tabs[0].icon,
+                  label: _tabs[0].label,
+                  active: loc.startsWith(_tabs[0].path),
+                  onTap: () => context.go(_tabs[0].path),
+                ),
+              ),
 
-            // ── Center: + FAB ───────────────────────────────────
-            _FabButton(
-              pressed: _fabPressed,
-              onTapDown: () => setState(() => _fabPressed = true),
-              onTapUp: () {
-                setState(() => _fabPressed = false);
-                showPlayActionSheet(context);
-              },
-              onTapCancel: () => setState(() => _fabPressed = false),
-            ),
+              // Center: + FAB
+              _FabButton(
+                pressed: _fabPressed,
+                onTapDown: () => setState(() => _fabPressed = true),
+                onTapUp: () {
+                  setState(() => _fabPressed = false);
+                  showPlayActionSheet(context);
+                },
+                onTapCancel: () => setState(() => _fabPressed = false),
+              ),
 
-            // ── Right: Play Home ────────────────────────────────
-            Expanded(child: _NavItem(
-              icon: _tabs[1].icon,
-              active: loc.startsWith(_tabs[1].path),
-              onTap: () => context.go(_tabs[1].path),
-            )),
-          ],
+              // Right: Bookings
+              Expanded(
+                child: _NavItem(
+                  icon: _tabs[1].icon,
+                  label: _tabs[1].label,
+                  active: loc.startsWith(_tabs[1].path),
+                  onTap: () => context.go(_tabs[1].path),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -98,42 +99,45 @@ class _PlayShellState extends State<PlayShell> {
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.icon,
+    required this.label,
     required this.active,
     required this.onTap,
   });
 
-  final IconData icon;
-  final bool active;
+  final IconData     icon;
+  final String       label;
+  final bool         active;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final colors   = context.colors;
+    final accent   = colors.colorAccentPrimary;
+    final inactive = colors.colorTextTertiary;
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Center(
-        child: AnimatedContainer(
-          duration: AppDuration.fast,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 22,
-                color: active ? _kActive : _kInactive,
-              ),
-              const SizedBox(height: 4),
-              AnimatedContainer(
-                duration: AppDuration.fast,
-                width: active ? 4 : 0,
-                height: active ? 4 : 0,
-                decoration: const BoxDecoration(
-                  color: _kActive,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 22, color: active ? accent : inactive),
+            const SizedBox(height: 3),
+            Text(
+              label.toUpperCase(),
+              style: AppTextStyles.overline(active ? accent : inactive)
+                  .copyWith(fontSize: 8, letterSpacing: 0.5),
+            ),
+            const SizedBox(height: 3),
+            AnimatedContainer(
+              duration: AppDuration.fast,
+              width:  active ? 4 : 0,
+              height: active ? 4 : 0,
+              decoration: BoxDecoration(
+                  color: accent, shape: BoxShape.circle),
+            ),
+          ],
         ),
       ),
     );
@@ -150,32 +154,34 @@ class _FabButton extends StatelessWidget {
     required this.onTapCancel,
   });
 
-  final bool pressed;
+  final bool         pressed;
   final VoidCallback onTapDown;
   final VoidCallback onTapUp;
   final VoidCallback onTapCancel;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return GestureDetector(
       onTapDown: (_) => onTapDown(),
-      onTapUp: (_) => onTapUp(),
+      onTapUp:   (_) => onTapUp(),
       onTapCancel: onTapCancel,
       child: AnimatedScale(
         scale: pressed ? 0.92 : 1.0,
         duration: const Duration(milliseconds: 80),
         curve: Curves.easeIn,
         child: Container(
-          width: 56,
-          height: 56,
+          width:  52,
+          height: 52,
           decoration: BoxDecoration(
-            color: _kFab,
-            shape: BoxShape.circle,
+            color:    colors.colorAccentPrimary,
+            shape:    BoxShape.circle,
             boxShadow: AppShadow.fab,
           ),
-          child: const Icon(
+          child: Icon(
             Icons.add_rounded,
-            color: Colors.white,
+            color: colors.colorTextOnAccent,
             size: 26,
           ),
         ),
@@ -187,7 +193,8 @@ class _FabButton extends StatelessWidget {
 // ── Tab descriptor ────────────────────────────────────────────────
 
 class _Tab {
-  const _Tab({required this.icon, required this.path});
+  const _Tab({required this.icon, required this.label, required this.path});
   final IconData icon;
-  final String path;
+  final String   label;
+  final String   path;
 }

@@ -62,9 +62,9 @@ class AppShell extends StatelessWidget {
           Navigator.pop(context);
           context.go(AppRoutes.explore);
         },
-        onJoinGame: () {
+        onHostGame: () {
           Navigator.pop(context);
-          context.push(AppRoutes.explore);
+          context.push(AppRoutes.hostGame);
         },
       ),
     );
@@ -215,11 +215,11 @@ class _FloatingNavBar extends StatelessWidget {
 class _QuickActionSheet extends StatelessWidget {
   const _QuickActionSheet({
     required this.onBookCourt,
-    required this.onJoinGame,
+    required this.onHostGame,
   });
 
   final VoidCallback onBookCourt;
-  final VoidCallback onJoinGame;
+  final VoidCallback onHostGame;
 
   @override
   Widget build(BuildContext context) {
@@ -246,18 +246,18 @@ class _QuickActionSheet extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _ActionTile(
-            icon: Icons.sports_basketball_rounded,
+            icon: Icons.stadium_outlined,
             label: 'Book a Court',
             subtitle: 'Find and reserve a court near you',
             color: colors.colorSportBasketball,
             onTap: onBookCourt,
           ),
           _ActionTile(
-            icon: Icons.group_rounded,
-            label: 'Join a Game',
-            subtitle: 'Find pickup games near you',
-            color: colors.colorSportCricket,
-            onTap: onJoinGame,
+            icon: Icons.flag_rounded,
+            label: 'Host a Game',
+            subtitle: 'Book a court · invite players · pickup or tournament',
+            color: colors.colorAccentPrimary,
+            onTap: onHostGame,
           ),
           const SizedBox(height: 16),
         ],

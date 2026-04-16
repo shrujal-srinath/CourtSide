@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../core/constants.dart';
 import '../../core/theme.dart';
 
 import '../../models/fake_data.dart';
@@ -398,6 +399,13 @@ class _VenueScreenState extends ConsumerState<VenueScreen> {
           ),
         ),
 
+        // Host a Game banner
+        SliverToBoxAdapter(
+          child: _HostGameBanner(
+            onTap: () => context.push(AppRoutes.hostGame),
+          ),
+        ),
+
         // List of Venues
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
@@ -728,6 +736,89 @@ class _VenueScreenState extends ConsumerState<VenueScreen> {
             ),
           ),
       ],
+    );
+  }
+}
+
+// ── Host a Game Banner ────────────────────────────────────────────
+
+class _HostGameBanner extends StatefulWidget {
+  const _HostGameBanner({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  State<_HostGameBanner> createState() => _HostGameBannerState();
+}
+
+class _HostGameBannerState extends State<_HostGameBanner> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 80),
+        curve: Curves.easeIn,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: colors.colorAccentPrimary.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(
+              color: colors.colorAccentPrimary.withValues(alpha: 0.22),
+              width: 0.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: colors.colorAccentPrimary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Icon(
+                  Icons.flag_rounded,
+                  color: colors.colorAccentPrimary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Host a Game',
+                      style: AppTextStyles.headingS(colors.colorTextPrimary),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Book any court · invite players · run a pickup or tournament',
+                      style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 13,
+                color: colors.colorTextTertiary,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

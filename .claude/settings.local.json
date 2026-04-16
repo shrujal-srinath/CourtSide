@@ -16,7 +16,24 @@
       "Bash(git pull:*)",
       "Read(//mnt/skills/public/frontend-design/**)",
       "Read(//mnt/**)",
-      "Read(//mnt/skills/**)"
+      "Read(//mnt/skills/**)",
+      "Bash(npx skills:*)",
+      "Bash(ls /Users/shrujalsrinath/Desktop/courtside/lib/core/theme*)",
+      "Bash(grep -v \"^$\")",
+      "Bash(find /Users/shrujalsrinath/Desktop/courtside -name \"*.dart\" -type f -exec grep -l \"class AppRoutes\\\\|abstract class AppRoutes\" {} \\\\;)",
+      "Read(//Users/shrujalsrinath/.claude/**)",
+      "Read(//Users/shrujalsrinath/**)",
+      "Bash(curl -s https://api.supabase.com/v1/projects/eoowagimooxsqcrrihbw/database/query -H 'Authorization: Bearer sbp_e03ea4ec0c5df1f1c89f20e1f17f3908de08c6c7' -H 'Content-Type: application/json' -d '{\"query\": \"SELECT table_name, table_schema FROM information_schema.tables WHERE table_schema NOT IN \\('\\\\''pg_catalog'\\\\'', '\\\\''information_schema'\\\\''\\) ORDER BY table_schema, table_name;\"}')",
+      "Bash(curl -s https://api.supabase.com/v1/projects/eoowagimooxsqcrrihbw/database/query -H 'Authorization: Bearer sbp_e03ea4ec0c5df1f1c89f20e1f17f3908de08c6c7' -H 'Content-Type: application/json' -d '{\"query\": \"SELECT table_name, column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = '\\\\''public'\\\\'' AND table_name IN \\('\\\\''bookings'\\\\'', '\\\\''slots'\\\\'', '\\\\''profiles'\\\\'', '\\\\''games'\\\\''\\) ORDER BY table_name, ordinal_position;\"}')",
+      "Bash(curl -s https://api.supabase.com/v1/projects/eoowagimooxsqcrrihbw/database/query -H 'Authorization: Bearer sbp_e03ea4ec0c5df1f1c89f20e1f17f3908de08c6c7' -H 'Content-Type: application/json' -d '{:*)",
+      "Bash(curl -s https://api.supabase.com/v1/projects/eoowagimooxsqcrrihbw/database/query -H 'Authorization: Bearer sbp_e03ea4ec0c5df1f1c89f20e1f17f3908de08c6c7' -H 'Content-Type: application/json' -d '{\"query\": \"SELECT table_name FROM information_schema.tables WHERE table_schema = '\\\\''public'\\\\'' AND table_name IN \\('\\\\''venues'\\\\'', '\\\\''courts'\\\\'', '\\\\''player_stats'\\\\''\\) ORDER BY table_name;\"}')",
+      "Bash(curl -s https://api.supabase.com/v1/projects/eoowagimooxsqcrrihbw/database/query -H 'Authorization: Bearer sbp_e03ea4ec0c5df1f1c89f20e1f17f3908de08c6c7' -H 'Content-Type: application/json' -d '{\"query\": \"SELECT column_name FROM information_schema.columns WHERE table_schema='\\\\''public'\\\\'' AND table_name='\\\\''slots'\\\\'' AND column_name IN \\('\\\\''date'\\\\'', '\\\\''status'\\\\'', '\\\\''venue_court_id'\\\\''\\) ORDER BY column_name;\"}')",
+      "Bash(curl -s https://api.supabase.com/v1/projects/eoowagimooxsqcrrihbw/database/query -H 'Authorization: Bearer sbp_e03ea4ec0c5df1f1c89f20e1f17f3908de08c6c7' -H 'Content-Type: application/json' -d '{\"query\": \"SELECT routine_name FROM information_schema.routines WHERE routine_schema='\\\\''public'\\\\'' AND routine_name='\\\\''book_slot'\\\\'';\"}')",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(f'Inserted {len\\(data\\)} slots'\\)\")",
+      "Bash(curl -s https://api.supabase.com/v1/projects/eoowagimooxsqcrrihbw/database/query -H 'Authorization: Bearer sbp_e03ea4ec0c5df1f1c89f20e1f17f3908de08c6c7' -H 'Content-Type: application/json' -d '{\"query\": \"DELETE FROM slots WHERE venue_court_id IS NOT NULL; SELECT COUNT\\(*\\) FROM slots WHERE venue_court_id IS NOT NULL;\"}')"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

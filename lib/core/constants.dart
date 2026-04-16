@@ -35,8 +35,9 @@ class AppRoutes {
   static const String explore  = '/explore';
 
   // ── Play shell ────────────────────────────────────────────────
-  static const String playHome = '/play';
-  static const String hostGame = '/host-game';
+  static const String playHome     = '/play';
+  static const String playBookings = '/play/bookings';
+  static const String hostGame     = '/host-game';
   static const String stats    = '/stats';
   static const String bookings = '/bookings';
 

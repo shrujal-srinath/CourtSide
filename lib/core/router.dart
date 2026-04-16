@@ -16,6 +16,10 @@ import '../screens/sport/sport_screen.dart';
 import '../screens/venue/venue_detail_screen.dart';
 import '../screens/booking/booking_screen.dart';
 import '../screens/booking/booking_summary_screen.dart';
+import '../screens/booking/booking_invite_screen.dart';
+import '../screens/booking/booking_hardware_screen.dart';
+import '../screens/booking/booking_shop_screen.dart';
+import '../screens/booking/booking_cart_screen.dart';
 import '../screens/venue/venue_screen.dart';
 import '../screens/stats/stats_screen.dart';
 import '../screens/bookings/my_bookings_screen.dart';
@@ -30,9 +34,10 @@ import '../screens/marketplace/product_detail_screen.dart';
 import '../screens/marketplace/cart_screen.dart';
 import '../screens/marketplace/checkout_screen.dart';
 import '../screens/mode_gate/mode_gate_screen.dart';
-import '../screens/play/play_home_screen.dart';
+import '../screens/host_game/host_game_screen.dart';
 import '../widgets/common/app_shell.dart';
 import '../widgets/common/play_shell.dart';
+import '../screens/play/play_home_screen.dart';
 import '../widgets/stat_share/stat_share_preview_screen.dart';
 import 'constants.dart';
 import 'theme.dart';
@@ -55,7 +60,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           AppRoutes.splash,
         ];
         if (publicRoutes.contains(state.matchedLocation)) {
-          return AppRoutes.home;
+          return AppRoutes.modeGate;
         }
         return null;
       }
@@ -63,7 +68,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (authAsync.isLoading) return null;
       final isLoggedIn = authAsync.asData?.value != null;
       final loc = state.matchedLocation;
-      if (loc == AppRoutes.splash) return null;
+      if (loc == AppRoutes.splash || loc == AppRoutes.modeGate) return null;
 
       final publicRoutes = [
         AppRoutes.landing,
@@ -71,7 +76,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         AppRoutes.phoneAuth,
       ];
       if (publicRoutes.contains(loc)) {
-        if (isLoggedIn) return AppRoutes.home;
+        if (isLoggedIn) return AppRoutes.modeGate;
         return null;
       }
       if (!isLoggedIn) return AppRoutes.landing;
@@ -147,12 +152,42 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // ── Booking Summary ──────────────────────────────────────
+      // ── Booking Summary (legacy) ─────────────────────────────
       GoRoute(
         path: AppRoutes.bookingSummary,
         pageBuilder: (context, state) => slideUpPage(
           key: state.pageKey,
           child: const BookingSummaryScreen(),
+        ),
+      ),
+
+      // ── Booking wizard steps ──────────────────────────────────
+      GoRoute(
+        path: '/book/:venueId/invite',
+        pageBuilder: (context, state) => slideUpPage(
+          key: state.pageKey,
+          child: const BookingInviteScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/book/:venueId/hardware',
+        pageBuilder: (context, state) => slideUpPage(
+          key: state.pageKey,
+          child: const BookingHardwareScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/book/:venueId/shop',
+        pageBuilder: (context, state) => slideUpPage(
+          key: state.pageKey,
+          child: const BookingShopScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/book/:venueId/cart',
+        pageBuilder: (context, state) => slideUpPage(
+          key: state.pageKey,
+          child: const BookingCartScreen(),
         ),
       ),
 
@@ -214,7 +249,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // ── Shell with bottom nav ────────────────────────────────
+      // ── Play shell ───────────────────────────────────────────
+      ShellRoute(
+        builder: (context, state, child) => PlayShell(child: child),
+        routes: [
+          GoRoute(
+            path: AppRoutes.playHome,
+            pageBuilder: (ctx, s) =>
+                const NoTransitionPage(child: PlayHomeScreen()),
+          ),
+          GoRoute(
+            path: AppRoutes.playBookings,
+            pageBuilder: (ctx, s) =>
+                const NoTransitionPage(child: MyBookingsScreen()),
+          ),
+        ],
+      ),
+
+      // ── Explore shell with bottom nav ────────────────────────
       ShellRoute(
         builder: (context, state, child) => AppShell(child: child),
         routes: [
@@ -267,29 +319,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // ── Play shell with bottom nav ───────────────────────────
-      ShellRoute(
-        builder: (context, state, child) => PlayShell(child: child),
-        routes: [
-          GoRoute(
-            path: AppRoutes.playHome,
-            pageBuilder: (ctx, s) =>
-                const NoTransitionPage(child: PlayHomeScreen()),
-          ),
-          GoRoute(
-            path: AppRoutes.bookings,
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: MyBookingsScreen()),
-          ),
-        ],
+      // ── My Bookings (top-level, slides up from anywhere) ────
+      GoRoute(
+        path: AppRoutes.bookings,
+        pageBuilder: (_, state) => slideUpPage(
+          key: state.pageKey,
+          child: const MyBookingsScreen(),
+        ),
       ),
 
-      // ── Host game (stub) ─────────────────────────────────────
+      // ── Host game ────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.hostGame,
         pageBuilder: (_, state) => slideUpPage(
           key: state.pageKey,
-          child: const _Soon('Host a Game'),
+          child: const HostGameScreen(),
         ),
       ),
 

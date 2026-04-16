@@ -13,6 +13,8 @@ import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../models/fake_data.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/venue_provider.dart';
+import '../../widgets/common/cs_shimmer.dart';
 import '../../../app.dart' show themeModeProvider;
 
 // ── Sport config ────────────────────────────────────────────────
@@ -428,8 +430,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         onSeeAll: () => context.go(AppRoutes.explore),
                       ),
 
-                      _CourtsNearYou(
-                        venues: FakeData.venues,
+                      _CourtsNearYouLive(
+                        userLocation: _userLocation,
                         onVenueTap: (v) =>
                             context.push(AppRoutes.venueById(v.id)),
                         onSeeAll: () => context.go(AppRoutes.explore),
@@ -1278,36 +1280,34 @@ class _MapPanelState extends State<_MapPanel> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Real Google Map ───────────────────────────────────
-          widget.userLocation == null
-              ? Container(
-                  color: colors.colorSurfacePrimary,
-                  child: Center(
-                    child: Text(
-                      'Loading map…',
-                      style: AppTextStyles.labelS(colors.colorTextTertiary),
-                    ),
-                  ),
-                )
-              : GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: target,
-                    zoom: 13,
-                  ),
-                  onMapCreated: (c) => _ctrl = c,
-                  style: widget.mapStyle,
-                  markers: widget.markers,
-                  myLocationEnabled: false,
-                  myLocationButtonEnabled: false,
-                  zoomControlsEnabled: false,
-                  compassEnabled: false,
-                  mapToolbarEnabled: false,
-                  scrollGesturesEnabled: false,
-                  zoomGesturesEnabled: false,
-                  rotateGesturesEnabled: false,
-                  tiltGesturesEnabled: false,
-                  liteModeEnabled: false,
-                ),
+          // ── Real Google Map — always rendered, Bengaluru fallback ──
+          GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: target,
+              zoom: 13,
+            ),
+            onMapCreated: (c) {
+              _ctrl = c;
+              // If location already resolved by the time map is ready, jump to it
+              if (widget.userLocation != null) {
+                c.animateCamera(
+                  CameraUpdate.newLatLngZoom(widget.userLocation!, 13),
+                );
+              }
+            },
+            style: widget.mapStyle,
+            markers: widget.markers,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            compassEnabled: false,
+            mapToolbarEnabled: false,
+            scrollGesturesEnabled: false,
+            zoomGesturesEnabled: false,
+            rotateGesturesEnabled: false,
+            tiltGesturesEnabled: false,
+            liteModeEnabled: false,
+          ),
 
           // ── Bottom gradient ───────────────────────────────────
           Positioned(
@@ -1773,7 +1773,7 @@ class _StatDivider extends StatelessWidget {
 
 
 // ═══════════════════════════════════════════════════════════════
-//  SPORT CHIP ROW
+//  SPORT CHIP ROW  (2×2 dramatic sport grid)
 // ═══════════════════════════════════════════════════════════════
 
 class _SportChipRow extends StatelessWidget {
@@ -1785,11 +1785,11 @@ class _SportChipRow extends StatelessWidget {
   final String? activeSport;
   final ValueChanged<String> onSelect;
 
-  static const _chipSports = [
-    _Sport('basketball', 'Basketball', '🏀', AppColors.basketball),
-    _Sport('cricket',    'Box Cricket', '🏏', AppColors.cricket),
-    _Sport('badminton',  'Badminton',   '🏸', AppColors.badminton),
-    _Sport('football',   'Football',    '⚽', AppColors.football),
+  static const _gridSports = [
+    _Sport('basketball', 'Basketball',  '', AppColors.basketball),
+    _Sport('cricket',    'Box Cricket', '', AppColors.cricket),
+    _Sport('badminton',  'Badminton',   '', AppColors.badminton),
+    _Sport('football',   'Football',    '', AppColors.football),
   ];
 
   @override
@@ -1808,58 +1808,272 @@ class _SportChipRow extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 40,
+          height: 80,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            itemCount: _chipSports.length,
-            separatorBuilder: (c, i) => const SizedBox(width: AppSpacing.sm),
-            itemBuilder: (c, i) {
-              final sport = _chipSports[i];
-              final active = sport.id == activeSport;
-              return GestureDetector(
+            itemCount: _gridSports.length,
+            separatorBuilder: (_, i) => const SizedBox(width: AppSpacing.sm),
+            itemBuilder: (context, i) {
+              final sport = _gridSports[i];
+              final isActive = sport.id == activeSport;
+              final courtCount = FakeData.courts
+                  .where((c) => c.sport == sport.id)
+                  .length;
+              return _SportGridCard(
+                sport: sport,
+                isActive: isActive,
+                courtCount: courtCount,
                 onTap: () => onSelect(sport.id),
-                child: AnimatedContainer(
-                  duration: AppDuration.fast,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    // Sport-colored active state — NOT solid red fill
-                    color: active
-                        ? sport.color.withValues(alpha: 0.14)
-                        : colors.colorSurfaceElevated,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    border: Border.all(
-                      color: active
-                          ? sport.color
-                          : colors.colorBorderSubtle,
-                      width: active ? 1.0 : 0.5,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(sport.emoji,
-                          style: const TextStyle(fontSize: 14)),
-                      const SizedBox(width: 6),
-                      Text(
-                        sport.label,
-                        style: AppTextStyles.labelM(
-                          active
-                              ? sport.color
-                              : colors.colorTextSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               );
             },
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Individual sport card with press feedback + glow
+// ─────────────────────────────────────────────────────────────
+
+class _SportGridCard extends StatefulWidget {
+  const _SportGridCard({
+    required this.sport,
+    required this.isActive,
+    required this.courtCount,
+    required this.onTap,
+  });
+
+  final _Sport sport;
+  final bool isActive;
+  final int courtCount;
+  final VoidCallback onTap;
+
+  @override
+  State<_SportGridCard> createState() => _SportGridCardState();
+}
+
+class _SportGridCardState extends State<_SportGridCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pressCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 80),
+      reverseDuration: const Duration(milliseconds: 120),
+      lowerBound: 0.97,
+      upperBound: 1.0,
+      value: 1.0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails _) => _pressCtrl.reverse();
+  void _onTapUp(TapUpDetails _)     => _pressCtrl.forward();
+  void _onTapCancel()               => _pressCtrl.forward();
+
+  IconData _sportIconData(String id) {
+    switch (id) {
+      case 'basketball': return Icons.sports_basketball_rounded;
+      case 'cricket':    return Icons.sports_cricket_rounded;
+      case 'badminton':  return Icons.sports_tennis_rounded;
+      default:           return Icons.sports_soccer_rounded;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors     = context.colors;
+    final sportColor = widget.sport.color;
+    final isActive   = widget.isActive;
+
+    return GestureDetector(
+      onTap:       widget.onTap,
+      onTapDown:   _onTapDown,
+      onTapUp:     _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: ScaleTransition(
+        scale: _pressCtrl,
+        child: AnimatedContainer(
+          duration: AppDuration.fast,
+          curve: Curves.easeOut,
+          width: 120,
+          clipBehavior: Clip.hardEdge,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            color: isActive
+                ? sportColor.withValues(alpha: 0.10)
+                : colors.colorSurfacePrimary,
+            border: Border.all(
+              color: isActive
+                  ? sportColor.withValues(alpha: 0.55)
+                  : colors.colorBorderSubtle,
+              width: isActive ? 1.0 : 0.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF000000).withValues(alpha: 0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+                spreadRadius: -4,
+              ),
+              BoxShadow(
+                color: sportColor.withValues(alpha: isActive ? 0.18 : 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+                spreadRadius: -6,
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icon dot
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: sportColor.withValues(alpha: isActive ? 0.18 : 0.10),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      _sportIconData(widget.sport.id),
+                      color: sportColor,
+                      size: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        widget.sport.label,
+                        style: AppTextStyles.headingS(colors.colorTextPrimary)
+                            .copyWith(fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${widget.courtCount} courts',
+                        style: AppTextStyles.labelS(
+                          isActive
+                              ? sportColor.withValues(alpha: 0.80)
+                              : colors.colorTextTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════
+//  COURTS NEAR YOU — live data wrapper
+// ═══════════════════════════════════════════════════════════════
+
+class _CourtsNearYouLive extends ConsumerWidget {
+  const _CourtsNearYouLive({
+    required this.userLocation,
+    required this.onVenueTap,
+    required this.onSeeAll,
+  });
+  final LatLng? userLocation;
+  final ValueChanged<Venue> onVenueTap;
+  final VoidCallback onSeeAll;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final loc = userLocation;
+    if (loc == null) {
+      return _CourtsNearYou(
+        // FakeData fallback while location is loading
+        venues: FakeData.venues.take(6).toList(),
+        onVenueTap: onVenueTap,
+        onSeeAll: onSeeAll,
+      );
+    }
+
+    final params = NearbyVenuesParams(loc.latitude, loc.longitude, radiusKm: 15.0);
+    final venuesAsync = ref.watch(nearbyVenuesProvider(params));
+
+    return venuesAsync.when(
+      loading: () => const SizedBox(
+        height: 230,
+        child: _CourtsShimmer(),
+      ),
+      error: (e, _) => _CourtsNearYou(
+        // FakeData fallback on error — keep browsing working
+        venues: FakeData.venues.take(6).toList(),
+        onVenueTap: onVenueTap,
+        onSeeAll: onSeeAll,
+      ),
+      data: (venues) {
+        if (venues.isEmpty) {
+          return _CourtsNearYou(
+            // FakeData fallback when no live venues seeded nearby
+            venues: FakeData.venues.take(6).toList(),
+            onVenueTap: onVenueTap,
+            onSeeAll: onSeeAll,
+          );
+        }
+        return _CourtsNearYou(
+          venues: venues,
+          onVenueTap: onVenueTap,
+          onSeeAll: onSeeAll,
+        );
+      },
+    );
+  }
+}
+
+class _CourtsShimmer extends StatelessWidget {
+  const _CourtsShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      itemCount: 4,
+      separatorBuilder: (_, i) => const SizedBox(width: AppSpacing.md),
+      itemBuilder: (_, i) => CsShimmer(
+        child: Container(
+          width: 160,
+          height: 210,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -2403,56 +2617,70 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
 // ═══════════════════════════════════════════════════════════════
 // ── Host Game Banner ──────────────────────────────────────────────
 
-class _HostGameBanner extends StatelessWidget {
+class _HostGameBanner extends StatefulWidget {
   const _HostGameBanner();
+
+  @override
+  State<_HostGameBanner> createState() => _HostGameBannerState();
+}
+
+class _HostGameBannerState extends State<_HostGameBanner> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     return GestureDetector(
       onTap: () => context.push(AppRoutes.hostGame),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        height: 72,
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0D0D0D),
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(
-              color: const Color(0xFF1A2030), width: 0.5),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Host a game',
-                    style: AppTextStyles.headingS(colors.colorTextOnAccent)
-                        .copyWith(fontSize: 17),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Create a public or private match at any court',
-                    style: AppTextStyles.bodyS(colors.colorTextSecondary),
-                  ),
-                ],
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 80),
+        curve: Curves.easeIn,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: colors.colorAccentPrimary.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(
+                color: colors.colorAccentPrimary.withValues(alpha: 0.22),
+                width: 0.5),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: colors.colorAccentPrimary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Icon(Icons.flag_rounded,
+                    color: colors.colorAccentPrimary, size: 22),
               ),
-            ),
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: colors.colorAccentPrimary,
-                shape: BoxShape.circle,
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Host a Game',
+                        style: AppTextStyles.headingS(colors.colorTextPrimary)),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Book any court · invite players · pickup or tournament',
+                      style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                    ),
+                  ],
+                ),
               ),
-              child: const Icon(Icons.arrow_forward_rounded,
-                  color: Colors.white, size: 15),
-            ),
-          ],
+              const SizedBox(width: AppSpacing.sm),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  size: 13, color: colors.colorTextTertiary),
+            ],
+          ),
         ),
       ),
     );

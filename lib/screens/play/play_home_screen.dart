@@ -1,259 +1,988 @@
 // lib/screens/play/play_home_screen.dart
 //
-// Play shell home — focused court list, dark background.
-// No map, no sport chips, no feed. Courts only.
+// Play section home — venue list + map toggle, sport chips, booking-first.
+// No Coaching/Events tabs. No Host a Game banner (lives in FAB sheet).
 
+import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../models/fake_data.dart';
-import 'play_action_sheet.dart';
+import '../../providers/auth_provider.dart';
 
-// ── Palette ───────────────────────────────────────────────────────
-const _kBg         = Color(0xFF0D0D0D);
-const _kSurface    = Color(0xFF161B24);
-const _kBorder     = Color(0xFF1A2030);
-const _kWhite      = Color(0xFFF8F9FA);
-const _kGrey       = Color(0xFF6B7280);
-const _kRed        = Color(0xFFE8112D);
-
-class PlayHomeScreen extends StatelessWidget {
+class PlayHomeScreen extends ConsumerStatefulWidget {
   const PlayHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
-    final venues = FakeData.venues;
-
-    return Scaffold(
-      backgroundColor: _kBg,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // ── Header ─────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                  AppSpacing.lg, topPad + AppSpacing.xxl,
-                  AppSpacing.lg, AppSpacing.xl),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Near you',
-                    style: AppTextStyles.displayXL(_kWhite).copyWith(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.6,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_rounded,
-                          size: 13, color: _kRed),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Koramangala, Bengaluru',
-                        style: AppTextStyles.bodyS(_kGrey),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // ── Venue list ─────────────────────────────────────────
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, i) {
-                if (i == venues.length) {
-                  return _HostGameCard(
-                    onTap: () => showPlayActionSheet(context),
-                  );
-                }
-                return _PlayVenueCard(
-                  venue: venues[i],
-                  onTap: () => context.push(AppRoutes.venueById(venues[i].id)),
-                );
-              },
-              childCount: venues.length + 1, // +1 for host card
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
-        ],
-      ),
-    );
-  }
+  ConsumerState<PlayHomeScreen> createState() => _PlayHomeScreenState();
 }
 
-// ── Venue card ────────────────────────────────────────────────────
+class _PlayHomeScreenState extends ConsumerState<PlayHomeScreen> {
+  bool _isMapMode = false;
+  String _search = '';
+  String _activeSport = 'all';
+  String _locationLabel = 'Koramangala, Bengaluru';
 
-class _PlayVenueCard extends StatelessWidget {
-  const _PlayVenueCard({required this.venue, required this.onTap});
-  final Venue venue;
-  final VoidCallback onTap;
+  static const _neighborhoods = [
+    'Koramangala', 'Indiranagar', 'Whitefield',
+    'HSR Layout', 'Jayanagar', 'Marathahalli',
+    'Bellandur', 'Electronic City',
+  ];
 
-  Color _sportColor(String sport) {
-    switch (sport) {
-      case 'basketball': return const Color(0xFFFF6B35);
-      case 'cricket':    return const Color(0xFF00C9A7);
-      case 'badminton':  return const Color(0xFFFFC107);
-      default:           return const Color(0xFF4CAF50);
+  LatLng? _userLocation;
+  String? _mapStyle;
+  GoogleMapController? _mapController;
+  Set<Marker> _markers = {};
+
+  final Map<String, BitmapDescriptor> _normalMarkers = {};
+  final Map<String, BitmapDescriptor> _selectedMarkers = {};
+
+  late PageController _pageController;
+  int _focusedIndex = 0;
+
+  static const _bengaluru = LatLng(12.9716, 77.5946);
+
+  static const _sports = [
+    ('all', 'All'),
+    ('football', 'Football'),
+    ('cricket', 'Cricket'),
+    ('basketball', 'Basketball'),
+    ('nearby', 'Nearby'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.85);
+    _initLocation();
+    _prepareMarkers();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadMapStyle();
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<BitmapDescriptor> _createCustomMarkerBitmap(
+      String title, bool isSelected) async {
+    final PictureRecorder pictureRecorder = PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+    const double width = 140.0;
+    const double height = 50.0;
+
+    final Paint shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.15)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    final RRect rrect =
+        RRect.fromLTRBR(0, 0, width, 24, const Radius.circular(12));
+    canvas.drawRRect(rrect.shift(const Offset(0, 4)), shadowPaint);
+
+    // Use brand accent directly — no BuildContext available in async bitmap creation
+    const brandAccent = Color(0xFFE8112D);
+    final Paint bgPaint = Paint()
+      ..color = isSelected ? brandAccent : Colors.white;
+    canvas.drawRRect(rrect, bgPaint);
+
+    final Paint pinPaint = Paint()
+      ..color = isSelected ? brandAccent : Colors.white;
+    final Path pinPath = Path()
+      ..moveTo(width / 2 - 5, 23)
+      ..lineTo(width / 2 + 5, 23)
+      ..lineTo(width / 2, 32)
+      ..close();
+    canvas.drawPath(pinPath, pinPaint);
+
+    final TextSpan textSpan = TextSpan(
+      text: title,
+      style: TextStyle(
+        fontFamily: 'Inter',
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: isSelected ? Colors.white : Colors.black87,
+      ),
+    );
+    final TextPainter textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+      ellipsis: '...',
+      textAlign: TextAlign.center,
+    );
+    textPainter.layout(minWidth: 0, maxWidth: width - 12);
+    final xCenter = (width - textPainter.width) / 2;
+    final yCenter = (24 - textPainter.height) / 2;
+    textPainter.paint(canvas, Offset(xCenter, yCenter));
+
+    final img = await pictureRecorder
+        .endRecording()
+        .toImage(width.toInt(), height.toInt());
+    final data = await img.toByteData(format: ImageByteFormat.png);
+    return BitmapDescriptor.bytes(data!.buffer.asUint8List());
+  }
+
+  Future<void> _prepareMarkers() async {
+    for (var v in FakeData.venues) {
+      _normalMarkers[v.id] = await _createCustomMarkerBitmap(v.name, false);
+      _selectedMarkers[v.id] = await _createCustomMarkerBitmap(v.name, true);
+    }
+    if (mounted) _buildMarkers();
+  }
+
+  Future<void> _initLocation() async {
+    try {
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
+        if (mounted) setState(() => _userLocation = _bengaluru);
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+          locationSettings:
+              const LocationSettings(accuracy: LocationAccuracy.high));
+      if (!mounted) return;
+      final raw = LatLng(pos.latitude, pos.longitude);
+      final loc = _isInIndia(raw) ? raw : _bengaluru;
+      setState(() => _userLocation = loc);
+      _buildMarkers();
+      _mapController?.animateCamera(CameraUpdate.newLatLngZoom(loc, 13));
+    } catch (_) {
+      if (mounted) setState(() => _userLocation = _bengaluru);
+      _buildMarkers();
     }
   }
 
+  bool _isInIndia(LatLng p) =>
+      p.latitude >= 8 &&
+      p.latitude <= 37 &&
+      p.longitude >= 68 &&
+      p.longitude <= 97;
+
+  Future<void> _loadMapStyle() async {
+    try {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final file = isDark
+          ? 'assets/map_style_dark.json'
+          : 'assets/map_style_light.json';
+      final style = await DefaultAssetBundle.of(context).loadString(file);
+      if (mounted) setState(() => _mapStyle = style);
+    } catch (_) {}
+  }
+
+  double _haversineKm(LatLng a, LatLng b) {
+    const r = 6371.0;
+    final dLat = (b.latitude - a.latitude) * math.pi / 180;
+    final dLng = (b.longitude - a.longitude) * math.pi / 180;
+    final h = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(a.latitude * math.pi / 180) *
+            math.cos(b.latitude * math.pi / 180) *
+            math.sin(dLng / 2) *
+            math.sin(dLng / 2);
+    return r * 2 * math.asin(math.sqrt(h));
+  }
+
+  String _distanceLabel(Venue v) {
+    final loc = _userLocation ?? _bengaluru;
+    final km = _haversineKm(loc, LatLng(v.lat, v.lng));
+    return km < 1.0
+        ? '${(km * 1000).round()} m'
+        : '~${km.toStringAsFixed(1)} km';
+  }
+
+  List<Venue> get _filtered {
+    var venues = List<Venue>.from(FakeData.venues);
+    if (_search.isNotEmpty) {
+      final q = _search.toLowerCase();
+      venues = venues
+          .where((v) =>
+              v.name.toLowerCase().contains(q) ||
+              v.area.toLowerCase().contains(q))
+          .toList();
+    }
+    if (_activeSport != 'all' && _activeSport != 'nearby') {
+      venues = venues.where((v) => v.sports.contains(_activeSport)).toList();
+    }
+    final loc = _userLocation ?? _bengaluru;
+    venues.sort((a, b) =>
+        _haversineKm(loc, LatLng(a.lat, a.lng))
+            .compareTo(_haversineKm(loc, LatLng(b.lat, b.lng))));
+    return venues;
+  }
+
+  void _buildMarkers() {
+    final venues = _filtered;
+    setState(() {
+      _markers = venues.asMap().entries.map((entry) {
+        final i = entry.key;
+        final v = entry.value;
+        final isFocused = _focusedIndex == i;
+        final icon = isFocused
+            ? (_selectedMarkers[v.id] ?? BitmapDescriptor.defaultMarker)
+            : (_normalMarkers[v.id] ?? BitmapDescriptor.defaultMarker);
+        return Marker(
+          markerId: MarkerId(v.id),
+          position: LatLng(v.lat, v.lng),
+          icon: icon,
+          anchor: const Offset(0.5, 0.7),
+          zIndexInt: isFocused ? 10 : 1,
+          consumeTapEvents: true,
+          onTap: () {
+            if (_pageController.hasClients) {
+              _pageController.animateToPage(i,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut);
+            }
+          },
+        );
+      }).toSet();
+    });
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _focusedIndex = index;
+      _buildMarkers();
+    });
+    final venues = _filtered;
+    if (venues.isNotEmpty && index < venues.length) {
+      final v = venues[index];
+      _mapController
+          ?.animateCamera(CameraUpdate.newLatLng(LatLng(v.lat, v.lng)));
+    }
+  }
+
+  String _getVenueImage(Venue v) {
+    if (v.photoUrl.isNotEmpty) return v.photoUrl;
+    if (v.sports.contains('football')) {
+      return 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80&w=800';
+    }
+    if (v.sports.contains('cricket')) {
+      return 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?auto=format&fit=crop&q=80&w=800';
+    }
+    if (v.sports.contains('badminton')) {
+      return 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&q=80&w=800';
+    }
+    return 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=800';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final court = FakeData.courts.where((c) => c.venueId == venue.id).firstOrNull;
-    final slots = court?.slotsAvailableToday ?? 0;
-    final price = court?.pricePerSlot ?? 0;
-    final primarySport = venue.sports.isNotEmpty ? venue.sports.first : 'basketball';
-    final sportColor = _sportColor(primarySport);
+    final colors = context.colors;
+    return Scaffold(
+      backgroundColor: colors.colorBackgroundPrimary,
+      body: _isMapMode ? _buildMapMode(colors) : _buildListMode(colors),
+    );
+  }
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(
-            AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
-        padding: const EdgeInsets.all(AppSpacing.md),
+  // ── LIST MODE ────────────────────────────────────────────────────
+
+  void _showLocationPicker(BuildContext ctx) {
+    final colors = ctx.colors;
+    showModalBottomSheet<void>(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
         decoration: BoxDecoration(
-          color: _kSurface,
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(color: _kBorder, width: 0.5),
+          color: colors.colorSurfaceOverlay,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: colors.colorBorderSubtle, width: 0.5)),
         ),
-        child: Row(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.lg, AppSpacing.lg,
+          MediaQuery.of(ctx).padding.bottom + AppSpacing.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Sport colour bar
-            Container(
-              width: 4,
-              height: 52,
-              decoration: BoxDecoration(
-                color: sportColor,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
+            Center(
+              child: Container(
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                  color: colors.colorBorderMedium,
+                  borderRadius: BorderRadius.circular(100),
+                ),
               ),
             ),
-            const SizedBox(width: AppSpacing.md),
-
-            // Text
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    venue.name,
-                    style: AppTextStyles.headingS(_kWhite),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    venue.area,
-                    style: AppTextStyles.bodyS(_kGrey),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+            const SizedBox(height: AppSpacing.lg),
+            Text('YOUR LOCATION', style: AppTextStyles.overline(colors.colorTextTertiary)),
+            const SizedBox(height: AppSpacing.sm),
+            ..._neighborhoods.map((n) => GestureDetector(
+              onTap: () {
+                setState(() => _locationLabel = n);
+                Navigator.of(ctx).pop();
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: Row(
+                  children: [
+                    Icon(Icons.location_on_rounded, size: 16, color: colors.colorAccentPrimary),
+                    const SizedBox(width: AppSpacing.md),
+                    Text(n, style: AppTextStyles.bodyM(colors.colorTextPrimary)),
+                    const Spacer(),
+                    if (_locationLabel == n)
+                      Icon(Icons.check_rounded, size: 16, color: colors.colorAccentPrimary),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.md),
+            )),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // Right: slots + price
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+  Widget _buildListMode(AppColorScheme colors) {
+    final topPad  = MediaQuery.of(context).padding.top;
+    final venues  = _filtered;
+    final user    = ref.watch(currentUserProvider);
+    final rawName = user?.userMetadata?['full_name'];
+    final name    = rawName is String && rawName.isNotEmpty ? rawName : 'Player';
+    final firstName = name.split(' ').first;
+    final initials  = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'P';
+    final locLabel  = _locationLabel.length > 20
+        ? '${_locationLabel.substring(0, 17)}…'
+        : _locationLabel;
+
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Container(
+            color: colors.colorSurfacePrimary,
+            padding: EdgeInsets.fromLTRB(
+                AppSpacing.lg, topPad + AppSpacing.sm, AppSpacing.lg, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: slots > 0
-                        ? const Color(0xFF22C55E).withValues(alpha: 0.12)
-                        : const Color(0xFFEF4444).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    slots > 0 ? '$slots slots' : 'Full',
-                    style: AppTextStyles.labelS(
-                      slots > 0
-                          ? const Color(0xFF22C55E)
-                          : const Color(0xFFEF4444),
+                // ── Profile row ──────────────────────────────────────
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        // Avatar
+                        GestureDetector(
+                          onTap: () => context.push(AppRoutes.profile),
+                          child: Container(
+                            width: 42, height: 42,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: colors.colorAccentPrimary, width: 2),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(2),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: colors.colorSurfaceElevated,
+                                ),
+                                child: Center(
+                                  child: Text(initials,
+                                      style: AppTextStyles.labelM(
+                                          colors.colorTextPrimary)),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        // Name + location
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Hey, $firstName',
+                              style: AppTextStyles.headingS(colors.colorTextPrimary),
+                            ),
+                            const SizedBox(height: 1),
+                            GestureDetector(
+                              onTap: () => _showLocationPicker(context),
+                              behavior: HitTestBehavior.opaque,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.location_on_rounded,
+                                      size: 12, color: colors.colorAccentPrimary),
+                                  const SizedBox(width: 3),
+                                  Text(locLabel,
+                                      style: AppTextStyles.bodyS(
+                                          colors.colorTextSecondary)),
+                                  const SizedBox(width: 3),
+                                  Icon(Icons.keyboard_arrow_down_rounded,
+                                      size: 12, color: colors.colorTextTertiary),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
+                    // Map toggle
+                    GestureDetector(
+                      onTap: () => setState(() => _isMapMode = true),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: colors.colorSurfacePrimary,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: colors.colorBorderSubtle, width: 1),
+                          boxShadow: AppShadow.card,
+                        ),
+                        child: Icon(Icons.map_outlined,
+                            color: colors.colorTextPrimary, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // ── "Courts near you" label ──────────────────────────
+                Text('Courts near you',
+                    style: AppTextStyles.bodyS(colors.colorTextSecondary)),
+                const SizedBox(height: AppSpacing.md),
+
+                // Search Bar
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: colors.colorBackgroundPrimary,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                        color: colors.colorBorderSubtle, width: 1),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search_rounded,
+                          color: colors.colorTextTertiary, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          onChanged: (v) => setState(() => _search = v),
+                          style:
+                              AppTextStyles.bodyM(colors.colorTextPrimary),
+                          decoration: InputDecoration(
+                            hintText: 'Search venues or areas...',
+                            hintStyle: AppTextStyles.bodyM(
+                                colors.colorTextTertiary),
+                            border: InputBorder.none,
+                            isDense: true,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  price > 0 ? '₹$price' : '—',
-                  style: AppTextStyles.headingS(_kWhite),
+                const SizedBox(height: 16),
+
+                // Sport Chips
+                SizedBox(
+                  height: 36,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: _sports.length,
+                    separatorBuilder: (_, i) => const SizedBox(width: 8),
+                    itemBuilder: (context, i) {
+                      final sp = _sports[i];
+                      final active = _activeSport == sp.$1;
+                      return GestureDetector(
+                        onTap: () => setState(() => _activeSport = sp.$1),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: active
+                                ? colors.colorAccentPrimary
+                                : colors.colorSurfaceElevated,
+                            borderRadius: BorderRadius.circular(100),
+                            border: Border.all(
+                                color: active
+                                    ? colors.colorAccentPrimary
+                                    : colors.colorBorderSubtle,
+                                width: 1),
+                          ),
+                          child: Text(
+                            sp.$2.toUpperCase(),
+                            style: AppTextStyles.labelS(active
+                                    ? Colors.white
+                                    : colors.colorTextSecondary)
+                                .copyWith(fontSize: 10, letterSpacing: 0.5),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
+                const SizedBox(height: 20),
               ],
             ),
-          ],
+          ),
         ),
-      ),
+
+        // Venue list
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) =>
+                  _buildListVenueCard(venues[index], colors),
+              childCount: venues.length,
+            ),
+          ),
+        ),
+
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
+      ],
     );
   }
-}
 
-// ── Host game card ────────────────────────────────────────────────
+  Widget _buildListVenueCard(Venue v, AppColorScheme colors) {
+    final slotsAvailable = FakeData.courts
+        .where((c) => c.venueId == v.id)
+        .fold(0, (sum, c) => sum + c.slotsAvailableToday);
+    final available = slotsAvailable > 0;
 
-class _HostGameCard extends StatelessWidget {
-  const _HostGameCard({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => context.push('/venue/${v.id}'),
       child: Container(
-        margin: const EdgeInsets.fromLTRB(
-            AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: _kRed.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(
-              color: _kRed.withValues(alpha: 0.25), width: 0.5),
+          color: colors.colorSurfacePrimary,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+          boxShadow: AppShadow.card,
         ),
-        child: Row(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: _kRed.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: const Icon(Icons.add_rounded, color: _kRed, size: 22),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // Image
+            SizedBox(
+              height: 160,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  Text('Host your own game',
-                      style: AppTextStyles.headingS(_kWhite)),
-                  const SizedBox(height: 3),
-                  Text('Book any court and invite players',
-                      style: AppTextStyles.bodyS(_kGrey)),
+                  Image.network(_getVenueImage(v), fit: BoxFit.cover),
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(4)),
+                      child: Text('AVAILABLE NOW',
+                          style: AppTextStyles.labelS(Colors.white)
+                              .copyWith(fontSize: 10, letterSpacing: 0.5)),
+                    ),
+                  ),
+                  const Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Icon(Icons.favorite_border_rounded,
+                        color: Colors.white, size: 24),
+                  ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                size: 13, color: _kGrey),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                          child: Text(v.name,
+                              style: AppTextStyles.headingS(
+                                  colors.colorTextPrimary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis)),
+                      Row(children: [
+                        Icon(Icons.star_rounded,
+                            color: colors.colorWarning, size: 16),
+                        const SizedBox(width: 4),
+                        Text('${v.rating}',
+                            style: AppTextStyles.labelS(
+                                colors.colorTextPrimary)),
+                      ]),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text('${v.area} • ${_distanceLabel(v)}',
+                      style:
+                          AppTextStyles.bodyS(colors.colorTextSecondary)),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                            color: available
+                                ? colors.colorSuccess
+                                : colors.colorError,
+                            shape: BoxShape.circle)),
+                    const SizedBox(width: 6),
+                    Text(
+                        available
+                            ? 'Slots Available Today'
+                            : 'Fully Booked',
+                        style: AppTextStyles.labelS(available
+                                ? colors.colorSuccess
+                                : colors.colorError)
+                            .copyWith(fontSize: 11)),
+                  ]),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-}
 
-extension _ListX<T> on Iterable<T> {
-  T? get firstOrNull {
-    final it = iterator;
-    return it.moveNext() ? it.current : null;
+  // ── MAP MODE ─────────────────────────────────────────────────────
+
+  Widget _buildMapMode(AppColorScheme colors) {
+    final topPad = MediaQuery.of(context).padding.top;
+    final botPad = MediaQuery.of(context).padding.bottom;
+    final venues = _filtered;
+
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: GoogleMap(
+            onMapCreated: (mc) {
+              _mapController = mc;
+              if (_userLocation != null) {
+                mc.animateCamera(
+                    CameraUpdate.newLatLngZoom(_userLocation!, 13));
+              }
+              _buildMarkers();
+            },
+            initialCameraPosition:
+                const CameraPosition(target: _bengaluru, zoom: 13),
+            markers: _markers,
+            mapType: MapType.normal,
+            style: _mapStyle,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
+            compassEnabled: false,
+          ),
+        ),
+
+        // Top UI
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                padding: EdgeInsets.fromLTRB(AppSpacing.lg,
+                    topPad + AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
+                color: colors.colorSurfacePrimary.withValues(alpha: 0.8),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () =>
+                              setState(() => _isMapMode = false),
+                          child: Container(
+                            height: 48,
+                            width: 48,
+                            decoration: BoxDecoration(
+                                color: colors.colorSurfacePrimary,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: colors.colorBorderSubtle,
+                                    width: 0.5)),
+                            child: Icon(Icons.arrow_back_ios_new_rounded,
+                                color: colors.colorTextPrimary, size: 18),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                                color: colors.colorSurfacePrimary,
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                    color: colors.colorBorderSubtle,
+                                    width: 1)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16),
+                            child: Row(
+                              children: [
+                                Icon(Icons.search_rounded,
+                                    color: colors.colorTextTertiary,
+                                    size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: TextField(
+                                    onChanged: (v) {
+                                      setState(() {
+                                        _search = v;
+                                        _focusedIndex = 0;
+                                      });
+                                      if (_pageController.hasClients) {
+                                        _pageController.jumpToPage(0);
+                                      }
+                                      _buildMarkers();
+                                    },
+                                    style: AppTextStyles.bodyM(
+                                        colors.colorTextPrimary),
+                                    decoration: InputDecoration(
+                                      hintText:
+                                          'Search venues or areas...',
+                                      hintStyle: AppTextStyles.bodyM(
+                                          colors.colorTextTertiary),
+                                      border: InputBorder.none,
+                                      isDense: true,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 36,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: _sports.length,
+                        separatorBuilder: (_, i) =>
+                            const SizedBox(width: 8),
+                        itemBuilder: (context, i) {
+                          final sp = _sports[i];
+                          final active = _activeSport == sp.$1;
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _activeSport = sp.$1;
+                                _focusedIndex = 0;
+                              });
+                              if (_pageController.hasClients) {
+                                _pageController.jumpToPage(0);
+                              }
+                              _buildMarkers();
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: active
+                                    ? colors.colorAccentPrimary
+                                    : colors.colorSurfacePrimary,
+                                borderRadius: BorderRadius.circular(100),
+                                border: Border.all(
+                                    color: active
+                                        ? colors.colorAccentPrimary
+                                        : colors.colorBorderSubtle,
+                                    width: 1),
+                              ),
+                              child: Text(
+                                sp.$2.toUpperCase(),
+                                style: AppTextStyles.labelS(active
+                                        ? Colors.white
+                                        : colors.colorTextSecondary)
+                                    .copyWith(
+                                        fontSize: 10, letterSpacing: 0.5),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // My Location button
+        Positioned(
+          bottom: botPad + 184,
+          right: 16,
+          child: GestureDetector(
+            onTap: () {
+              if (_userLocation != null) {
+                _mapController?.animateCamera(
+                    CameraUpdate.newLatLngZoom(_userLocation!, 14));
+              } else {
+                _initLocation();
+              }
+            },
+            child: Container(
+              height: 48,
+              width: 48,
+              decoration: BoxDecoration(
+                color: colors.colorSurfacePrimary,
+                shape: BoxShape.circle,
+                boxShadow: AppShadow.card,
+              ),
+              child: Icon(Icons.my_location_rounded,
+                  color: colors.colorInfo, size: 24),
+            ),
+          ),
+        ),
+
+        // Bottom Map Cards
+        if (venues.isNotEmpty)
+          Positioned(
+            bottom: botPad + 16,
+            left: 0,
+            right: 0,
+            height: 160,
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: venues.length,
+              onPageChanged: _onPageChanged,
+              itemBuilder: (context, index) {
+                final v = venues[index];
+                final isFocused = _focusedIndex == index;
+                final slotsAvailable = FakeData.courts
+                    .where((c) => c.venueId == v.id)
+                    .fold(0, (sum, c) => sum + c.slotsAvailableToday);
+                final available = slotsAvailable > 0;
+
+                return AnimatedScale(
+                  scale: isFocused ? 1.0 : 0.95,
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  child: GestureDetector(
+                    onTap: () => context.push('/venue/${v.id}'),
+                    child: Container(
+                      margin:
+                          const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: colors.colorSurfacePrimary,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: AppShadow.cardElevated,
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 120,
+                            height: 160,
+                            child: Image.network(_getVenueImage(v),
+                                fit: BoxFit.cover),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(v.name,
+                                      style: AppTextStyles.headingS(
+                                          colors.colorTextPrimary),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                      '⭐ ${v.rating} • ${_distanceLabel(v)}',
+                                      style: AppTextStyles.labelS(
+                                          colors.colorTextSecondary)),
+                                  const Spacer(),
+                                  Row(children: [
+                                    Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                            color: available
+                                                ? colors.colorSuccess
+                                                : colors.colorError,
+                                            shape: BoxShape.circle)),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                        available
+                                            ? 'Available Today'
+                                            : 'Booked',
+                                        style: AppTextStyles.labelS(
+                                                available
+                                                    ? colors.colorSuccess
+                                                    : colors.colorError)
+                                            .copyWith(fontSize: 11)),
+                                  ]),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    height: 36,
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () => context
+                                          .push('/venue/${v.id}'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: colors
+                                            .colorAccentPrimary
+                                            .withValues(alpha: 0.1),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(
+                                                    8)),
+                                        elevation: 0,
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                      child: Text('Check Slots →',
+                                          style: AppTextStyles.labelS(
+                                              colors.colorAccentPrimary)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
   }
 }

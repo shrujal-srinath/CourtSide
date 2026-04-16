@@ -1,6 +1,6 @@
 // lib/screens/booking/booking_shop_screen.dart
 //
-// Step 2 of the booking wizard — buy items for the game.
+// Step 3 of the booking wizard — buy items delivered to venue.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,21 +32,23 @@ class BookingShopScreen extends ConsumerWidget {
       backgroundColor: colors.colorBackgroundPrimary,
       body: Column(
         children: [
-          BookingStepHeader(
-            step: 2,
-            title: 'Add to your game',
-            subtitle: 'Equipment and accessories',
-            onBack: () => context.pop(),
-            colors: colors,
+          BookingWizardNav(
+            currentStep: 3,
+            venueId:     flow.venueId,
+            onBack:      () => context.pop(),
           ),
-          BookingStepProgressBar(currentStep: 2, colors: colors),
 
           Expanded(
             child: ListView(
+              physics: const BouncingScrollPhysics(),
               padding: EdgeInsets.fromLTRB(
-                  AppSpacing.lg, 0, AppSpacing.lg,
+                  AppSpacing.lg, AppSpacing.sm, AppSpacing.lg,
                   botPad + AppSpacing.xxl + 70),
               children: [
+                // ── Delivery promise banner ──────────────────────
+                _DeliveryBanner(colors: colors),
+                const SizedBox(height: AppSpacing.lg),
+
                 if (equipment.isNotEmpty) ...[
                   _CategoryHeader(label: 'EQUIPMENT', colors: colors),
                   ...equipment.map((item) => _ShopItemRow(
@@ -87,11 +89,88 @@ class BookingShopScreen extends ConsumerWidget {
       bottomNavigationBar: BookingStepFooter(
         label: cartCount == 0
             ? 'Skip — no items'
-            : 'Next — Gear rental ($cartCount item${cartCount == 1 ? '' : 's'})',
+            : 'Next — Review ($cartCount item${cartCount == 1 ? '' : 's'} · ₹${flow.shopTotal})',
         isSkip: cartCount == 0,
         colors: colors,
         botPad: botPad,
-        onTap: () => context.push(AppRoutes.bookHardware(flow.venueId)),
+        onTap: () => context.push(AppRoutes.bookCart(flow.venueId)),
+      ),
+    );
+  }
+}
+
+// ── Delivery promise banner ───────────────────────────────────────
+
+class _DeliveryBanner extends StatelessWidget {
+  const _DeliveryBanner({required this.colors});
+  final AppColorScheme colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.colorSuccess.withValues(alpha: 0.08),
+            colors.colorSuccess.withValues(alpha: 0.03),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(
+          color: colors.colorSuccess.withValues(alpha: 0.2),
+          width: 0.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: colors.colorSuccess.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Icon(Icons.local_shipping_rounded,
+                size: 22, color: colors.colorSuccess),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Delivered to your court',
+                      style: AppTextStyles.headingS(colors.colorTextPrimary),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: colors.colorSuccess,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: Text('FREE',
+                          style: AppTextStyles.overline(
+                                  colors.colorTextOnAccent)
+                              .copyWith(fontSize: 8)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Items will be ready at the venue by the time you arrive.',
+                  style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

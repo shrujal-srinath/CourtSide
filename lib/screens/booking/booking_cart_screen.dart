@@ -147,14 +147,11 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
       backgroundColor: colors.colorBackgroundPrimary,
       body: Column(
         children: [
-          BookingStepHeader(
-            step: 4,
-            title: 'Review & confirm',
-            subtitle: 'Your complete order',
-            onBack: () => context.pop(),
-            colors: colors,
+          BookingWizardNav(
+            currentStep: 4,
+            venueId:     flow.venueId,
+            onBack:      () => context.pop(),
           ),
-          BookingStepProgressBar(currentStep: 4, colors: colors),
 
           Expanded(
             child: ListView(

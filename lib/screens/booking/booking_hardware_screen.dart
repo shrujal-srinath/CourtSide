@@ -25,14 +25,11 @@ class BookingHardwareScreen extends ConsumerWidget {
       backgroundColor: colors.colorBackgroundPrimary,
       body: Column(
         children: [
-          BookingStepHeader(
-            step: 3,
-            title: 'Level up your game',
-            subtitle: 'Rent smart scoring & recording gear',
-            onBack: () => context.pop(),
-            colors: colors,
+          BookingWizardNav(
+            currentStep: 2,
+            venueId:     flow.venueId,
+            onBack:      () => context.pop(),
           ),
-          BookingStepProgressBar(currentStep: 3, colors: colors),
 
           Expanded(
             child: ListView(
@@ -75,12 +72,12 @@ class BookingHardwareScreen extends ConsumerWidget {
       ),
       bottomNavigationBar: BookingStepFooter(
         label: flow.hardware == null
-            ? 'Skip — no hardware'
-            : 'Next — Review (₹${flow.hardware!.pricePerGame}/game)',
+            ? 'Skip — no gear rental'
+            : 'Next — Shop (₹${flow.hardware!.pricePerGame}/game)',
         isSkip: flow.hardware == null,
         colors: colors,
         botPad: botPad,
-        onTap: () => context.push(AppRoutes.bookCart(flow.venueId)),
+        onTap: () => context.push(AppRoutes.bookShop(flow.venueId)),
       ),
     );
   }

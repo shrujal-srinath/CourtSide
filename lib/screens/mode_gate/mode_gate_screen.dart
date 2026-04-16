@@ -152,7 +152,7 @@ class _ModeGateScreenState extends State<ModeGateScreen>
                     onTapDown: () => setState(() => _explorePressed = true),
                     onTapUp: () {
                       setState(() => _explorePressed = false);
-                      context.go(AppRoutes.explore);
+                      context.go(AppRoutes.home);
                     },
                     onTapCancel: () => setState(() => _explorePressed = false),
                     child: _GateCard(

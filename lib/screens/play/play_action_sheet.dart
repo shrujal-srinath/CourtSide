@@ -1,21 +1,14 @@
 // lib/screens/play/play_action_sheet.dart
 //
 // + button action sheet for the Play shell.
-// Dark (#111) modal with 4 primary actions + a secondary "Switch" row.
+// Dark modal with 4 primary actions + a secondary "Switch" row.
+// Uses semantic tokens — adapts to both dark and light themes.
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants.dart';
 import '../../core/theme.dart';
-
-// ── Palette (dark sheet — intentionally local) ────────────────────
-const _kSheetBg   = Color(0xFF111111);
-const _kRowBg     = Color(0xFF1A1A1A);
-const _kBorder    = Color(0xFF2A2A2A);
-const _kWhite     = Color(0xFFF8F9FA);
-const _kGrey      = Color(0xFF6B7280);
-const _kRed       = Color(0xFFE8112D);
 
 void showPlayActionSheet(BuildContext context) {
   showModalBottomSheet(
@@ -35,12 +28,15 @@ class _PlayActionSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final botPad = MediaQuery.of(context).padding.bottom;
+    final colors  = context.colors;
+    final botPad  = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: _kSheetBg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: colors.colorSurfaceOverlay,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(
+            top: BorderSide(color: colors.colorBorderSubtle, width: 0.5)),
       ),
       padding: EdgeInsets.fromLTRB(
           AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, botPad + AppSpacing.lg),
@@ -53,7 +49,7 @@ class _PlayActionSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: _kBorder,
+                color: colors.colorBorderMedium,
                 borderRadius: BorderRadius.circular(100),
               ),
             ),
@@ -65,7 +61,7 @@ class _PlayActionSheet extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               'WHAT DO YOU WANT TO DO?',
-              style: AppTextStyles.overline(_kGrey),
+              style: AppTextStyles.overline(colors.colorTextTertiary),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -73,7 +69,7 @@ class _PlayActionSheet extends StatelessWidget {
           // ── 4 primary options ─────────────────────────────────
           _ActionRow(
             icon: Icons.location_on_rounded,
-            iconColor: _kRed,
+            iconColor: colors.colorAccentPrimary,
             title: 'Book a court',
             subtitle: 'Find and reserve a nearby court',
             onTap: () {
@@ -83,7 +79,7 @@ class _PlayActionSheet extends StatelessWidget {
           ),
           _ActionRow(
             icon: Icons.flag_rounded,
-            iconColor: const Color(0xFF3B82F6),
+            iconColor: colors.colorInfo,
             title: 'Host a game',
             subtitle: 'Create a public or private game',
             onTap: () {
@@ -93,7 +89,7 @@ class _PlayActionSheet extends StatelessWidget {
           ),
           _ActionRow(
             icon: Icons.scoreboard_rounded,
-            iconColor: const Color(0xFF22C55E),
+            iconColor: colors.colorSuccess,
             title: 'Live scoring',
             subtitle: 'Open the scorer for your game',
             onTap: () {
@@ -103,22 +99,22 @@ class _PlayActionSheet extends StatelessWidget {
           ),
           _ActionRow(
             icon: Icons.bar_chart_rounded,
-            iconColor: const Color(0xFFF59E0B),
+            iconColor: colors.colorWarning,
             title: 'Add stats',
             subtitle: 'Log stats from a completed game',
             onTap: () {
               _close();
-              context.push(AppRoutes.hostGame); // stub — same as host for now
+              context.push(AppRoutes.hostGame);
             },
           ),
 
           const SizedBox(height: AppSpacing.md),
 
-          // ── Divider ───────────────────────────────────────────
-          Container(height: 0.5, color: _kBorder),
+          // Divider
+          Container(height: 0.5, color: colors.colorBorderSubtle),
           const SizedBox(height: AppSpacing.md),
 
-          // ── Switch to Explore ─────────────────────────────────
+          // Switch to Explore
           GestureDetector(
             onTap: () {
               _close();
@@ -130,24 +126,24 @@ class _PlayActionSheet extends StatelessWidget {
               child: Row(
                 children: [
                   Container(
-                    width: 36,
+                    width:  36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF222222),
+                      color: colors.colorSurfaceElevated,
                       borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
-                    child: const Icon(Icons.grid_view_rounded,
-                        size: 16, color: _kGrey),
+                    child: Icon(Icons.grid_view_rounded,
+                        size: 16, color: colors.colorTextSecondary),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Text(
                       'Switch to Explore',
-                      style: AppTextStyles.bodyM(_kGrey),
+                      style: AppTextStyles.bodyM(colors.colorTextSecondary),
                     ),
                   ),
-                  const Icon(Icons.arrow_forward_ios_rounded,
-                      size: 12, color: _kGrey),
+                  Icon(Icons.arrow_forward_ios_rounded,
+                      size: 12, color: colors.colorTextTertiary),
                 ],
               ),
             ),
@@ -174,12 +170,15 @@ class _SportPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final botPad = MediaQuery.of(context).padding.bottom;
+    final colors  = context.colors;
+    final botPad  = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: _kSheetBg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: colors.colorSurfaceOverlay,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(
+            top: BorderSide(color: colors.colorBorderSubtle, width: 0.5)),
       ),
       padding: EdgeInsets.fromLTRB(
           AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, botPad + AppSpacing.lg),
@@ -188,9 +187,10 @@ class _SportPickerSheet extends StatelessWidget {
         children: [
           Center(
             child: Container(
-              width: 36, height: 4,
+              width: 36,
+              height: 4,
               decoration: BoxDecoration(
-                color: _kBorder,
+                color: colors.colorBorderMedium,
                 borderRadius: BorderRadius.circular(100),
               ),
             ),
@@ -198,7 +198,8 @@ class _SportPickerSheet extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Align(
             alignment: Alignment.centerLeft,
-            child: Text('SELECT SPORT', style: AppTextStyles.overline(_kGrey)),
+            child: Text('SELECT SPORT',
+                style: AppTextStyles.overline(colors.colorTextTertiary)),
           ),
           const SizedBox(height: AppSpacing.sm),
           _SportRow(
@@ -224,13 +225,16 @@ class _SportPickerSheet extends StatelessWidget {
 }
 
 class _SportRow extends StatelessWidget {
-  const _SportRow({required this.emoji, required this.label, required this.onTap});
-  final String emoji;
-  final String label;
+  const _SportRow(
+      {required this.emoji, required this.label, required this.onTap});
+  final String       emoji;
+  final String       label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -240,9 +244,10 @@ class _SportRow extends StatelessWidget {
           children: [
             Text(emoji, style: const TextStyle(fontSize: 24)),
             const SizedBox(width: AppSpacing.md),
-            Text(label, style: AppTextStyles.headingM(_kWhite)),
+            Text(label, style: AppTextStyles.headingM(colors.colorTextPrimary)),
             const Spacer(),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: _kGrey),
+            Icon(Icons.arrow_forward_ios_rounded,
+                size: 14, color: colors.colorTextTertiary),
           ],
         ),
       ),
@@ -261,14 +266,16 @@ class _ActionRow extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
+  final IconData     icon;
+  final Color        iconColor;
+  final String       title;
+  final String       subtitle;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -276,14 +283,14 @@ class _ActionRow extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: AppSpacing.xs),
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: _kRowBg,
+          color: colors.colorSurfaceElevated,
           borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(color: _kBorder, width: 0.5),
+          border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
         ),
         child: Row(
           children: [
             Container(
-              width: 44,
+              width:  44,
               height: 44,
               decoration: BoxDecoration(
                 color: iconColor.withValues(alpha: 0.1),
@@ -296,14 +303,16 @@ class _ActionRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: AppTextStyles.headingS(_kWhite)),
+                  Text(title,
+                      style: AppTextStyles.headingS(colors.colorTextPrimary)),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: AppTextStyles.bodyS(_kGrey)),
+                  Text(subtitle,
+                      style: AppTextStyles.bodyS(colors.colorTextSecondary)),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                size: 12, color: _kGrey),
+            Icon(Icons.arrow_forward_ios_rounded,
+                size: 12, color: colors.colorTextTertiary),
           ],
         ),
       ),

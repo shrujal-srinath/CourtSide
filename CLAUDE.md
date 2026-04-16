@@ -575,6 +575,9 @@ Never animate layout properties rapidly during scroll (layout thrashing).
 | Stat share | /stats/share | ✅ |
 | Basketball scorer | /score/basketball | ✅ full scorer |
 | Cricket scorer | /score/cricket | ✅ |
+| Mode gate | /mode-gate | ✅ entry screen, every session |
+| Play home | /play | ✅ dark venue list, Play shell |
+| Host game | /host-game | 🔲 stub |
 | Explore | /explore | 🔲 stub |
 | Player profile | /player/:id | 🔲 |
 | Squad | /squad | 🔲 |
