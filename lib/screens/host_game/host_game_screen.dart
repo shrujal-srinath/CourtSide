@@ -1273,7 +1273,7 @@ class _ToggleRow extends StatelessWidget {
             value: value,
             onChanged: onChanged,
             activeTrackColor: colors.colorAccentPrimary,
-            activeColor: colors.colorTextOnAccent,
+            activeThumbColor: colors.colorTextOnAccent,
           ),
         ],
       ),

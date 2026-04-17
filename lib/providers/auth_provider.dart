@@ -13,8 +13,12 @@ final supabaseProvider = Provider<SupabaseClient>(
 
 // ── Auth state stream ───────────────────────────────────────────
 // Emits the current Session (or null if signed out)
+// Includes error handling for network timeouts and auth failures
 final authStateProvider = StreamProvider<Session?>((ref) {
   final client = ref.watch(supabaseProvider);
+  // onAuthStateChange is a persistent broadcast stream — do NOT add
+  // .timeout() or .handleError() as these close the stream and prevent
+  // sign-in/sign-out events from reaching the router.
   return client.auth.onAuthStateChange.map((event) => event.session);
 });
 

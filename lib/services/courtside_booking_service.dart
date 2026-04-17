@@ -77,6 +77,8 @@ class CourtsideBookingService {
   }
 
   /// Cancels a booking by setting cs_status to 'cancelled'.
+  /// Only cancels bookings that are still 'upcoming' — guards against
+  /// accidentally cancelling already-completed or already-cancelled bookings.
   Future<void> cancelBooking(String bookingId) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) throw Exception('Not authenticated');
@@ -85,7 +87,8 @@ class CourtsideBookingService {
         .from('bookings')
         .update({'cs_status': 'cancelled'})
         .eq('id', bookingId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .eq('cs_status', 'upcoming'); // guard: only cancel upcoming bookings
   }
 
   // ── Converters ─────────────────────────────────────────────────

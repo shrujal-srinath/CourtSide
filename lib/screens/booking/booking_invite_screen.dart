@@ -21,45 +21,20 @@ class BookingInviteScreen extends ConsumerStatefulWidget {
 
 class _BookingInviteScreenState
     extends ConsumerState<BookingInviteScreen> {
-  final _searchCtrl = TextEditingController();
-  List<FriendProfile> _searchResults = [];
-  bool _hasSearched = false;
+  bool _inviteSectionExpanded = false;
 
   @override
-  void initState() {
-    super.initState();
-    _searchCtrl.addListener(_onSearch);
-  }
-
-  @override
-  void dispose() {
-    _searchCtrl.removeListener(_onSearch);
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  bool get _queryIsPhone {
-    final q = _searchCtrl.text.trim().replaceAll(RegExp(r'[\s\-+]'), '');
-    return RegExp(r'^\d{7,13}$').hasMatch(q);
-  }
-
-  void _onSearch() {
-    final query = _searchCtrl.text.trim().toLowerCase();
-    if (query.isEmpty) {
-      setState(() {
-        _searchResults = [];
-        _hasSearched   = false;
+  void didUpdateWidget(BookingInviteScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Auto-expand/collapse based on game type
+    final flow = ref.read(bookingFlowProvider);
+    if (!flow.isPublicGame && !_inviteSectionExpanded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() => _inviteSectionExpanded = true);
+        }
       });
-      return;
     }
-    setState(() {
-      _hasSearched   = true;
-      _searchResults = fakeFriends.where((f) {
-        return f.name.toLowerCase().contains(query) ||
-            f.username.toLowerCase().contains(query) ||
-            f.id.contains(query);
-      }).toList();
-    });
   }
 
   @override
@@ -69,7 +44,6 @@ class _BookingInviteScreenState
     final colors   = context.colors;
     final botPad   = MediaQuery.of(context).padding.bottom;
 
-    final displayList = _hasSearched ? _searchResults : fakeFriends;
     final hasInvites  = flow.invitedFriendIds.isNotEmpty;
 
     return Scaffold(
@@ -126,54 +100,19 @@ class _BookingInviteScreenState
                   ),
                 ],
 
-                // ── Private game: stats sharing ────────────────────
-                if (!flow.isPublicGame) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  _StatsShareBanner(colors: colors),
-                ],
-
                 const SizedBox(height: AppSpacing.xl),
 
-                // ── Invite friends ─────────────────────────────────
-                _SectionHeader(
-                  flow.isPublicGame
-                      ? 'INVITE FRIENDS DIRECTLY'
-                      : 'INVITE YOUR SQUAD',
-                  colors,
+                // ── Collapsible invite section ─────────────────────
+                _InviteCollapsibleCard(
+                  isExpanded: _inviteSectionExpanded,
+                  isPublicGame: flow.isPublicGame,
+                  invitedFriendIds: flow.invitedFriendIds,
+                  onToggleExpand: () => setState(
+                    () => _inviteSectionExpanded = !_inviteSectionExpanded,
+                  ),
+                  onToggleFriend: notifier.toggleFriend,
+                  colors: colors,
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  flow.isPublicGame
-                      ? 'Friends will get reserved spots before public spots open'
-                      : 'Only invited players will be able to see and join your game',
-                  style: AppTextStyles.bodyS(colors.colorTextTertiary),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _SearchField(
-                    controller: _searchCtrl, colors: colors),
-                const SizedBox(height: AppSpacing.sm),
-
-                if (_hasSearched && _searchResults.isEmpty)
-                  _queryIsPhone
-                      ? _PhoneInvite(
-                          phone: _searchCtrl.text.trim(),
-                          colors: colors)
-                      : _EmptySearch(colors: colors)
-                else
-                  ...displayList.map((friend) {
-                    final invited =
-                        flow.invitedFriendIds.contains(friend.id);
-                    return Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: AppSpacing.sm),
-                      child: _FriendTile(
-                        friend:  friend,
-                        invited: invited,
-                        colors:  colors,
-                        onTap:   () => notifier.toggleFriend(friend.id),
-                      ),
-                    );
-                  }),
               ],
             ),
           ),
@@ -188,6 +127,260 @@ class _BookingInviteScreenState
         colors:  colors,
         botPad:  botPad,
         onTap:   () => context.push(AppRoutes.bookHardware(flow.venueId)),
+      ),
+    );
+  }
+}
+
+// ── Collapsible invite card ───────────────────────────────────────
+
+class _InviteCollapsibleCard extends StatefulWidget {
+  const _InviteCollapsibleCard({
+    required this.isExpanded,
+    required this.isPublicGame,
+    required this.invitedFriendIds,
+    required this.onToggleExpand,
+    required this.onToggleFriend,
+    required this.colors,
+  });
+
+  final bool isExpanded;
+  final bool isPublicGame;
+  final List<String> invitedFriendIds;
+  final VoidCallback onToggleExpand;
+  final ValueChanged<String> onToggleFriend;
+  final AppColorScheme colors;
+
+  @override
+  State<_InviteCollapsibleCard> createState() =>
+      _InviteCollapsibleCardState();
+}
+
+class _InviteCollapsibleCardState extends State<_InviteCollapsibleCard> {
+  final _searchCtrl = TextEditingController();
+  List<FriendProfile> _searchResults = [];
+  bool _hasSearched = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl.addListener(_onSearch);
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.removeListener(_onSearch);
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _queryIsPhone {
+    final q = _searchCtrl.text.trim().replaceAll(RegExp(r'[\s\-+]'), '');
+    return RegExp(r'^\d{7,13}$').hasMatch(q);
+  }
+
+  void _onSearch() {
+    final query = _searchCtrl.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _hasSearched = false;
+      });
+      return;
+    }
+    setState(() {
+      _hasSearched = true;
+      _searchResults = fakeFriends.where((f) {
+        return f.name.toLowerCase().contains(query) ||
+            f.username.toLowerCase().contains(query) ||
+            f.id.contains(query);
+      }).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayList = _hasSearched ? _searchResults : fakeFriends;
+
+    return GestureDetector(
+      onTap: widget.isExpanded ? null : widget.onToggleExpand,
+      child: AnimatedContainer(
+        duration: AppDuration.normal,
+        decoration: BoxDecoration(
+          color: widget.colors.colorSurfaceElevated,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border(
+            left: BorderSide(
+              color: widget.colors.colorAccentPrimary,
+              width: widget.isExpanded ? 3.0 : 2.0,
+            ),
+            top: BorderSide(
+              color: widget.colors.colorBorderSubtle,
+              width: 0.5,
+            ),
+            right: BorderSide(
+              color: widget.colors.colorBorderSubtle,
+              width: 0.5,
+            ),
+            bottom: BorderSide(
+              color: widget.colors.colorBorderSubtle,
+              width: 0.5,
+            ),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header (always visible) ────────────────────────────
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            AnimatedRotation(
+                              turns: widget.isExpanded ? 0.5 : 0,
+                              duration: AppDuration.fast,
+                              child: Icon(
+                                Icons.expand_more_rounded,
+                                color: widget.colors.colorTextPrimary,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Text(
+                              'Invite Players to Your Game',
+                              style: AppTextStyles.headingM(
+                                widget.colors.colorTextPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Share live stats · Compare performance',
+                          style: AppTextStyles.bodyS(
+                            widget.colors.colorTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (widget.invitedFriendIds.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: widget.colors.colorAccentPrimary,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: Text(
+                        '${widget.invitedFriendIds.length}',
+                        style: AppTextStyles.labelS(
+                          widget.colors.colorTextOnAccent,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // ── Expanded content (search + friends) ───────────────
+            if (widget.isExpanded) ...[
+              Container(
+                height: 0.5,
+                color: widget.colors.colorBorderSubtle,
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Search field
+                    Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: widget.colors.colorSurfacePrimary,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        border: Border.all(
+                          color: widget.colors.colorBorderSubtle,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: TextField(
+                        controller: _searchCtrl,
+                        style: AppTextStyles.bodyM(
+                          widget.colors.colorTextPrimary,
+                        ),
+                        keyboardType: TextInputType.text,
+                        textInputAction: TextInputAction.search,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          hintText: 'Search by name, @username, or phone',
+                          hintStyle: AppTextStyles.bodyM(
+                            widget.colors.colorTextTertiary,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            size: 18,
+                            color: widget.colors.colorTextTertiary,
+                          ),
+                          suffixIcon: _searchCtrl.text.isNotEmpty
+                              ? GestureDetector(
+                                  onTap: _searchCtrl.clear,
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    size: 16,
+                                    color: widget.colors.colorTextTertiary,
+                                  ),
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Friend list or search results
+                    if (_hasSearched && _searchResults.isEmpty)
+                      _queryIsPhone
+                          ? _PhoneInvite(
+                              phone: _searchCtrl.text.trim(),
+                              colors: widget.colors,
+                            )
+                          : _EmptySearch(colors: widget.colors)
+                    else
+                      ...displayList.map((friend) {
+                        final invited =
+                            widget.invitedFriendIds.contains(friend.id);
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: AppSpacing.sm,
+                          ),
+                          child: _FriendTile(
+                            friend: friend,
+                            invited: invited,
+                            colors: widget.colors,
+                            onTap: () =>
+                                widget.onToggleFriend(friend.id),
+                          ),
+                        );
+                      }),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -300,13 +493,13 @@ class _GameTypeSelector extends StatelessWidget {
           label:       'Private',
           subtitle:    'Only your squad plays',
           tag:         'INVITE-ONLY',
-          tagColor:    colors.colorInfo,
+          tagColor:    colors.colorAccentPrimary,
           isSelected:  !isPublic,
           colors:      colors,
           onTap:       () => onChanged(false),
           bullets: const [
             'Only invited players',
-            'Share stats after game',
+            'Share stats with squad',
             'Full privacy control',
           ],
         ),
@@ -359,165 +552,114 @@ class _GameTypeCard extends StatelessWidget {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: AppDuration.normal,
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? colors.colorAccentPrimary.withValues(alpha: 0.07)
-                : colors.colorSurfacePrimary,
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(
-              color: isSelected
-                  ? colors.colorAccentPrimary
-                  : colors.colorBorderSubtle,
-              width: isSelected ? 1.5 : 0.5,
-            ),
-            boxShadow: isSelected ? AppShadow.cardElevated : null,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon + tag row
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? colors.colorAccentPrimary
-                          : colors.colorSurfaceElevated,
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    child: Icon(icon,
-                        size: 20,
-                        color: isSelected
-                            ? colors.colorTextOnAccent
-                            : colors.colorTextTertiary),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: tagColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Text(
-                      tag,
-                      style: AppTextStyles.overline(tagColor)
-                          .copyWith(fontSize: 8),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-
-              // Label
-              Text(
-                label,
-                style: AppTextStyles.headingM(
-                  isSelected
-                      ? colors.colorAccentPrimary
-                      : colors.colorTextPrimary,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(subtitle,
-                  style: AppTextStyles.bodyS(colors.colorTextSecondary)),
-
-              const SizedBox(height: AppSpacing.md),
-              Container(height: 0.5, color: colors.colorBorderSubtle),
-              const SizedBox(height: AppSpacing.sm),
-
-              // Bullet points
-              ...bullets.map((b) => Padding(
-                    padding: const EdgeInsets.only(bottom: 5),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 4,
-                          height: 4,
-                          margin:
-                              const EdgeInsets.fromLTRB(0, 5, 6, 0),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? colors.colorAccentPrimary
-                                : colors.colorTextTertiary,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            b,
-                            style: AppTextStyles.bodyS(
-                              isSelected
-                                  ? colors.colorTextSecondary
-                                  : colors.colorTextTertiary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Stats sharing banner (private game only) ──────────────────────
-
-class _StatsShareBanner extends StatelessWidget {
-  const _StatsShareBanner({required this.colors});
-  final AppColorScheme colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: colors.colorInfo.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(
-          color: colors.colorInfo.withValues(alpha: 0.2),
-          width: 0.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
+        child: AnimatedScale(
+          scale: isSelected ? 0.98 : 1.0,
+          duration: AppDuration.fast,
+          child: AnimatedContainer(
+            duration: AppDuration.normal,
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: colors.colorInfo.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
+              color: isSelected
+                  ? tagColor.withValues(alpha: 0.08)
+                  : colors.colorSurfacePrimary,
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              border: Border.all(
+                color: isSelected
+                    ? tagColor
+                    : colors.colorBorderSubtle,
+                width: isSelected ? 1.5 : 0.5,
+              ),
+              boxShadow: isSelected ? AppShadow.cardElevated : null,
             ),
-            child: Icon(Icons.bar_chart_rounded,
-                size: 18, color: colors.colorInfo),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Icon + tag row
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? tagColor.withValues(alpha: 0.12)
+                            : colors.colorSurfaceElevated,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: Icon(icon,
+                          size: 20,
+                          color: isSelected
+                              ? tagColor
+                              : colors.colorTextTertiary),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: tagColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: Text(
+                        tag,
+                        style: AppTextStyles.overline(tagColor)
+                            .copyWith(fontSize: 8),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Label - WHITE text for readability
                 Text(
-                  'Stats are shared with invited players',
-                  style: AppTextStyles.headingS(colors.colorTextPrimary),
+                  label,
+                  style: AppTextStyles.headingM(
+                    isSelected
+                        ? tagColor
+                        : colors.colorTextPrimary,
+                  ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  'Everyone in your private game gets a full stat card after.',
-                  style: AppTextStyles.bodyS(colors.colorTextTertiary),
-                ),
+                Text(subtitle,
+                    style: AppTextStyles.bodyS(colors.colorTextSecondary)),
+
+                const SizedBox(height: AppSpacing.md),
+                Container(height: 0.5, color: colors.colorBorderSubtle),
+                const SizedBox(height: AppSpacing.sm),
+
+                // Bullet points (max 3)
+                ...bullets.take(3).map((b) => Padding(
+                      padding: const EdgeInsets.only(bottom: 5),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 4,
+                            height: 4,
+                            margin:
+                                const EdgeInsets.fromLTRB(0, 5, 6, 0),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? tagColor
+                                  : colors.colorTextTertiary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              b,
+                              style: AppTextStyles.bodyS(
+                                colors.colorTextSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -682,49 +824,6 @@ class _SkillLevelPicker extends StatelessWidget {
           ),
         );
       }).toList(),
-    );
-  }
-}
-
-// ── Search field ──────────────────────────────────────────────────
-
-class _SearchField extends StatelessWidget {
-  const _SearchField({required this.controller, required this.colors});
-
-  final TextEditingController controller;
-  final AppColorScheme colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: colors.colorSurfacePrimary,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
-      ),
-      child: TextField(
-        controller: controller,
-        style: AppTextStyles.bodyM(colors.colorTextPrimary),
-        keyboardType: TextInputType.text,
-        textInputAction: TextInputAction.search,
-        decoration: InputDecoration(
-          hintText: 'Search by name, @username, or phone',
-          hintStyle: AppTextStyles.bodyM(colors.colorTextTertiary),
-          prefixIcon: Icon(Icons.search_rounded,
-              size: 18, color: colors.colorTextTertiary),
-          suffixIcon: controller.text.isNotEmpty
-              ? GestureDetector(
-                  onTap: controller.clear,
-                  child: Icon(Icons.close_rounded,
-                      size: 16, color: colors.colorTextTertiary),
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 14),
-        ),
-      ),
     );
   }
 }

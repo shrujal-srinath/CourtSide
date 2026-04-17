@@ -115,7 +115,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 textColor: c.text,
                 onTap: () {
                   ref.read(devAccessProvider.notifier).state = true;
-                  context.go(AppRoutes.home);
+                  context.go(AppRoutes.modeGate);
                 },
               ),
 

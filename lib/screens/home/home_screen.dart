@@ -306,25 +306,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Container(
               width: 48, height: 48,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: colors.colorTextOnAccent.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.scoreboard_rounded, color: Colors.white, size: 24),
+              child: Icon(Icons.scoreboard_rounded, color: colors.colorTextOnAccent, size: 24),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('READY TO SCORE?', style: AppTextStyles.overline(Colors.white70)),
+                  Text('READY TO SCORE?', style: AppTextStyles.overline(colors.colorTextOnAccent.withValues(alpha: 0.7))),
                   Text(
                     'Start scoring for your ${windowBooking.sport} match at ${windowBooking.venueName}',
-                    style: AppTextStyles.bodyS(Colors.white).copyWith(fontWeight: FontWeight.w600),
+                    style: AppTextStyles.bodyS(colors.colorTextOnAccent).copyWith(fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 14),
+            Icon(Icons.arrow_forward_ios_rounded, color: colors.colorTextOnAccent.withValues(alpha: 0.7), size: 14),
           ],
         ),
       ),
@@ -776,7 +776,7 @@ class _HomeSearchBar extends StatelessWidget {
           border: Border.all(color: colors.colorBorderSubtle, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: colors.colorBackgroundPrimary.withValues(alpha: 0.04),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -1924,7 +1924,7 @@ class _SportGridCardState extends State<_SportGridCard>
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF000000).withValues(alpha: 0.4),
+                color: colors.colorBackgroundPrimary.withValues(alpha: 0.4),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
                 spreadRadius: -4,

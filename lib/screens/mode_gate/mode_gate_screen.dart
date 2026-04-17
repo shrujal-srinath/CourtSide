@@ -1,174 +1,99 @@
 // lib/screens/mode_gate/mode_gate_screen.dart
 //
 // Mode gate — choose between Play (book a court) and Explore (browse app).
-// White-background screen, two full-height stacked cards, typography-led.
-// Olympic-style sport pictograms cycle every 2 seconds.
-
-import 'dart:async';
+// Light-background screen, two full-height stacked cards, typography-led.
+// Sport pictogram cycles via Riverpod provider every 2 seconds.
+//
+// Design tokens:
+//   • Colors: LightModeColorTokens (white, greys, red accent)
+//   • Shadows: AppShadow.lightCard for card depth
+//   • Spacing: AppSpacing tokens (all pixels on 8pt grid)
+//   • Typography: AppTextStyles only (no manual overrides)
+//   • Animations: Staggered entry via StaggeredCardEntry, press feedback via AnimatedScale
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants.dart';
 import '../../core/theme.dart';
+import '../../core/tokens/color_tokens.dart';
+import '../../providers/sport_cycle_provider.dart';
 import 'painters/basketball_painter.dart';
 import 'painters/cricket_painter.dart';
 import 'painters/football_painter.dart';
 
-// ── Local palette (light-mode screen, intentionally off dark token system) ──
-const _kBg        = Color(0xFFFAFAFA);
-const _kCardBg    = Color(0xFFFFFFFF);
-const _kBorder    = Color(0xFFE5E7EB);
-const _kInk       = Color(0xFF0D0D0D);
-const _kRed       = Color(0xFFE8112D);
-const _kGrey      = Color(0xFF6B7280);
-const _kGreyLight = Color(0xFF9CA3AF);
-const _kIconBg    = Color(0xFFF3F4F6);
-
 // ─────────────────────────────────────────────────────────────────
-class ModeGateScreen extends StatefulWidget {
+class ModeGateScreen extends ConsumerWidget {
   const ModeGateScreen({super.key});
 
   @override
-  State<ModeGateScreen> createState() => _ModeGateScreenState();
-}
-
-class _ModeGateScreenState extends State<ModeGateScreen>
-    with TickerProviderStateMixin {
-
-  // ── Entry animations ─────────────────────────────────────────────
-  late final AnimationController _entryCtrl;
-  late final Animation<double>   _screenFade;
-  late final Animation<Offset>   _card1Slide;
-  late final Animation<Offset>   _card2Slide;
-
-  // ── Sport cycling ─────────────────────────────────────────────────
-  int _sportIndex = 0;
-  Timer? _cycleTimer;
-
-  static const _sports = ['BASKETBALL', 'CRICKET', 'FOOTBALL'];
-
-  @override
-  void initState() {
-    super.initState();
-
-    _entryCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 680),
-    );
-
-    _screenFade = CurvedAnimation(
-      parent: _entryCtrl,
-      curve: const Interval(0.0, 0.65, curve: Curves.easeOut),
-    );
-
-    _card1Slide = Tween<Offset>(
-      begin: const Offset(0, 0.06),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _entryCtrl,
-      curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic),
-    ));
-
-    _card2Slide = Tween<Offset>(
-      begin: const Offset(0, 0.06),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _entryCtrl,
-      curve: const Interval(0.12, 0.92, curve: Curves.easeOutCubic),
-    ));
-
-    _entryCtrl.forward();
-
-    _cycleTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      if (mounted) {
-        setState(() {
-          _sportIndex = (_sportIndex + 1) % _sports.length;
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _entryCtrl.dispose();
-    _cycleTimer?.cancel();
-    super.dispose();
-  }
-
-  // ── Press scale state ─────────────────────────────────────────────
-  bool _playPressed    = false;
-  bool _explorePressed = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final topPad = MediaQuery.of(context).padding.top;
     final botPad = MediaQuery.of(context).padding.bottom;
+    final sport  = ref.watch(sportCycleProvider);
 
     return Scaffold(
-      backgroundColor: _kBg,
-      body: FadeTransition(
-        opacity: _screenFade,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.md, topPad + AppSpacing.md,
-            AppSpacing.md, botPad + AppSpacing.md,
-          ),
-          child: Column(
-            children: [
-              // ── PLAY CARD ────────────────────────────────────────
-              Expanded(
-                child: SlideTransition(
-                  position: _card1Slide,
-                  child: _PressScaleWrapper(
-                    pressed: _playPressed,
-                    onTapDown: () => setState(() => _playPressed = true),
-                    onTapUp: () {
-                      setState(() => _playPressed = false);
-                      context.go(AppRoutes.playHome);
-                    },
-                    onTapCancel: () => setState(() => _playPressed = false),
-                    child: _GateCard(
-                      eyebrow: 'GET ON THE COURT',
-                      title: 'Play',
-                      titleColor: _kRed,
-                      description:
-                          'Find courts near you, book a slot and\nstart tracking your game stats.',
-                      bottomLeft: _SportPictogram(sport: _sports[_sportIndex]),
-                      arrowColor: _kInk,
-                    ),
-                  ),
+      backgroundColor: LightModeColorTokens.background,
+      body: Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.md, topPad + AppSpacing.md,
+          AppSpacing.md, botPad + AppSpacing.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── App name ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.sm, 0, 0, AppSpacing.lg),
+              child: Text(
+                'COURTSIDE',
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize:      26,
+                  fontWeight:    FontWeight.w800,
+                  letterSpacing: -0.8,
+                  color:         LightModeColorTokens.textPrimary,
                 ),
               ),
+            ),
 
-              const SizedBox(height: AppSpacing.md),
-
-              // ── EXPLORE CARD ──────────────────────────────────────
-              Expanded(
-                child: SlideTransition(
-                  position: _card2Slide,
-                  child: _PressScaleWrapper(
-                    pressed: _explorePressed,
-                    onTapDown: () => setState(() => _explorePressed = true),
-                    onTapUp: () {
-                      setState(() => _explorePressed = false);
-                      context.go(AppRoutes.home);
-                    },
-                    onTapCancel: () => setState(() => _explorePressed = false),
-                    child: _GateCard(
-                      eyebrow: 'BROWSE THE APP',
-                      title: 'Explore',
-                      titleColor: _kInk,
-                      description:
-                          'Discover stats, shop gear, follow players\nand find new courts.',
-                      bottomLeft: const _ExploreIcons(),
-                      arrowColor: _kInk,
-                    ),
+            // ── PLAY CARD ─────────────────────────────────────────
+            Expanded(
+              child: _PressScaleWrapper(
+                onTap: () => context.go(AppRoutes.playHome),
+                child: _GateCard(
+                  eyebrow:     'GET ON THE COURT',
+                  title:       'Play',
+                  titleColor:  LightModeColorTokens.accentPrimary,
+                  description: 'Find courts near you, book a slot and\nstart tracking your game stats.',
+                  bottomLeft:  sport.when(
+                    data:    (s) => _SportPictogram(sport: s),
+                    loading: ()  => const SizedBox.shrink(),
+                    error:   (_, _) => const SizedBox.shrink(),
                   ),
+                  arrowColor: LightModeColorTokens.textPrimary,
                 ),
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // ── EXPLORE CARD ──────────────────────────────────────
+            Expanded(
+              child: _PressScaleWrapper(
+                onTap: () => context.go(AppRoutes.home),
+                child: _GateCard(
+                  eyebrow:     'BROWSE THE APP',
+                  title:       'Explore',
+                  titleColor:  LightModeColorTokens.textPrimary,
+                  description: 'Discover stats, shop gear, follow players\nand find new courts.',
+                  bottomLeft:  const _ExploreIcons(),
+                  arrowColor:  LightModeColorTokens.textPrimary,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -187,20 +112,21 @@ class _GateCard extends StatelessWidget {
     required this.arrowColor,
   });
 
-  final String   eyebrow;
-  final String   title;
-  final Color    titleColor;
-  final String   description;
-  final Widget   bottomLeft;
-  final Color    arrowColor;
+  final String title;
+  final String eyebrow;
+  final Color titleColor;
+  final String description;
+  final Widget bottomLeft;
+  final Color arrowColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: _kCardBg,
+        color: LightModeColorTokens.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: _kBorder, width: 1.5),
+        border: Border.all(color: LightModeColorTokens.border, width: 0.5),
+        boxShadow: AppShadow.lightCard,
       ),
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.xxl, AppSpacing.xxl,
@@ -212,20 +138,15 @@ class _GateCard extends StatelessWidget {
           // Eyebrow
           Text(
             eyebrow,
-            style: AppTextStyles.overline(_kGreyLight),
+            style: AppTextStyles.overline(LightModeColorTokens.textTertiary),
           ),
 
           const SizedBox(height: AppSpacing.sm),
 
-          // Hero title
+          // Hero title — use token directly, no copyWith overrides
           Text(
             title,
-            style: AppTextStyles.displayXL(titleColor).copyWith(
-              fontSize: 56,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -2.0,
-              height: 1.0,
-            ),
+            style: AppTextStyles.displayL(titleColor),
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -233,7 +154,8 @@ class _GateCard extends StatelessWidget {
           // Description
           Text(
             description,
-            style: AppTextStyles.bodyM(_kGrey).copyWith(height: 1.55),
+            style: AppTextStyles.bodyM(LightModeColorTokens.textSecondary)
+                .copyWith(height: 1.55),
           ),
 
           const Spacer(),
@@ -262,7 +184,7 @@ class _SportPictogram extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 400),
+      duration: AppDuration.slow,
       transitionBuilder: (child, anim) {
         return FadeTransition(
           opacity: anim,
@@ -293,10 +215,7 @@ class _SportPictogram extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               sport,
-              style: AppTextStyles.overline(_kGreyLight).copyWith(
-                fontSize: 9,
-                letterSpacing: 1.2,
-              ),
+              style: AppTextStyles.overline(LightModeColorTokens.textTertiary),
             ),
           ],
         ),
@@ -306,9 +225,12 @@ class _SportPictogram extends StatelessWidget {
 
   CustomPainter _painterFor(String sport) {
     switch (sport) {
-      case 'CRICKET':    return const CricketPainter();
-      case 'FOOTBALL':   return const FootballPainter();
-      default:           return const BasketballPainter();
+      case 'CRICKET':
+        return const CricketPainter();
+      case 'FOOTBALL':
+        return const FootballPainter();
+      default:
+        return const BasketballPainter();
     }
   }
 }
@@ -335,7 +257,7 @@ class _ExploreIcons extends StatelessWidget {
 class _MiniIcon extends StatelessWidget {
   const _MiniIcon({required this.icon, required this.label});
   final IconData icon;
-  final String   label;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -345,18 +267,15 @@ class _MiniIcon extends StatelessWidget {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: _kIconBg,
+            color: LightModeColorTokens.surfaceElevated,
             borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
-          child: Icon(icon, size: 18, color: _kGrey),
+          child: Icon(icon, size: 18, color: LightModeColorTokens.textSecondary),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           label,
-          style: AppTextStyles.overline(_kGreyLight).copyWith(
-            fontSize: 9,
-            letterSpacing: 1.0,
-          ),
+          style: AppTextStyles.overline(LightModeColorTokens.textTertiary),
         ),
       ],
     );
@@ -366,7 +285,7 @@ class _MiniIcon extends StatelessWidget {
 class _MiniIconWithDot extends StatelessWidget {
   const _MiniIconWithDot({required this.icon, required this.label});
   final IconData icon;
-  final String   label;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -379,10 +298,10 @@ class _MiniIconWithDot extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: _kIconBg,
+                color: LightModeColorTokens.surfaceElevated,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
-              child: Icon(icon, size: 18, color: _kGrey),
+              child: Icon(icon, size: 18, color: LightModeColorTokens.textSecondary),
             ),
             Positioned(
               top: -3,
@@ -391,21 +310,21 @@ class _MiniIconWithDot extends StatelessWidget {
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
-                  color: _kRed,
+                  color: LightModeColorTokens.accentPrimary,
                   shape: BoxShape.circle,
-                  border: Border.all(color: _kCardBg, width: 1.5),
+                  border: Border.all(
+                    color: LightModeColorTokens.surface,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           label,
-          style: AppTextStyles.overline(_kGreyLight).copyWith(
-            fontSize: 9,
-            letterSpacing: 1.0,
-          ),
+          style: AppTextStyles.overline(LightModeColorTokens.textTertiary),
         ),
       ],
     );
@@ -426,10 +345,17 @@ class _ArrowButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: const Icon(
+      child: Icon(
         Icons.arrow_forward_rounded,
-        color: Colors.white,
+        color: LightModeColorTokens.textOnAccent,
         size: 22,
       ),
     );
@@ -438,32 +364,36 @@ class _ArrowButton extends StatelessWidget {
 
 // ── Press scale wrapper ───────────────────────────────────────────
 
-class _PressScaleWrapper extends StatelessWidget {
+class _PressScaleWrapper extends StatefulWidget {
   const _PressScaleWrapper({
     required this.child,
-    required this.pressed,
-    required this.onTapDown,
-    required this.onTapUp,
-    required this.onTapCancel,
+    required this.onTap,
   });
 
-  final Widget    child;
-  final bool      pressed;
-  final VoidCallback onTapDown;
-  final VoidCallback onTapUp;
-  final VoidCallback onTapCancel;
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  State<_PressScaleWrapper> createState() => _PressScaleWrapperState();
+}
+
+class _PressScaleWrapperState extends State<_PressScaleWrapper> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) => onTapDown(),
-      onTapUp: (_) => onTapUp(),
-      onTapCancel: onTapCancel,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
-        scale: pressed ? 0.985 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeIn,
-        child: child,
+        scale: _pressed ? 0.985 : 1.0,
+        duration: AppDuration.fast,
+        curve: Curves.elasticOut,
+        child: widget.child,
       ),
     );
   }

@@ -31,10 +31,11 @@ class AppColors {
   AppColors._();
 
   // ── Dark backgrounds (4-level hierarchy) ─────────────────────
-  static const Color black        = Color(0xFF0B0F1A); // scaffold
-  static const Color surface      = Color(0xFF0F1524); // card bg
-  static const Color surfaceHigh  = Color(0xFF161B24); // elevated card
-  static const Color overlay      = Color(0xFF1E2535); // modals / sheets
+  // Synced with DarkColorTokens — keep these aligned
+  static const Color black        = Color(0xFF07090E); // scaffold
+  static const Color surface      = Color(0xFF0D1320); // card bg
+  static const Color surfaceHigh  = Color(0xFF152032); // elevated card
+  static const Color overlay      = Color(0xFF1C2B44); // modals / sheets
 
   // ── Light backgrounds (clean neutral) ────────────────────────
   static const Color lightBg      = Color(0xFFF5F6F8); // scaffold
@@ -42,8 +43,8 @@ class AppColors {
   static const Color lightHigh    = Color(0xFFF3F4F6); // elevated / muted bg
   static const Color lightOverlay = Color(0xFFFFFFFF); // modals / sheets
 
-  static const Color border       = Color(0xFF1A2030); // dark border
-  static const Color borderMuted  = Color(0xFF111520); // dark muted
+  static const Color border       = Color(0xFF1B2640); // dark border — synced with DarkColorTokens
+  static const Color borderMuted  = Color(0xFF111A2E); // dark muted
   static const Color lightBorder  = Color(0x14000000); // rgba(0,0,0,0.08)
   static const Color lightBorderMuted = Color(0x0F000000); // rgba(0,0,0,0.06)
 
@@ -60,10 +61,10 @@ class AppColors {
   static const Color badminton    = Color(0xFFFFC107);
   static const Color football     = Color(0xFF4CAF50);
 
-  // ── Text — dark theme ─────────────────────────────────────────
-  static const Color textPrimaryDark    = Color(0xFFFFFFFF);
-  static const Color textSecondaryDark  = Color(0xFFCCCCCC);
-  static const Color textTertiaryDark   = Color(0xFF888888);
+  // ── Text — dark theme — synced with DarkColorTokens ──────────
+  static const Color textPrimaryDark    = Color(0xFFF0F4FF);
+  static const Color textSecondaryDark  = Color(0xFF8D97AA);
+  static const Color textTertiaryDark   = Color(0xFF5E6B7D);
 
   // ── Text — light theme (clean neutral) ────────────────────────
   static const Color textPrimaryLight   = Color(0xFF111827);
@@ -126,12 +127,12 @@ class ThemeColors {
   final Color onBrand;
   final bool  isDark;
 
-  /// Header background gradient
+  /// Header background gradient — synced with new surface tokens
   LinearGradient get gradBrand => isDark
       ? const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0B0F1A), Color(0xFF0F1524)],
+          colors: [Color(0xFF07090E), Color(0xFF0D1320)],
         )
       : const LinearGradient(
           begin: Alignment.topLeft,
@@ -142,7 +143,7 @@ class ThemeColors {
   LinearGradient get gradProfile => isDark
       ? const LinearGradient(
           begin: Alignment.topLeft, end: Alignment.bottomRight,
-          colors: [Color(0xFF0D1010), Color(0xFF1A0A12)],
+          colors: [Color(0xFF0A0D18), Color(0xFF180A14)],
         )
       : const LinearGradient(
           begin: Alignment.topLeft,
@@ -153,10 +154,10 @@ class ThemeColors {
   LinearGradient gradSport(String sport) {
     if (isDark) {
       const Map<String, List<Color>> dark = {
-        'basketball': [Color(0xFF1A0F00), Color(0xFF101010)],
-        'cricket':    [Color(0xFF001A16), Color(0xFF101010)],
-        'badminton':  [Color(0xFF1A1500), Color(0xFF101010)],
-        'football':   [Color(0xFF001A08), Color(0xFF101010)],
+        'basketball': [Color(0xFF1E1200), Color(0xFF0D1320)],
+        'cricket':    [Color(0xFF001E1A), Color(0xFF0D1320)],
+        'badminton':  [Color(0xFF1E1800), Color(0xFF0D1320)],
+        'football':   [Color(0xFF001E0A), Color(0xFF0D1320)],
       };
       final c = dark[sport.toLowerCase()];
       if (c != null) {

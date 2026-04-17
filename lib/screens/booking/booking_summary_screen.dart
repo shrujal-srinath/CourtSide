@@ -245,7 +245,7 @@ class BookingSummaryScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('PRICE BREAKdown', style: AppTextStyles.overline(colors.colorTextTertiary)),
+          Text('PRICE BREAKDOWN', style: AppTextStyles.overline(colors.colorTextTertiary)),
           const SizedBox(height: 16),
           _PriceRow(label: 'Booking Base', value: draft.basePrice),
           if (draft.addons.isNotEmpty)

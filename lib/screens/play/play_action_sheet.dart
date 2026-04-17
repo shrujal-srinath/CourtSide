@@ -74,7 +74,7 @@ class _PlayActionSheet extends StatelessWidget {
             subtitle: 'Find and reserve a nearby court',
             onTap: () {
               _close();
-              context.go(AppRoutes.explore);
+              parentContext.go(AppRoutes.explore);
             },
           ),
           _ActionRow(
@@ -84,7 +84,7 @@ class _PlayActionSheet extends StatelessWidget {
             subtitle: 'Create a public or private game',
             onTap: () {
               _close();
-              context.push(AppRoutes.hostGame);
+              parentContext.push(AppRoutes.hostGame);
             },
           ),
           _ActionRow(
@@ -94,7 +94,7 @@ class _PlayActionSheet extends StatelessWidget {
             subtitle: 'Open the scorer for your game',
             onTap: () {
               _close();
-              _showSportPicker(context);
+              _showSportPicker(parentContext);
             },
           ),
           _ActionRow(
@@ -104,7 +104,7 @@ class _PlayActionSheet extends StatelessWidget {
             subtitle: 'Log stats from a completed game',
             onTap: () {
               _close();
-              context.push(AppRoutes.hostGame);
+              parentContext.push(AppRoutes.hostGame);
             },
           ),
 
@@ -118,7 +118,7 @@ class _PlayActionSheet extends StatelessWidget {
           GestureDetector(
             onTap: () {
               _close();
-              context.go(AppRoutes.home);
+              parentContext.go(AppRoutes.home);
             },
             behavior: HitTestBehavior.opaque,
             child: Padding(
@@ -207,7 +207,7 @@ class _SportPickerSheet extends StatelessWidget {
             label: 'Basketball',
             onTap: () {
               Navigator.pop(context);
-              context.push(AppRoutes.bballMode);
+              parentContext.push(AppRoutes.bballMode);
             },
           ),
           _SportRow(
@@ -215,7 +215,7 @@ class _SportPickerSheet extends StatelessWidget {
             label: 'Cricket',
             onTap: () {
               Navigator.pop(context);
-              context.push(AppRoutes.scoreCricket);
+              parentContext.push(AppRoutes.scoreCricket);
             },
           ),
         ],

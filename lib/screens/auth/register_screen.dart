@@ -42,7 +42,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         fullName: _nameCtrl.text.trim(),
         username: _usernameCtrl.text.trim().toLowerCase(),
       );
-      if (mounted) context.go(AppRoutes.home);
+      if (mounted) context.go(AppRoutes.modeGate);
     } catch (e) {
       setState(() => _error = _friendlyError(e.toString()));
     } finally {

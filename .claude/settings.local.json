@@ -30,7 +30,22 @@
       "Bash(curl -s https://api.supabase.com/v1/projects/eoowagimooxsqcrrihbw/database/query -H 'Authorization: Bearer sbp_e03ea4ec0c5df1f1c89f20e1f17f3908de08c6c7' -H 'Content-Type: application/json' -d '{\"query\": \"SELECT column_name FROM information_schema.columns WHERE table_schema='\\\\''public'\\\\'' AND table_name='\\\\''slots'\\\\'' AND column_name IN \\('\\\\''date'\\\\'', '\\\\''status'\\\\'', '\\\\''venue_court_id'\\\\''\\) ORDER BY column_name;\"}')",
       "Bash(curl -s https://api.supabase.com/v1/projects/eoowagimooxsqcrrihbw/database/query -H 'Authorization: Bearer sbp_e03ea4ec0c5df1f1c89f20e1f17f3908de08c6c7' -H 'Content-Type: application/json' -d '{\"query\": \"SELECT routine_name FROM information_schema.routines WHERE routine_schema='\\\\''public'\\\\'' AND routine_name='\\\\''book_slot'\\\\'';\"}')",
       "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(f'Inserted {len\\(data\\)} slots'\\)\")",
-      "Bash(curl -s https://api.supabase.com/v1/projects/eoowagimooxsqcrrihbw/database/query -H 'Authorization: Bearer sbp_e03ea4ec0c5df1f1c89f20e1f17f3908de08c6c7' -H 'Content-Type: application/json' -d '{\"query\": \"DELETE FROM slots WHERE venue_court_id IS NOT NULL; SELECT COUNT\\(*\\) FROM slots WHERE venue_court_id IS NOT NULL;\"}')"
+      "Bash(curl -s https://api.supabase.com/v1/projects/eoowagimooxsqcrrihbw/database/query -H 'Authorization: Bearer sbp_e03ea4ec0c5df1f1c89f20e1f17f3908de08c6c7' -H 'Content-Type: application/json' -d '{\"query\": \"DELETE FROM slots WHERE venue_court_id IS NOT NULL; SELECT COUNT\\(*\\) FROM slots WHERE venue_court_id IS NOT NULL;\"}')",
+      "mcp__supabase__list_projects",
+      "Bash(flutter devices:*)",
+      "Bash(flutter run:*)",
+      "Bash(grep -r \"height: [0-9]\\\\{3,\\\\}\\\\|width: [0-9]\\\\{3,\\\\}\\\\|EdgeInsets\\\\.all\\([0-9]\\\\|EdgeInsets\\\\.symmetric\\([a-z]*: [0-9]\\\\{2,\\\\}\\)\\\\|padding: EdgeInsets\\\\|SizedBox\\(height: [0-9]\\\\{2,\\\\}\\\\|SizedBox\\(width: [0-9]\\\\{2,\\\\}\" /Users/shrujalsrinath/Desktop/courtside/lib/screens/)",
+      "Bash(find /Users/shrujalsrinath/Desktop/courtside/lib/screens -name \"*.dart\" -exec grep -l \"GET ON THE COURT\\\\|Play\\\\|Explore\" {} \\\\;)",
+      "Bash(flutter emulators:*)",
+      "Bash(xargs ls:*)",
+      "Bash(tee /tmp/flutter_run.log)",
+      "Read(//tmp/**)",
+      "Read(//private/tmp/**)",
+      "Bash(tee /tmp/phone_run.log)",
+      "Bash(pkill -f \"flutter run\")",
+      "Bash(pkill -9 -f \"flutter run\")",
+      "Bash(grep -l \"class.*Screen extends\" /Users/shrujalsrinath/Desktop/courtside/lib/screens/**/*.dart)",
+      "Bash(find /Users/shrujalsrinath/Desktop/courtside/lib/services -name \"*.dart\" -exec grep -l \"class.*Service\" {} \\\\;)"
     ]
   },
   "enabledMcpjsonServers": [

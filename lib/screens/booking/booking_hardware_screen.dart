@@ -1,6 +1,7 @@
 // lib/screens/booking/booking_hardware_screen.dart
 //
-// Step 3 of the booking wizard — rent Courtside scoring hardware.
+// Step 2 of the booking wizard — rent Courtside scoring hardware.
+// Multi-select hardware with bundle discount logic.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,15 +12,72 @@ import '../../models/fake_data.dart';
 import '../../providers/booking_flow_provider.dart';
 import 'booking_step_widgets.dart';
 
-class BookingHardwareScreen extends ConsumerWidget {
+class BookingHardwareScreen extends ConsumerStatefulWidget {
   const BookingHardwareScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final flow     = ref.watch(bookingFlowProvider);
+  ConsumerState<BookingHardwareScreen> createState() =>
+      _BookingHardwareScreenState();
+}
+
+class _BookingHardwareScreenState extends ConsumerState<BookingHardwareScreen> {
+  late Set<String> _selectedIds;
+
+  @override
+  void initState() {
+    super.initState();
+    final flow = ref.read(bookingFlowProvider);
+    _selectedIds = flow.hardware != null ? {flow.hardware!.id} : {};
+  }
+
+  void _toggleHardware(String hwId) {
+    setState(() {
+      if (_selectedIds.contains(hwId)) {
+        _selectedIds.remove(hwId);
+      } else {
+        _selectedIds.add(hwId);
+      }
+    });
+  }
+
+  int _calculateTotal() {
+    int total = 0;
+    for (final hw in hardwareOptions) {
+      if (_selectedIds.contains(hw.id)) {
+        total += hw.pricePerGame;
+      }
+    }
+    // Apply bundle discount if both hw1 and hw2 selected
+    if (_selectedIds.contains('hw1') && _selectedIds.contains('hw2')) {
+      total -= 49; // Bundle discount ₹49
+    }
+    return total;
+  }
+
+  bool _hasBundleDiscount() {
+    return _selectedIds.contains('hw1') && _selectedIds.contains('hw2');
+  }
+
+  void _confirmSelection() {
     final notifier = ref.read(bookingFlowProvider.notifier);
-    final colors   = context.colors;
-    final botPad   = MediaQuery.of(context).padding.bottom;
+    if (_selectedIds.isNotEmpty) {
+      final selected =
+          hardwareOptions.firstWhere((hw) => _selectedIds.contains(hw.id));
+      notifier.selectHardware(selected);
+    } else {
+      notifier.selectHardware(null);
+    }
+    final flow = ref.read(bookingFlowProvider);
+    context.push(AppRoutes.bookShop(flow.venueId));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final flow = ref.watch(bookingFlowProvider);
+    final colors = context.colors;
+    final botPad = MediaQuery.of(context).padding.bottom;
+    final total = _calculateTotal();
+    final hasBundleDiscount = _hasBundleDiscount();
 
     return Scaffold(
       backgroundColor: colors.colorBackgroundPrimary,
@@ -27,41 +85,42 @@ class BookingHardwareScreen extends ConsumerWidget {
         children: [
           BookingWizardNav(
             currentStep: 2,
-            venueId:     flow.venueId,
-            onBack:      () => context.pop(),
+            venueId: flow.venueId,
+            onBack: () => context.pop(),
           ),
-
           Expanded(
             child: ListView(
               physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                  AppSpacing.lg, AppSpacing.sm, AppSpacing.lg,
-                  botPad + AppSpacing.xxl + 70),
+              padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm,
+                  AppSpacing.lg, botPad + AppSpacing.xxl + 70),
               children: [
                 // ── THE BOX intro ──────────────────────────────────────
                 _TheBoxHeroBanner(colors: colors),
                 const SizedBox(height: AppSpacing.lg),
 
                 // ── What you get section ───────────────────────────────
-                Text('WHAT YOU GET', style: AppTextStyles.overline(colors.colorTextTertiary)),
+                Text('WHAT YOU GET',
+                    style: AppTextStyles.overline(colors.colorTextTertiary)),
                 const SizedBox(height: AppSpacing.sm),
                 _FeatureBullets(colors: colors),
                 const SizedBox(height: AppSpacing.xl),
 
                 // ── Hardware options ────────────────────────────────────
-                Text('CHOOSE YOUR SETUP', style: AppTextStyles.overline(colors.colorTextTertiary)),
+                Text('CHOOSE YOUR SETUP',
+                    style: AppTextStyles.overline(colors.colorTextTertiary)),
                 const SizedBox(height: AppSpacing.sm),
-
                 ...hardwareOptions.map((hw) => _HardwareTile(
                   option: hw,
-                  selected: flow.hardware?.id == hw.id,
+                  selected: _selectedIds.contains(hw.id),
                   colors: colors,
-                  onTap: () => notifier.selectHardware(
-                    flow.hardware?.id == hw.id ? null : hw,
-                  ),
+                  onTap: () => _toggleHardware(hw.id),
                 )),
-
                 const SizedBox(height: AppSpacing.lg),
+
+                // ── Bundle offer ───────────────────────────────────────
+                if (hasBundleDiscount)
+                  _BundleOfferBanner(colors: colors, saved: 49),
+                if (hasBundleDiscount) const SizedBox(height: AppSpacing.lg),
 
                 // ── How it works ───────────────────────────────────────
                 _HowItWorksSection(colors: colors),
@@ -71,13 +130,64 @@ class BookingHardwareScreen extends ConsumerWidget {
         ],
       ),
       bottomNavigationBar: BookingStepFooter(
-        label: flow.hardware == null
+        label: total == 0
             ? 'Skip — no gear rental'
-            : 'Next — Shop (₹${flow.hardware!.pricePerGame}/game)',
-        isSkip: flow.hardware == null,
+            : hasBundleDiscount
+                ? 'Next — Shop (₹$total/game, Save ₹49)'
+                : 'Next — Shop (₹$total/game)',
+        isSkip: total == 0,
         colors: colors,
         botPad: botPad,
-        onTap: () => context.push(AppRoutes.bookShop(flow.venueId)),
+        onTap: _confirmSelection,
+      ),
+    );
+  }
+}
+
+// ── Bundle Offer Banner ──────────────────────────────────────────
+
+class _BundleOfferBanner extends StatelessWidget {
+  const _BundleOfferBanner({required this.colors, required this.saved});
+  final AppColorScheme colors;
+  final int saved;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: colors.colorSuccess.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(
+          color: colors.colorSuccess.withValues(alpha: 0.25),
+          width: 0.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: colors.colorSuccess.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.local_offer_rounded,
+                size: 20, color: colors.colorSuccess),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Bundle Discount Applied',
+                    style: AppTextStyles.headingS(colors.colorTextPrimary)),
+                Text('Select both items to save ₹$saved',
+                    style: AppTextStyles.bodyS(colors.colorTextSecondary)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

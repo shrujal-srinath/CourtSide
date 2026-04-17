@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme.dart';
+import '../../../core/constants.dart';
 import '../../../providers/auth_provider.dart';
 
 class HomeHeader extends ConsumerWidget {
@@ -55,7 +57,7 @@ class HomeHeader extends ConsumerWidget {
               _IconBtn(
                 icon: Icons.menu_rounded,
                 onTap: () {
-                  // TODO: open drawer
+                  Scaffold.of(context).openDrawer();
                 },
               ),
             ],
@@ -144,7 +146,7 @@ class _SearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // TODO: navigate to explore/search screen
+        context.push(AppRoutes.explore);
       },
       child: Container(
         height: 46,

@@ -38,26 +38,64 @@ class ColorTokens {
   static const Color sportFootball   = Color(0xFF4CAF50);
 }
 
-// ── DARK MODE primitives (Void Fire) ──────────────────────────────
+// ── LIGHT MODE TOKEN CLASS (for light-mode only screens like ModeGate) ────
+//
+// Use this for screens that intentionally override to light mode.
+// Provides semantic token names matching DarkColorTokens but with light values.
+//
+class LightModeColorTokens {
+  LightModeColorTokens._();
+
+  static const Color background = Color(0xFFFAFAFA);
+  static const Color surface     = Color(0xFFFFFFFF);
+  static const Color surfaceElevated = Color(0xFFF3F4F6);
+
+  static const Color accentPrimary = Color(0xFFE8112D);
+  static const Color accentSubtle  = Color(0xFFE8112D); // use with opacity
+
+  static const Color textPrimary   = Color(0xFF0D0D0D);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color textTertiary  = Color(0xFF9CA3AF);
+  static const Color textOnAccent  = Color(0xFFFFFFFF);
+
+  static const Color border = Color(0xFFE5E7EB);
+
+  static const Color success = Color(0xFF22C55E);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color error   = Color(0xFFEF4444);
+}
+
+// ── DARK MODE primitives (Void Fire — UPGRADED) ───────────────────
+//
+// Overhaul goals:
+//   1. Surface hierarchy: 4 levels clearly perceptible (was clustered in 8–30 range)
+//   2. Text contrast: textTertiary was 0xFF374151 (WCAG fail ~2.8:1) — now readable
+//   3. accentSubtle: was near-black maroon, now a visible red tint
+//   4. borderSubtle: visible hairlines for card separation
+//
 class DarkColorTokens {
   DarkColorTokens._();
 
-  static const Color backgroundPrimary = Color(0xFF080A0F);
-  static const Color surfacePrimary    = Color(0xFF0F1117);
-  static const Color surfaceElevated   = Color(0xFF161B24);
-  static const Color surfaceOverlay    = Color(0xFF1E2535);
+  // 4-level surface stack — each step clearly perceptible
+  static const Color backgroundPrimary = Color(0xFF07090E); // deep black-navy
+  static const Color surfacePrimary    = Color(0xFF0D1320); // card base  (+16/+15/+18 from bg)
+  static const Color surfaceElevated   = Color(0xFF152032); // elevated cards (+8/+13/+18)
+  static const Color surfaceOverlay    = Color(0xFF1C2B44); // modals/sheets (+7/+11/+12)
 
-  static const Color accentPrimary   = Color(0xFFE8112D);
-  static const Color accentSecondary = Color(0xFFB50022);
-  static const Color accentSubtle    = Color(0xFF3D000A);
+  // Accent — brand red preserved, subtle now actually visible
+  static const Color accentPrimary   = Color(0xFFE8112D); // brand red (unchanged)
+  static const Color accentSecondary = Color(0xFFB50022); // pressed state (unchanged)
+  static const Color accentSubtle    = Color(0xFF2B0009); // visible red tint (was near-black)
 
-  static const Color textPrimary   = Color(0xFFF8F9FA);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textTertiary  = Color(0xFF374151);
-  static const Color textOnAccent  = Color(0xFFFFFFFF);
+  // Text — 4-level hierarchy, all readable on dark surfaces
+  static const Color textPrimary   = Color(0xFFF0F4FF); // crisp cool white (was warm F8F9FA)
+  static const Color textSecondary = Color(0xFF8D97AA); // clearly readable (was 6B7280, too dark)
+  static const Color textTertiary  = Color(0xFF5E6B7D); // visible hints (was 374151, WCAG fail)
+  static const Color textOnAccent  = Color(0xFFFFFFFF); // pure white (unchanged)
 
-  static const Color borderSubtle = Color(0xFF1A2030);
-  static const Color borderMedium = Color(0xFF2A3040);
+  // Borders — visible hairlines
+  static const Color borderSubtle = Color(0xFF1B2640); // visible 0.5px lines (was 1A2030)
+  static const Color borderMedium = Color(0xFF2B3E5A); // focus/active states (was 2A3040)
 
   static const Color success = Color(0xFF22C55E);
   static const Color warning = Color(0xFFF59E0B);

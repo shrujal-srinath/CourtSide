@@ -1,6 +1,5 @@
 // lib/core/router.dart
 
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,7 +9,7 @@ import '../screens/splash/splash_screen.dart';
 import '../screens/auth/landing_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/phone_auth_screen.dart';
-import '../screens/onboarding/onboarding_screen.dart';
+import '../onboarding/onboarding_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/sport/sport_screen.dart';
 import '../screens/venue/venue_detail_screen.dart';
@@ -43,45 +42,55 @@ import 'constants.dart';
 import 'theme.dart';
 import 'app_transitions.dart';
 
+// Notifier that keeps the GoRouter alive and re-triggers redirects
+// when auth or dev-access state changes — without tearing down the router.
+class _RouterNotifier extends ChangeNotifier {
+  _RouterNotifier(this._ref) {
+    _ref.listen<AsyncValue>(authStateProvider, (_, _) => notifyListeners());
+    _ref.listen<bool>(devAccessProvider,       (_, _) => notifyListeners());
+  }
+  final Ref _ref;
+
+  static const _publicRoutes = [
+    AppRoutes.landing,
+    AppRoutes.login,
+    AppRoutes.phoneAuth,
+    AppRoutes.splash,
+  ];
+
+  String? redirect(GoRouterState state) {
+    final isDevAccess = _ref.read(devAccessProvider);
+    final authAsync   = _ref.read(authStateProvider);
+    final loc         = state.matchedLocation;
+
+    if (loc == AppRoutes.splash || loc == AppRoutes.modeGate) return null;
+
+    if (isDevAccess) {
+      if (_publicRoutes.contains(loc)) return AppRoutes.modeGate;
+      return null;
+    }
+
+    if (authAsync.isLoading) return null;
+    final isLoggedIn = authAsync.asData?.value != null;
+
+    if (_publicRoutes.contains(loc)) {
+      if (isLoggedIn) return AppRoutes.modeGate;
+      return null;
+    }
+    if (!isLoggedIn) return AppRoutes.landing;
+    return null;
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authAsync = ref.watch(authStateProvider);
-  final isDevAccess = ref.watch(devAccessProvider);
+  final notifier = _RouterNotifier(ref);
+  ref.onDispose(notifier.dispose);
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: false,
-
-    redirect: (context, state) {
-      if (kDebugMode && isDevAccess) {
-        final publicRoutes = [
-          AppRoutes.landing,
-          AppRoutes.login,
-          AppRoutes.phoneAuth,
-          AppRoutes.splash,
-        ];
-        if (publicRoutes.contains(state.matchedLocation)) {
-          return AppRoutes.modeGate;
-        }
-        return null;
-      }
-      
-      if (authAsync.isLoading) return null;
-      final isLoggedIn = authAsync.asData?.value != null;
-      final loc = state.matchedLocation;
-      if (loc == AppRoutes.splash || loc == AppRoutes.modeGate) return null;
-
-      final publicRoutes = [
-        AppRoutes.landing,
-        AppRoutes.login,
-        AppRoutes.phoneAuth,
-      ];
-      if (publicRoutes.contains(loc)) {
-        if (isLoggedIn) return AppRoutes.modeGate;
-        return null;
-      }
-      if (!isLoggedIn) return AppRoutes.landing;
-      return null;
-    },
+    refreshListenable: notifier,
+    redirect: (context, state) => notifier.redirect(state),
 
     routes: [
       // ── Auth ────────────────────────────────────────────────

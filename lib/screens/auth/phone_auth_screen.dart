@@ -81,7 +81,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
             profile['username'] != null &&
             (profile['username'] as String).isNotEmpty;
         if (hasUsername) {
-          context.go(AppRoutes.home);
+          context.go(AppRoutes.modeGate);
         } else {
           context.go(AppRoutes.onboarding);
         }

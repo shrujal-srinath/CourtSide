@@ -8,8 +8,22 @@ class AppConstants {
   static const String company    = 'THE BOX';
   static const String appTagline = 'Book the Court. Own the Stats.';
 
-  static String get supabaseUrl     => dotenv.env['SUPABASE_URL']     ?? '';
-  static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY']?? '';
+  static String get supabaseUrl {
+    final url = dotenv.env['SUPABASE_URL'] ?? '';
+    if (url.isEmpty) {
+      throw Exception('SUPABASE_URL not set in .env file');
+    }
+    return url;
+  }
+
+  static String get supabaseAnonKey {
+    final key = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+    if (key.isEmpty) {
+      throw Exception('SUPABASE_ANON_KEY not set in .env file');
+    }
+    return key;
+  }
+
   static const String redirectUrl = 'com.courtside.app://login-callback';
 
   static const String sportBasketball = 'basketball';

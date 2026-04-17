@@ -54,11 +54,16 @@ class VenueService {
 
   /// Full-text search across venue name and area.
   Future<List<Venue>> searchVenues(String query) async {
+    // Strip commas — PostgREST uses commas as condition separators in .or(),
+    // so a raw comma in the query string would split the filter incorrectly.
+    final safe = query.replaceAll(',', '');
+    if (safe.trim().isEmpty) return [];
+
     final rows = await _client
         .from('venues')
         .select()
         .eq('is_active', true)
-        .or('name.ilike.%$query%,area.ilike.%$query%');
+        .or('name.ilike.%$safe%,area.ilike.%$safe%');
 
     return rows.map(_rowToVenue).toList();
   }
