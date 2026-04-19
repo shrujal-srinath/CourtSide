@@ -96,16 +96,9 @@ class _BookingHardwareScreenState extends ConsumerState<BookingHardwareScreen> {
               children: [
                 // ── THE BOX intro ──────────────────────────────────────
                 _TheBoxHeroBanner(colors: colors),
-                const SizedBox(height: AppSpacing.lg),
-
-                // ── What you get section ───────────────────────────────
-                Text('WHAT YOU GET',
-                    style: AppTextStyles.overline(colors.colorTextTertiary)),
-                const SizedBox(height: AppSpacing.sm),
-                _FeatureBullets(colors: colors),
                 const SizedBox(height: AppSpacing.xl),
 
-                // ── Hardware options ────────────────────────────────────
+                // ── Choose your setup ───────────────────────────────────
                 Text('CHOOSE YOUR SETUP',
                     style: AppTextStyles.overline(colors.colorTextTertiary)),
                 const SizedBox(height: AppSpacing.sm),
@@ -121,6 +114,10 @@ class _BookingHardwareScreenState extends ConsumerState<BookingHardwareScreen> {
                 if (hasBundleDiscount)
                   _BundleOfferBanner(colors: colors, saved: 49),
                 if (hasBundleDiscount) const SizedBox(height: AppSpacing.lg),
+
+                // ── What you get (compact strip) ───────────────────────
+                _FeatureStrip(colors: colors),
+                const SizedBox(height: AppSpacing.xl),
 
                 // ── How it works ───────────────────────────────────────
                 _HowItWorksSection(colors: colors),
@@ -202,81 +199,58 @@ class _TheBoxHeroBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colors.colorAccentPrimary.withValues(alpha: 0.12),
-            colors.colorAccentPrimary.withValues(alpha: 0.04),
-          ],
-        ),
+        color: colors.colorSurfacePrimary,
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(
-          color: colors.colorAccentPrimary.withValues(alpha: 0.25),
-          width: 0.5,
+          color: colors.colorAccentPrimary.withValues(alpha: 0.20),
+          width: 1,
         ),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: colors.colorAccentPrimary,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  boxShadow: AppShadow.fab,
-                ),
-                child: const Center(
-                  child: Text('📟', style: TextStyle(fontSize: 24)),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: colors.colorAccentPrimary,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: const Center(
+              child: Text('📟', style: TextStyle(fontSize: 22)),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Text('THE BOX',
-                            style: AppTextStyles.headingM(colors.colorTextPrimary)),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: colors.colorAccentPrimary,
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                          ),
-                          child: Text('BY COURTSIDE',
-                              style: AppTextStyles.labelS(colors.colorTextOnAccent)),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'Smart hardware. Real stats. Zero effort.',
-                      style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                    Text('THE BOX',
+                        style: AppTextStyles.headingM(colors.colorTextPrimary)),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: colors.colorAccentPrimary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        border: Border.all(color: colors.colorAccentPrimary.withValues(alpha: 0.3), width: 0.5),
+                      ),
+                      child: Text('BY COURTSIDE',
+                          style: AppTextStyles.labelS(colors.colorAccentPrimary)),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Container(
-            height: 0.5,
-            color: colors.colorAccentPrimary.withValues(alpha: 0.2),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'THE BOX is a court-side scoring system with staff-assisted setup. '
-            'It\'s not fully automated — but after your game you get a detailed stats breakdown '
-            'and a full performance report for every player on the court.',
-            style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                const SizedBox(height: 4),
+                Text(
+                  'Rent smart hardware for verified stats — picked up at the venue, set up by staff in 2 minutes.',
+                  style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -284,66 +258,62 @@ class _TheBoxHeroBanner extends StatelessWidget {
   }
 }
 
-// ── Feature Bullets ───────────────────────────────────────────────
+// ── Feature Strip (compact 3-icon row) ────────────────────────────
 
-class _FeatureBullets extends StatelessWidget {
-  const _FeatureBullets({required this.colors});
+class _FeatureStrip extends StatelessWidget {
+  const _FeatureStrip({required this.colors});
   final AppColorScheme colors;
 
   static const _features = [
-    (Icons.wifi_rounded,              'Real-time sync',       'Scores update live on every player\'s phone'),
-    (Icons.bar_chart_rounded,         'Auto stat tracking',   'Points, rebounds, assists logged per player'),
-    (Icons.videocam_rounded,          'Game film',            '1080p auto-edited highlight clip post-game'),
-    (Icons.share_rounded,             'Instant share',        'Share your stat card to Instagram in one tap'),
-    (Icons.history_rounded,           'Career history',       'All games stored in your Courtside profile'),
+    (Icons.bar_chart_rounded,  'Auto Stats',    'Per-player breakdown'),
+    (Icons.map_outlined,       'Heat Maps',     'Shot zones + movement'),
+    (Icons.share_rounded,      'Instant Share', 'Post to Instagram'),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
       decoration: BoxDecoration(
         color: colors.colorSurfacePrimary,
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
       ),
-      child: Column(
+      child: Row(
         children: _features.asMap().entries.map((entry) {
           final (icon, title, sub) = entry.value;
           final isLast = entry.key == _features.length - 1;
-          return Column(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: colors.colorAccentPrimary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    child: Icon(icon, size: 16, color: colors.colorAccentPrimary),
+          return Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: colors.colorAccentPrimary.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
+                        child: Icon(icon, size: 17, color: colors.colorAccentPrimary),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(title,
+                          style: AppTextStyles.headingS(colors.colorTextPrimary),
+                          textAlign: TextAlign.center),
+                      const SizedBox(height: 2),
+                      Text(sub,
+                          style: AppTextStyles.bodyS(colors.colorTextTertiary).copyWith(fontSize: 10),
+                          textAlign: TextAlign.center),
+                    ],
                   ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: AppTextStyles.headingS(colors.colorTextPrimary)),
-                        const SizedBox(height: 2),
-                        Text(sub, style: AppTextStyles.bodyS(colors.colorTextSecondary)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              if (!isLast) ...[
-                const SizedBox(height: AppSpacing.sm),
-                Container(height: 0.5, color: colors.colorBorderSubtle),
-                const SizedBox(height: AppSpacing.sm),
+                ),
+                if (!isLast)
+                  Container(width: 0.5, height: 52, color: colors.colorBorderSubtle,
+                      margin: const EdgeInsets.symmetric(horizontal: 4)),
               ],
-            ],
+            ),
           );
         }).toList(),
       ),
@@ -471,7 +441,7 @@ class _HardwareTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: AppSpacing.sm),
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color: selected ? colors.colorAccentSubtle : colors.colorSurfacePrimary,
+          color: selected ? colors.colorSurfaceElevated : colors.colorSurfacePrimary,
           borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(
             color: selected ? colors.colorAccentPrimary : colors.colorBorderSubtle,
@@ -486,9 +456,7 @@ class _HardwareTile extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: selected
-                    ? colors.colorAccentPrimary
-                    : colors.colorSurfaceElevated,
+                color: colors.colorSurfaceOverlay,
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Center(

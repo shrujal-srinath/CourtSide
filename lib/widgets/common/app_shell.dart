@@ -66,6 +66,27 @@ class AppShell extends StatelessWidget {
           Navigator.pop(context);
           context.push(AppRoutes.hostGame);
         },
+        onStartScoring: () {
+          Navigator.pop(context);
+          _showSportPicker(context);
+        },
+      ),
+    );
+  }
+
+  void _showSportPicker(BuildContext context) {
+    showCsBottomSheet(
+      context: context,
+      showHandle: true,
+      child: _SportPickerSheet(
+        onBasketball: () {
+          Navigator.pop(context);
+          context.push(AppRoutes.bballMode);
+        },
+        onCricket: () {
+          Navigator.pop(context);
+          context.push(AppRoutes.scoreCricket);
+        },
       ),
     );
   }
@@ -216,10 +237,12 @@ class _QuickActionSheet extends StatelessWidget {
   const _QuickActionSheet({
     required this.onBookCourt,
     required this.onHostGame,
+    required this.onStartScoring,
   });
 
   final VoidCallback onBookCourt;
   final VoidCallback onHostGame;
+  final VoidCallback onStartScoring;
 
   @override
   Widget build(BuildContext context) {
@@ -237,8 +260,7 @@ class _QuickActionSheet extends StatelessWidget {
         children: [
           const SizedBox(height: 12),
           Container(
-            width: 36,
-            height: 4,
+            width: 36, height: 4,
             decoration: BoxDecoration(
               color: colors.colorBorderMedium,
               borderRadius: BorderRadius.circular(100),
@@ -258,6 +280,82 @@ class _QuickActionSheet extends StatelessWidget {
             subtitle: 'Book a court · invite players · pickup or tournament',
             color: colors.colorAccentPrimary,
             onTap: onHostGame,
+          ),
+          _ActionTile(
+            icon: Icons.scoreboard_outlined,
+            label: 'Start Scoring',
+            subtitle: 'Track live scores for basketball or cricket',
+            color: colors.colorInfo,
+            onTap: onStartScoring,
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Sport Picker Sheet ─────────────────────────────────────────
+
+class _SportPickerSheet extends StatelessWidget {
+  const _SportPickerSheet({
+    required this.onBasketball,
+    required this.onCricket,
+  });
+
+  final VoidCallback onBasketball;
+  final VoidCallback onCricket;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      decoration: BoxDecoration(
+        color: colors.colorSurfacePrimary,
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
+        border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
+        boxShadow: AppShadow.card,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 36, height: 4,
+            decoration: BoxDecoration(
+              color: colors.colorBorderMedium,
+              borderRadius: BorderRadius.circular(100),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('SELECT SPORT',
+                    style: AppTextStyles.overline(colors.colorTextTertiary)),
+                const SizedBox(height: 4),
+                Text('Which game are you scoring?',
+                    style: AppTextStyles.headingM(colors.colorTextPrimary)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _ActionTile(
+            icon: Icons.sports_basketball_rounded,
+            label: 'Basketball',
+            subtitle: 'Phone scorer · live stats · shot tracking',
+            color: colors.colorSportBasketball,
+            onTap: onBasketball,
+          ),
+          _ActionTile(
+            icon: Icons.sports_cricket_rounded,
+            label: 'Cricket',
+            subtitle: 'Ball-by-ball scoring · over tracking · partnerships',
+            color: colors.colorSportCricket,
+            onTap: onCricket,
           ),
           const SizedBox(height: 16),
         ],

@@ -10,6 +10,7 @@ import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../models/fake_data.dart';
 import '../../providers/booking_flow_provider.dart' show bookingFlowProvider, SkillLevel;
+import '../../providers/cart_provider.dart';
 import '../../providers/confirmed_bookings_provider.dart';
 import 'booking_step_widgets.dart';
 
@@ -22,6 +23,7 @@ class BookingCartScreen extends ConsumerStatefulWidget {
 
 class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
   bool _loading = false;
+  bool _phoneScoring = false; // ₹9 upsell
   late final Razorpay _razorpay;
 
   static const _razorpayKey = 'rzp_test_Sbka87EhdmeNsc';
@@ -135,9 +137,10 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final flow   = ref.watch(bookingFlowProvider);
-    final colors = context.colors;
-    final botPad = MediaQuery.of(context).padding.bottom;
+    final flow      = ref.watch(bookingFlowProvider);
+    final shopCart  = ref.watch(cartProvider);
+    final colors    = context.colors;
+    final botPad    = MediaQuery.of(context).padding.bottom;
     final date   = flow.date;
     final slot   = flow.slot;
     final court  = flow.court;
@@ -250,21 +253,20 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
                 ],
 
                 // ── Shop items ─────────────────────────────────────
-                if (flow.cartItems.isNotEmpty) ...[
+                if (shopCart.productCount > 0) ...[
                   _SectionLabel(label: 'ITEMS', colors: colors),
                   _CartSection(colors: colors, child: Column(
-                    children: flow.cartItems.asMap().entries.map((e) {
+                    children: shopCart.products.asMap().entries.map((e) {
                       final idx  = e.key;
                       final item = e.value;
                       return Column(
                         children: [
                           if (idx > 0) const _Divider(),
                           _CartRow(
-                            label: '${item.item.name} ×${item.quantity}',
-                            sub: item.item.category,
+                            label: '${item.name} ×${item.quantity}',
+                            sub: item.imageUrl,
                             colors: colors,
-                            iconEmoji: item.item.icon,
-                            trailing: '₹${item.subtotal}',
+                            trailing: '₹${item.total}',
                             trailingStyle: AppTextStyles.bodyM(colors.colorTextSecondary),
                           ),
                         ],
@@ -288,6 +290,14 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
                   const SizedBox(height: AppSpacing.md),
                 ],
 
+                // ── Phone scoring upsell ──────────────────────────
+                _PhoneScoringUpsell(
+                  isAdded: _phoneScoring,
+                  colors:  colors,
+                  onToggle: (v) => setState(() => _phoneScoring = v),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
                 // ── Total ──────────────────────────────────────────
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.lg),
@@ -304,7 +314,7 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
                     children: [
                       Text('Total to pay',
                           style: AppTextStyles.headingM(colors.colorTextPrimary)),
-                      Text('₹${flow.grandTotal}',
+                      Text('₹${flow.courtTotal + flow.hwTotal + shopCart.products.fold(0, (s, i) => s + i.total) + (_phoneScoring ? 9 : 0)}',
                           style: AppTextStyles.displayS(colors.colorAccentPrimary)),
                     ],
                   ),
@@ -315,7 +325,7 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
         ],
       ),
       bottomNavigationBar: BookingStepFooter(
-        label: _loading ? '' : 'Confirm & Pay · ₹${flow.grandTotal}',
+        label: _loading ? '' : 'Confirm & Pay · ₹${flow.courtTotal + flow.hwTotal + shopCart.products.fold(0, (s, i) => s + i.total) + (_phoneScoring ? 9 : 0)}',
         colors: colors,
         botPad: botPad,
         isLoading: _loading,
@@ -450,5 +460,126 @@ extension _ListX<T> on Iterable<T> {
   T? get firstOrNull {
     final it = iterator;
     return it.moveNext() ? it.current : null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  PHONE SCORING UPSELL — Zomato-style opt-in widget
+// ─────────────────────────────────────────────────────────────────
+
+class _PhoneScoringUpsell extends StatelessWidget {
+  const _PhoneScoringUpsell({
+    required this.isAdded,
+    required this.colors,
+    required this.onToggle,
+  });
+
+  final bool             isAdded;
+  final AppColorScheme   colors;
+  final ValueChanged<bool> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: AppDuration.normal,
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: isAdded
+            ? colors.colorInfo.withValues(alpha: 0.06)
+            : colors.colorSurfaceElevated,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(
+          color: isAdded
+              ? colors.colorInfo.withValues(alpha: 0.30)
+              : colors.colorBorderSubtle,
+          width: isAdded ? 1.0 : 0.5,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon
+          Container(
+            width: 42, height: 42,
+            decoration: BoxDecoration(
+              color: colors.colorInfo.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Icon(
+              Icons.scoreboard_outlined,
+              size: 20,
+              color: colors.colorInfo,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+
+          // Label + description
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text('Phone Scoring',
+                        style: AppTextStyles.headingS(colors.colorTextPrimary)),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: colors.colorInfo.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        border: Border.all(
+                            color: colors.colorInfo.withValues(alpha: 0.25),
+                            width: 0.5),
+                      ),
+                      child: Text('₹9',
+                          style: AppTextStyles.labelS(colors.colorInfo)
+                              .copyWith(fontSize: 9)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Track live scores, stats & highlights\ndirectly on your phone during the game.',
+                  style: AppTextStyles.bodyS(colors.colorTextSecondary)
+                      .copyWith(height: 1.4),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+
+          // Toggle
+          GestureDetector(
+            onTap: () => onToggle(!isAdded),
+            behavior: HitTestBehavior.opaque,
+            child: AnimatedContainer(
+              duration: AppDuration.fast,
+              width: 42, height: 26,
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: isAdded ? colors.colorInfo : colors.colorBorderMedium,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+              child: AnimatedAlign(
+                duration: AppDuration.fast,
+                curve: Curves.easeOutCubic,
+                alignment: isAdded
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
+                child: Container(
+                  width: 20, height: 20,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

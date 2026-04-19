@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../providers/booking_flow_provider.dart';
+import '../../providers/cart_provider.dart';
 
 // ── Step labels & icons ──────────────────────────────────────────
 const _stepLabels = ['GAME', 'GEAR', 'SHOP', 'REVIEW'];
@@ -48,8 +49,8 @@ class BookingWizardNav extends ConsumerWidget {
     final colors   = context.colors;
     final flow     = ref.watch(bookingFlowProvider);
     final topPad   = MediaQuery.of(context).padding.top;
-    final cartCount = flow.cartItems.fold(0, (s, i) => s + i.quantity)
-        + (flow.hardware != null ? 1 : 0);
+    final shopCart  = ref.watch(cartProvider);
+    final cartCount = shopCart.productCount + (flow.hardware != null ? 1 : 0);
 
     return Container(
       color: colors.colorBackgroundPrimary,
@@ -248,7 +249,8 @@ class BookingWizardNav extends ConsumerWidget {
 
   void _showCartSheet(BuildContext context, WidgetRef ref,
       AppColorScheme colors, BookingFlowState flow) {
-    if (flow.cartItems.isEmpty && flow.hardware == null) {
+    final shopProducts = ref.read(cartProvider).products;
+    if (shopProducts.isEmpty && flow.hardware == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Cart is empty',
@@ -273,16 +275,16 @@ class BookingWizardNav extends ConsumerWidget {
 
 // ── Mini cart bottom sheet ────────────────────────────────────────
 
-class _CartMiniSheet extends StatelessWidget {
+class _CartMiniSheet extends ConsumerWidget {
   const _CartMiniSheet({required this.flow, required this.colors});
 
   final BookingFlowState flow;
   final AppColorScheme colors;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final botPad = MediaQuery.of(context).padding.bottom;
-    final items  = flow.cartItems;
+    final items  = ref.watch(cartProvider).products;
     final hw     = flow.hardware;
 
     return Container(
@@ -320,7 +322,7 @@ class _CartMiniSheet extends StatelessWidget {
                         AppTextStyles.overline(colors.colorTextTertiary)),
                 const Spacer(),
                 Text(
-                  '₹${flow.shopTotal + flow.hwTotal}',
+                  '₹${items.fold(0, (s, i) => s + i.total) + flow.hwTotal}',
                   style: AppTextStyles.headingS(colors.colorAccentPrimary),
                 ),
               ],
@@ -347,9 +349,10 @@ class _CartMiniSheet extends StatelessWidget {
                         color: colors.colorSurfaceElevated,
                         borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
-                      child: Center(
-                        child: Text(c.item.icon,
-                            style: const TextStyle(fontSize: 16)),
+                      child: Icon(
+                        _categoryIcon(c.imageUrl),
+                        size: 18,
+                        color: colors.colorTextSecondary,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
@@ -357,7 +360,7 @@ class _CartMiniSheet extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(c.item.name,
+                          Text(c.name,
                               style: AppTextStyles.headingS(
                                   colors.colorTextPrimary),
                               maxLines: 1,
@@ -368,7 +371,7 @@ class _CartMiniSheet extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Text('₹${c.subtotal}',
+                    Text('₹${c.total}',
                         style:
                             AppTextStyles.labelM(colors.colorTextPrimary)),
                   ],
@@ -421,6 +424,18 @@ class _CartMiniSheet extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  IconData _categoryIcon(String cat) {
+    switch (cat.toLowerCase()) {
+      case 'hydration':  return Icons.water_drop_rounded;
+      case 'nutrition':  return Icons.fitness_center_rounded;
+      case 'equipment':  return Icons.sports_basketball_rounded;
+      case 'footwear':   return Icons.directions_run_rounded;
+      case 'apparel':    return Icons.checkroom_rounded;
+      case 'protection': return Icons.shield_rounded;
+      default:           return Icons.shopping_bag_outlined;
+    }
   }
 }
 

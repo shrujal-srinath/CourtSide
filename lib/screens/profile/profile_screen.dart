@@ -543,7 +543,7 @@ class _SignOutButton extends ConsumerWidget {
     return GestureDetector(
       onTap: () async {
         await Supabase.instance.client.auth.signOut();
-        if (context.mounted) context.go(AppRoutes.landing);
+        if (context.mounted) context.go(AppRoutes.login);
       },
       child: Container(
         width: double.infinity,

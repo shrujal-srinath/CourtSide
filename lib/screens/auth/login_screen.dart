@@ -47,7 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               // ── Back ──────────────────────────────────────
               GestureDetector(
-                onTap: () => context.go(AppRoutes.landing),
+                onTap: () => context.go(AppRoutes.login),
                 child: Icon(Icons.arrow_back_rounded, color: c.text, size: 24),
               ),
 
@@ -143,7 +143,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               // ── New user link ──────────────────────────────
               Center(
                 child: GestureDetector(
-                  onTap: () => context.go(AppRoutes.landing),
+                  onTap: () => context.go(AppRoutes.login),
                   child: RichText(
                     text: TextSpan(
                       style: GoogleFonts.inter(fontSize: 14, color: c.textSec),

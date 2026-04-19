@@ -71,7 +71,7 @@ The scoring surfaces are not a feature — they are the **wedge**. Everything el
 | **Stat card** | The shareable post-game artifact (Instagram-ready image). Has score, key stats, verified badge. | A player profile page. |
 | **Player profile** | The accumulated stats + history + identity of a user over time. The Strava-layer output. | A login screen. |
 | **THE BOX** | The hardware brand + venue-partner brand underneath Courtside. BOX-equipped courts produce automatic stats. Courtside is the consumer app that surfaces BOX data. | A tech term. A literal box icon. |
-| **Mode Gate** | A screen that currently appears on every session asking "Play or Explore." **Status unclear — ask Shrujal before making major changes to this screen.** | A permanent design decision. |
+| **Mode Gate** | **This IS the landing page.** The first screen users see after login — asks "Play or Explore." `/mode-gate` is the canonical post-auth entry point. The old `/landing` route has been deleted. Do not recreate a separate landing screen. | A temporary screen or a screen that can be bypassed. |
 
 If you encounter a word in a prompt that's in this table, default to this meaning. If a prompt conflicts with a definition, ask before proceeding.
 
@@ -276,7 +276,7 @@ lib/
 │   ├── splash/
 │   ├── auth/
 │   ├── onboarding/
-│   ├── mode_gate/                  ← status: unclear, ask before major changes
+│   ├── mode_gate/                  ← THE landing page (post-auth PLAY/EXPLORE selector)
 │   ├── home/
 │   ├── sport/
 │   ├── venue/
@@ -600,11 +600,11 @@ fontFeatures: [FontFeature.tabularFigures()]
 | Screen | Route | Status |
 |---|---|---|
 | Splash | / | ✅ custom animation |
-| Landing | /landing | ✅ |
+| Landing | /landing | ❌ DELETED — Mode Gate IS the landing page |
 | Login | /login | ✅ |
 | Phone auth | /phone-auth | ✅ |
 | Onboarding | /onboarding | ✅ |
-| Mode gate | /mode-gate | ✅ built — status unclear, ask before major changes |
+| Mode gate | /mode-gate | ✅ THE landing page — post-auth PLAY/EXPLORE selector |
 | Home | /home | ✅ Live Now + Map + Chips + Courts + Feed |
 | Sport | /sport/:id | ✅ |
 | Venue detail | /venue/:id | ✅ |

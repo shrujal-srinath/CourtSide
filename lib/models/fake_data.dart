@@ -19,6 +19,7 @@ class Venue {
     required this.sports,
     required this.rating,
     required this.reviewCount,
+    this.openingTime = '6 AM',
     required this.closingTime,
     required this.photoUrl,
     required this.amenities,
@@ -35,6 +36,7 @@ class Venue {
   final List<String> sports;
   final double rating;
   final int reviewCount;
+  final String openingTime;
   final String closingTime;
   final String photoUrl;
   final List<String> amenities;
@@ -195,6 +197,11 @@ class Product {
     required this.image,
     required this.category,
     required this.description,
+    this.brand = '',
+    this.reviewCount = 0,
+    this.inStock = true,
+    this.specifications = const {},
+    this.tags = const [],
   });
 
   final String id;
@@ -205,8 +212,130 @@ class Product {
   final String image;
   final String category;
   final String description;
+  final String brand;
+  final int reviewCount;
+  final bool inStock;
+  final Map<String, String> specifications;
+  final List<String> tags;
 
   int get discountPercent => ((originalPrice - price) / originalPrice * 100).round();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PRODUCT REVIEW
+// ═══════════════════════════════════════════════════════════════
+
+class ProductReview {
+  const ProductReview({
+    required this.id,
+    required this.userName,
+    required this.rating,
+    required this.title,
+    required this.comment,
+    required this.date,
+    this.helpfulCount = 0,
+    this.verified = true,
+  });
+
+  final String id;
+  final String userName;
+  final double rating;
+  final String title;
+  final String comment;
+  final String date;
+  final int helpfulCount;
+  final bool verified;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DELIVERY ADDRESS
+// ═══════════════════════════════════════════════════════════════
+
+class DeliveryAddress {
+  const DeliveryAddress({
+    required this.id,
+    required this.label,
+    required this.name,
+    required this.phone,
+    required this.street,
+    required this.area,
+    required this.city,
+    required this.pincode,
+    this.isDefault = false,
+  });
+
+  final String id;
+  final String label;
+  final String name;
+  final String phone;
+  final String street;
+  final String area;
+  final String city;
+  final String pincode;
+  final bool isDefault;
+
+  String get fullAddress => '$street, $area, $city - $pincode';
+
+  DeliveryAddress copyWith({bool? isDefault}) => DeliveryAddress(
+    id: id, label: label, name: name, phone: phone,
+    street: street, area: area, city: city, pincode: pincode,
+    isDefault: isDefault ?? this.isDefault,
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SHOP ORDER
+// ═══════════════════════════════════════════════════════════════
+
+class OrderLineItem {
+  const OrderLineItem({
+    required this.name,
+    required this.quantity,
+    required this.price,
+    required this.category,
+  });
+
+  final String name;
+  final int quantity;
+  final int price;
+  final String category;
+
+  int get total => price * quantity;
+}
+
+enum OrderStatus { placed, confirmed, shipped, outForDelivery, delivered, cancelled }
+
+class ShopOrder {
+  const ShopOrder({
+    required this.id,
+    required this.items,
+    required this.status,
+    required this.placedDate,
+    required this.address,
+    required this.total,
+    this.deliveryDate,
+    this.trackingId,
+  });
+
+  final String id;
+  final List<OrderLineItem> items;
+  final OrderStatus status;
+  final String placedDate;
+  final String address;
+  final int total;
+  final String? deliveryDate;
+  final String? trackingId;
+
+  String get statusLabel {
+    switch (status) {
+      case OrderStatus.placed: return 'Order Placed';
+      case OrderStatus.confirmed: return 'Confirmed';
+      case OrderStatus.shipped: return 'Shipped';
+      case OrderStatus.outForDelivery: return 'Out for Delivery';
+      case OrderStatus.delivered: return 'Delivered';
+      case OrderStatus.cancelled: return 'Cancelled';
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -604,155 +733,251 @@ class FakeData {
   ];
 
   static const products = [
+    // ── HYDRATION ─────────────────────────────────────────────────
     Product(
-      id: 'p1',
-      name: 'NIVIA Storm Football',
-      price: 899,
-      originalPrice: 1200,
-      rating: 4.5,
-      image: 'sports_football', // identifier for local asset
-      category: 'Football',
-      description: 'High-quality synthetic leather football for all-weather play. Hand-stitched for durability and shape retention.',
+      id: 'p1', name: 'Gatorade Blue Bolt 500ml', price: 120, originalPrice: 150,
+      rating: 4.5, image: 'hydration', category: 'Hydration', brand: 'Gatorade',
+      reviewCount: 2847,
+      description: 'Isotonic sports drink for rapid rehydration. Packed with electrolytes to help you perform at your best during intense sessions.',
+      specifications: {'Volume': '500ml', 'Calories': '90kcal', 'Sodium': '110mg', 'Potassium': '30mg', 'Carbs': '22g'},
+      tags: ['sports drink', 'electrolytes', 'hydration'],
     ),
     Product(
-      id: 'p2',
-      name: 'Gatorade Blue Bolt',
-      price: 50,
-      originalPrice: 60,
-      rating: 4.8,
-      image: 'nutrition_gatorade',
-      category: 'Nutrition',
-      description: 'Isotonic sports drink for rapid rehydration and carbohydrate energy. Stay hydrated during intense matches.',
+      id: 'p2', name: 'Pocari Sweat Ion Drink 500ml', price: 65, originalPrice: 80,
+      rating: 4.3, image: 'hydration', category: 'Hydration', brand: 'Pocari Sweat',
+      reviewCount: 1243,
+      description: 'Smooth ion balance drink that replaces water and ions lost through sweat. Gentle on the stomach.',
+      specifications: {'Volume': '500ml', 'Calories': '25kcal', 'Sodium': '49mg', 'Potassium': '20mg'},
+      tags: ['ion drink', 'hydration', 'recovery'],
     ),
     Product(
-      id: 'p3',
-      name: 'NIVIA Basketball',
-      price: 999,
-      originalPrice: 1499,
-      rating: 4.7,
-      image: 'sports_basketball',
-      category: 'Basketball',
-      description: 'Pro-grade basketball with enhanced grip and consistent bounce. Suitable for both indoor and outdoor courts.',
+      id: 'p3', name: 'Electral ORS Sachets (10 pack)', price: 149, originalPrice: 199,
+      rating: 4.7, image: 'hydration', category: 'Hydration', brand: 'Electral',
+      reviewCount: 3102,
+      description: 'WHO-formulated oral rehydration salts. Ideal for rapid recovery from dehydration during intense sports.',
+      specifications: {'Pack': '10 sachets', 'Net Weight': '21.8g each', 'Flavor': 'Lemon', 'Electrolytes': '5 key'},
+      tags: ['ORS', 'electrolytes', 'recovery'],
     ),
     Product(
-      id: 'p4',
-      name: 'Yonex Badminton Racket',
-      price: 2499,
-      originalPrice: 3500,
-      rating: 4.9,
-      image: 'sports_badminton',
-      category: 'Badminton',
-      description: 'Lightweight graphite frame for fast swings and powerful smashes. Perfect for intermediate to advanced players.',
+      id: 'p4', name: 'Red Bull Energy Drink 250ml', price: 125, originalPrice: 150,
+      rating: 4.4, image: 'hydration', category: 'Hydration', brand: 'Red Bull',
+      reviewCount: 5620,
+      description: 'Vitalizes body and mind. 80mg caffeine per can for sustained focus and energy during competition.',
+      specifications: {'Volume': '250ml', 'Caffeine': '80mg', 'Niacin (B3)': '22mg', 'B6': '5mg', 'B12': '5.5mcg'},
+      tags: ['energy drink', 'caffeine', 'focus'],
     ),
     Product(
-      id: 'p5',
-      name: 'Optimum Nutrition Whey',
-      price: 5999,
-      originalPrice: 7500,
-      rating: 4.6,
-      image: 'https://images.unsplash.com/photo-1593095199912-2d17bb46bd5a?w=400&q=80',
-      category: 'Nutrition',
-      description: 'Gold Standard 100% Whey protein for muscle recovery. 24g of protein per serving with BCAAs and glutamine.',
+      id: 'p5', name: 'Fast&Up Reload Electrolyte (20 tabs)', price: 349, originalPrice: 499,
+      rating: 4.6, image: 'hydration', category: 'Hydration', brand: 'Fast&Up',
+      reviewCount: 1876,
+      description: 'Effervescent electrolyte tablets with 5 key electrolytes. Drop in water for instant isotonic sports fuel.',
+      specifications: {'Tablets': '20', 'Flavor': 'Orange', 'Serving': '1 tab per 300ml', 'Sodium': '200mg', 'Sugar-free': 'Yes'},
+      tags: ['electrolyte tabs', 'effervescent', 'sugar-free'],
     ),
     Product(
-      id: 'p6',
-      name: 'Red Bull Energy Drink',
-      price: 110,
-      originalPrice: 125,
-      rating: 4.7,
-      image: 'https://images.unsplash.com/photo-1622543953491-017a9435303b?w=400&q=80',
-      category: 'Nutrition',
-      description: 'Vitalizes body and mind. High caffeine content for increased focus and performance.',
+      id: 'p6', name: 'Decathlon Sports Bottle 1.5L', price: 499, originalPrice: 799,
+      rating: 4.8, image: 'hydration', category: 'Hydration', brand: 'Decathlon',
+      reviewCount: 4391,
+      description: 'BPA-free Tritan bottle with one-click flip cap. Wide mouth for ice. Dishwasher safe and leak-proof.',
+      specifications: {'Capacity': '1.5L', 'Material': 'Tritan BPA-Free', 'Leak-proof': 'Yes', 'Dishwasher Safe': 'Yes', 'Weight': '195g'},
+      tags: ['water bottle', 'BPA-free', 'tritan'],
+    ),
+    // ── NUTRITION ─────────────────────────────────────────────────
+    Product(
+      id: 'p7', name: 'ON Gold Standard Whey 1kg', price: 2499, originalPrice: 3499,
+      rating: 4.8, image: 'nutrition', category: 'Nutrition', brand: 'Optimum Nutrition',
+      reviewCount: 8932,
+      description: "World's #1 whey protein. 24g of protein per serving with BCAAs and glutamine for muscle recovery and growth.",
+      specifications: {'Protein': '24g/serving', 'Servings': '29', 'Calories': '120kcal', 'Fat': '1.5g', 'Flavor': 'Double Chocolate'},
+      tags: ['whey protein', 'muscle recovery', 'BCAAs'],
     ),
     Product(
-      id: 'p7',
-      name: 'Raw Whey Protein',
-      price: 1899,
-      originalPrice: 2200,
-      rating: 4.4,
-      image: 'https://images.unsplash.com/photo-1593095199912-2d17bb46bd5a?w=400&q=80',
-      category: 'Nutrition',
-      description: 'Zero carb whey protein for lean muscle building. No added flavors.',
+      id: 'p8', name: 'MyProtein Impact Whey 1kg', price: 1799, originalPrice: 2499,
+      rating: 4.6, image: 'nutrition', category: 'Nutrition', brand: 'MyProtein',
+      reviewCount: 4521,
+      description: 'High-quality whey concentrate from grass-fed cows. Clean macro profile for lean gains. 21g protein per serving.',
+      specifications: {'Protein': '21g/serving', 'Servings': '40', 'Calories': '103kcal', 'Carbs': '4.5g', 'Fat': '1.9g'},
+      tags: ['whey', 'lean gains', 'grass-fed'],
     ),
     Product(
-      id: 'p8',
-      name: 'Premium Basketball Jersey',
-      price: 1499,
-      originalPrice: 2499,
-      rating: 4.8,
-      image: 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?w=400&q=80',
-      category: 'Clothing',
-      description: 'Moisture-wicking fabric with athletic cut. Lightweight and breathable for summer games.',
+      id: 'p9', name: 'MuscleBlaze Energy Bar (6 pack)', price: 349, originalPrice: 499,
+      rating: 4.4, image: 'nutrition', category: 'Nutrition', brand: 'MuscleBlaze',
+      reviewCount: 2134,
+      description: 'High-energy bars for sustained performance. No added sugar, natural oats base with chocolate coating.',
+      specifications: {'Pack': '6 bars', 'Protein': '10g/bar', 'Calories': '160kcal', 'Carbs': '22g', 'Sugar': 'None added'},
+      tags: ['energy bar', 'pre-workout', 'no added sugar'],
     ),
     Product(
-      id: 'p9',
-      name: 'Cricket Performance Tee',
-      price: 799,
-      originalPrice: 1599,
-      rating: 4.6,
-      image: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=400&q=80',
-      category: 'Clothing',
-      description: 'Built for long overs in the sun. SPF 50+ protection with quick-dry technology.',
+      id: 'p10', name: 'Ritebite Max Protein Bar', price: 99, originalPrice: 130,
+      rating: 4.3, image: 'nutrition', category: 'Nutrition', brand: 'Ritebite',
+      reviewCount: 3287,
+      description: 'Delicious protein bar with 20g protein. Perfect post-game recovery snack. Available in chocolate fudge.',
+      specifications: {'Protein': '20g', 'Weight': '67g', 'Calories': '230kcal', 'Sugar': '5g', 'Fiber': '2g'},
+      tags: ['protein bar', 'post-workout', 'recovery'],
     ),
     Product(
-      id: 'p10',
-      name: 'Nike Compression Pants',
-      price: 2999,
-      originalPrice: 3999,
-      rating: 4.9,
-      image: 'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400&q=80',
-      category: 'Clothing',
-      description: 'Pro-level compression for muscle stability and recovery. Flatlock seams for zero irritation.',
+      id: 'p11', name: 'Unived RRUNN Energy Gels (5 pack)', price: 599, originalPrice: 799,
+      rating: 4.5, image: 'nutrition', category: 'Nutrition', brand: 'Unived',
+      reviewCount: 987,
+      description: 'Natural energy gels for endurance sports. Maltodextrin + fructose for sustained energy release without crashes.',
+      specifications: {'Pack': '5 gels', 'Carbs': '22g/gel', 'Sodium': '50mg', 'Flavor': 'Orange Mango', 'Caffeine-free': 'Yes'},
+      tags: ['energy gel', 'endurance', 'natural'],
+    ),
+    // ── EQUIPMENT ─────────────────────────────────────────────────
+    Product(
+      id: 'p12', name: 'NIVIA Storm Football Size 5', price: 699, originalPrice: 999,
+      rating: 4.5, image: 'equipment', category: 'Equipment', brand: 'NIVIA',
+      reviewCount: 3412,
+      description: 'Match-grade synthetic leather football. 32 hand-stitched panels for shape retention and consistent flight.',
+      specifications: {'Size': '5', 'Material': 'Synthetic Leather', 'Panels': '32', 'Weight': '410-450g', 'Surface': 'All weather'},
+      tags: ['football', 'match ball', 'size 5'],
     ),
     Product(
-      id: 'p11',
-      name: 'Training Gym Shorts',
-      price: 499,
-      originalPrice: 999,
-      rating: 4.5,
-      image: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400&q=80',
-      category: 'Clothing',
-      description: 'Lightweight mesh shorts with four-way stretch. Ideal for explosive movements.',
+      id: 'p13', name: 'NIVIA Basketball Size 7', price: 899, originalPrice: 1299,
+      rating: 4.6, image: 'equipment', category: 'Equipment', brand: 'NIVIA',
+      reviewCount: 2678,
+      description: 'Pro-grade basketball with deep channel design for enhanced grip. Consistent bounce on indoor and outdoor courts.',
+      specifications: {'Size': '7', 'Circumference': '75-76cm', 'Material': 'Composite Leather', 'Surface': 'Indoor/Outdoor'},
+      tags: ['basketball', 'size 7', 'composite leather'],
     ),
     Product(
-      id: 'p12',
-      name: 'Neoprene Shoulder Support',
-      price: 1299,
-      originalPrice: 1999,
-      rating: 4.4,
-      image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
-      category: 'Accessories',
-      description: 'Adjustable pressure plate for AC joint stability. Breathable neoprene for all-day comfort.',
+      id: 'p14', name: 'Yonex Arcsaber 7 Play Racket', price: 2999, originalPrice: 4499,
+      rating: 4.7, image: 'equipment', category: 'Equipment', brand: 'Yonex',
+      reviewCount: 1892,
+      description: 'Graphite shaft with integrated T-joint. Balanced flex for maximum repulsion power and control.',
+      specifications: {'Weight': '85g ±2g', 'Flex': 'Medium', 'Frame': 'Graphite', 'Max Tension': '25 lbs', 'Balance': 'Even'},
+      tags: ['badminton racket', 'graphite', 'intermediate'],
     ),
     Product(
-      id: 'p13',
-      name: 'Pro Knee Sleeves (Pair)',
-      price: 1800,
-      originalPrice: 2500,
-      rating: 4.8,
-      image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
-      category: 'Accessories',
-      description: '7mm SBR/Neoprene for heavy lifting and impact protection. Anatomical fit.',
+      id: 'p15', name: 'SG KLR Xtreme Cricket Bat', price: 3499, originalPrice: 4999,
+      rating: 4.6, image: 'equipment', category: 'Equipment', brand: 'SG',
+      reviewCount: 1245,
+      description: 'English Willow Grade 2. Ready-to-play, oil-treated. Reinforced toe and cane handle for power hitting.',
+      specifications: {'Grade': 'English Willow G2', 'Handle': 'Cane', 'Weight': '1100-1200g', 'Edges': '38mm', 'Spine': '60mm'},
+      tags: ['cricket bat', 'english willow', 'SG'],
     ),
     Product(
-      id: 'p14',
-      name: 'Sports Water Bottle 1L',
-      price: 299,
-      originalPrice: 499,
-      rating: 4.6,
-      image: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400&q=80',
-      category: 'Accessories',
-      description: 'BPA-free tritan material with one-click opening. Leak-proof design.',
+      id: 'p16', name: 'Kookaburra Cricket Balls (3 pack)', price: 799, originalPrice: 999,
+      rating: 4.5, image: 'equipment', category: 'Equipment', brand: 'Kookaburra',
+      reviewCount: 876,
+      description: 'Practice-grade leather cricket balls with 4-piece construction. Used in club cricket across India.',
+      specifications: {'Pack': '3 balls', 'Weight': '155.9-163g', 'Seam': '6-row stitched', 'Type': 'Practice/Club'},
+      tags: ['cricket ball', 'leather', 'practice'],
     ),
     Product(
-      id: 'p15',
-      name: 'Antigravity Wrist Bands',
-      price: 199,
-      originalPrice: 399,
-      rating: 4.7,
-      image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
-      category: 'Accessories',
-      description: 'Super absorbent cotton blend. Standard size for elite performance.',
+      id: 'p17', name: 'Cosco Cricket Batting Gloves', price: 699, originalPrice: 999,
+      rating: 4.3, image: 'equipment', category: 'Equipment', brand: 'Cosco',
+      reviewCount: 654,
+      description: 'Reinforced palm with scatter foam knuckle protection. Breathable back for extended innings.',
+      specifications: {'Size': 'Adult', 'Palm': 'PU/Rubber', 'Fingers': 'Scatter Foam', 'Wrist': 'Velcro strap'},
+      tags: ['batting gloves', 'cricket', 'knuckle protection'],
+    ),
+    Product(
+      id: 'p18', name: 'Yonex Mavis 350 Shuttlecocks (6 pack)', price: 799, originalPrice: 1099,
+      rating: 4.8, image: 'equipment', category: 'Equipment', brand: 'Yonex',
+      reviewCount: 5231,
+      description: 'Nylon shuttlecocks with real-feather feel and consistent flight. Long-lasting for training and club play.',
+      specifications: {'Pack': '6 shuttles', 'Material': 'Nylon', 'Speed': 'Medium (Yellow)', 'Grade': 'Club/Training'},
+      tags: ['shuttlecock', 'nylon', 'consistent flight'],
+    ),
+    Product(
+      id: 'p19', name: 'Wilson Pro Grip Tape (3 pack)', price: 299, originalPrice: 399,
+      rating: 4.6, image: 'equipment', category: 'Equipment', brand: 'Wilson',
+      reviewCount: 2134,
+      description: 'Tacky feel with high moisture absorption. 110cm per tape. Fits all racket handle sizes.',
+      specifications: {'Pack': '3 tapes', 'Length': '110cm each', 'Thickness': '0.6mm', 'Absorption': 'High'},
+      tags: ['grip tape', 'racket', 'badminton', 'tennis'],
+    ),
+    Product(
+      id: 'p20', name: 'Cosco Ball Pump with Needle Kit', price: 199, originalPrice: 299,
+      rating: 4.2, image: 'equipment', category: 'Equipment', brand: 'Cosco',
+      reviewCount: 1678,
+      description: 'Dual-action pump for fast inflation. Compatible with all sports balls. Includes pressure gauge and 2 needles.',
+      specifications: {'Type': 'Dual Action', 'Max PSI': '15 PSI', 'Needles': '2 included', 'Gauge': 'Built-in'},
+      tags: ['ball pump', 'inflation', 'dual action'],
+    ),
+    // ── FOOTWEAR ──────────────────────────────────────────────────
+    Product(
+      id: 'p21', name: 'Nike Court Vision Low Basketball', price: 3999, originalPrice: 5999,
+      rating: 4.7, image: 'footwear', category: 'Footwear', brand: 'Nike',
+      reviewCount: 3421,
+      description: 'Classic low-top with perforated leather upper. Waffle-pattern outsole for court traction. Sizes 6-13.',
+      specifications: {'Upper': 'Perforated Leather', 'Sole': 'Rubber Waffle', 'Fit': 'True to Size', 'Sizes': 'UK 6-13'},
+      tags: ['basketball shoes', 'Nike', 'low-top court'],
+    ),
+    Product(
+      id: 'p22', name: 'Adidas Predator 24 Football Cleats', price: 3499, originalPrice: 5499,
+      rating: 4.5, image: 'footwear', category: 'Footwear', brand: 'Adidas',
+      reviewCount: 2187,
+      description: 'Control Zone upper for enhanced ball contact. Firm ground rubber studs for natural grass play.',
+      specifications: {'Upper': 'Synthetic', 'Sole': 'Firm Ground', 'Studs': 'Rubber', 'Sizes': 'UK 6-12'},
+      tags: ['football cleats', 'adidas', 'firm ground'],
+    ),
+    Product(
+      id: 'p23', name: 'Yonex Power Cushion Badminton Shoes', price: 2999, originalPrice: 4499,
+      rating: 4.7, image: 'footwear', category: 'Footwear', brand: 'Yonex',
+      reviewCount: 1654,
+      description: 'Power Cushion+ technology for superior impact absorption. 3D Power Carbon sole for explosive lateral movement.',
+      specifications: {'Upper': 'Mesh + Synthetic', 'Sole': 'Gum Rubber', 'Cushion': 'Power Cushion+', 'Sizes': 'UK 6-12'},
+      tags: ['badminton shoes', 'Yonex', 'court shoes'],
+    ),
+    Product(
+      id: 'p24', name: 'Decathlon Sports Socks (3 pack)', price: 199, originalPrice: 299,
+      rating: 4.4, image: 'footwear', category: 'Footwear', brand: 'Decathlon',
+      reviewCount: 7823,
+      description: 'Cushioned arch compression for all-day comfort. Anti-blister terry loop construction. Machine washable.',
+      specifications: {'Pack': '3 pairs', 'Material': '80% Cotton', 'Cushion': 'Full terry foot', 'Sizes': 'S / M / L / XL'},
+      tags: ['sports socks', 'cushioned', 'anti-blister'],
+    ),
+    // ── APPAREL ───────────────────────────────────────────────────
+    Product(
+      id: 'p25', name: 'Jordan Dri-FIT Basketball Jersey', price: 1299, originalPrice: 1999,
+      rating: 4.6, image: 'apparel', category: 'Apparel', brand: 'Jordan / Nike',
+      reviewCount: 2341,
+      description: 'Nike Dri-FIT technology moves sweat away fast. Mesh side panels for breathability. Classic Jordan drop.',
+      specifications: {'Material': 'Polyester Dri-FIT', 'Fit': 'Regular', 'Sizes': 'XS-3XL', 'Care': 'Machine Wash Cold'},
+      tags: ['basketball jersey', 'Jordan', 'Dri-FIT'],
+    ),
+    Product(
+      id: 'p26', name: 'Cricket Performance Tee SPF50', price: 799, originalPrice: 1099,
+      rating: 4.5, image: 'apparel', category: 'Apparel', brand: 'Decathlon',
+      reviewCount: 1897,
+      description: 'Quick-dry polyester with SPF50+ sun protection. Built for long innings in the Indian summer sun.',
+      specifications: {'Material': 'Polyester', 'SPF': '50+', 'Fit': 'Regular', 'Sizes': 'S-2XL', 'Drying': 'Quick-dry'},
+      tags: ['cricket tee', 'SPF protection', 'quick-dry'],
+    ),
+    Product(
+      id: 'p27', name: 'Nike Pro Compression Tights', price: 1499, originalPrice: 2499,
+      rating: 4.7, image: 'apparel', category: 'Apparel', brand: 'Nike',
+      reviewCount: 3102,
+      description: 'Nike Pro Dri-FIT fabric with 4-way stretch. Flatlock seams for zero irritation. Muscle stability under any kit.',
+      specifications: {'Material': '85% Polyester / 15% Elastane', 'Fit': 'Tight', 'Length': 'Full', 'Sizes': 'XS-2XL'},
+      tags: ['compression tights', 'Nike', 'muscle support'],
+    ),
+    Product(
+      id: 'p28', name: 'Adidas Training Mesh Shorts', price: 599, originalPrice: 899,
+      rating: 4.4, image: 'apparel', category: 'Apparel', brand: 'Adidas',
+      reviewCount: 2654,
+      description: 'Aeroready moisture-absorbing fabric. Side pockets, internal drawstring, 4-way stretch for full range of motion.',
+      specifications: {'Material': 'Polyester Aeroready', 'Length': '7 inch', 'Pockets': '2 side + 1 back', 'Sizes': 'XS-2XL'},
+      tags: ['training shorts', 'adidas', 'aeroready'],
+    ),
+    // ── PROTECTION ────────────────────────────────────────────────
+    Product(
+      id: 'p29', name: 'Tynor Knee Sleeves (pair)', price: 599, originalPrice: 899,
+      rating: 4.7, image: 'protection', category: 'Protection', brand: 'Tynor',
+      reviewCount: 4231,
+      description: 'Medical-grade neoprene with anatomical design. Provides warmth and graduated compression for injury prevention.',
+      specifications: {'Material': 'Neoprene', 'Pack': 'Pair', 'Sizes': 'S / M / L / XL', 'Compression': 'Medium', 'Thickness': '3mm'},
+      tags: ['knee sleeve', 'neoprene', 'compression'],
+    ),
+    Product(
+      id: 'p30', name: 'McDavid Ankle Support Brace', price: 449, originalPrice: 699,
+      rating: 4.6, image: 'protection', category: 'Protection', brand: 'McDavid',
+      reviewCount: 2876,
+      description: 'Figure-8 strap system for lateral ankle stability. Open-heel design fits all footwear. Reduces re-injury risk.',
+      specifications: {'Material': 'Nylon Elastic', 'Straps': 'Figure-8', 'Heel': 'Open heel', 'Size': 'One Size Fits Most'},
+      tags: ['ankle brace', 'ankle support', 'lateral stability'],
     ),
   ];
 
@@ -787,6 +1012,85 @@ class FakeData {
 
   static Product? productById(String id) =>
       products.where((p) => p.id == id).firstOrNull;
+
+  // ── Reviews ──────────────────────────────────────────────────
+
+  static const _reviewPool = [
+    ProductReview(id: 'r1', userName: 'Arjun S.', rating: 5.0, title: 'Excellent quality!', comment: "Been using this for 3 months and it's held up great. Exactly what I needed for my weekly basketball sessions at Game Theory.", date: '2 weeks ago', helpfulCount: 24),
+    ProductReview(id: 'r2', userName: 'Priya M.', rating: 4.0, title: 'Good value for money', comment: 'Does exactly what it says. Delivery was super quick, packaging was solid. Would recommend to any sports enthusiast.', date: '1 month ago', helpfulCount: 18),
+    ProductReview(id: 'r3', userName: 'Rahul K.', rating: 5.0, title: 'Game changer', comment: "This has genuinely improved my game. The quality is top-notch and it feels premium. Worth every rupee — don't hesitate.", date: '3 weeks ago', helpfulCount: 31),
+    ProductReview(id: 'r4', userName: 'Sneha R.', rating: 3.0, title: 'Average, could be better', comment: "It's okay but I expected a bit more at this price. Quality is fine but nothing extraordinary. Will try the competition next time.", date: '5 days ago', helpfulCount: 7),
+    ProductReview(id: 'r5', userName: 'Vikram P.', rating: 4.0, title: 'Solid purchase', comment: "Used it in 5+ games already. Durable and consistent performance. Fast delivery to Koramangala — was at my door in 25 mins.", date: '2 months ago', helpfulCount: 15),
+    ProductReview(id: 'r6', userName: 'Ananya B.', rating: 5.0, title: 'Love it!', comment: "Perfect for what I need. The quality surprised me — much better than expected. Already recommended it to my entire squad.", date: '1 week ago', helpfulCount: 42),
+    ProductReview(id: 'r7', userName: 'Kiran T.', rating: 4.5, title: 'Near perfect', comment: "Really satisfied with this. Minor packaging issue but the product itself is great. Would definitely buy again.", date: '3 days ago', helpfulCount: 11),
+    ProductReview(id: 'r8', userName: 'Dev A.', rating: 5.0, title: 'Exactly as described', comment: "No surprises — what you see is what you get. Material quality is excellent for the sport. My go-to shop now.", date: '6 weeks ago', helpfulCount: 28),
+    ProductReview(id: 'r9', userName: 'Meera N.', rating: 4.0, title: 'Good product, fast delivery', comment: 'Arrived in 28 mins as promised! Quality is great for the price. Courtside marketplace is my go-to for sports gear now.', date: '2 weeks ago', helpfulCount: 16),
+    ProductReview(id: 'r10', userName: 'Rohit C.', rating: 3.5, title: 'Decent but pricey', comment: 'Product is decent. You can find alternatives at lower prices elsewhere. But the convenience of quick delivery makes it worth it.', date: '1 month ago', helpfulCount: 9),
+    ProductReview(id: 'r11', userName: 'Pooja L.', rating: 5.0, title: 'Absolute must-have', comment: "Can't imagine playing without this now. The performance difference is very noticeable. Quality is genuinely top tier.", date: '4 days ago', helpfulCount: 37),
+    ProductReview(id: 'r12', userName: 'Suresh G.', rating: 4.5, title: 'Highly recommend', comment: "Been buying sports gear for years and this is one of my best purchases. Durable, well-made, and looks great on court.", date: '5 weeks ago', helpfulCount: 22),
+    ProductReview(id: 'r13', userName: 'Nita V.', rating: 4.0, title: 'Good for the price', comment: "Quality is on par with what you'd find at a sports store — delivered in minutes. Amazing convenience, can't complain!", date: '3 months ago', helpfulCount: 14),
+    ProductReview(id: 'r14', userName: 'Aakash J.', rating: 5.0, title: 'Outstanding!', comment: "The moment I used it I knew it was worth every rupee. Premium feel, perfect for competitive play at Game Theory Koramangala.", date: '1 week ago', helpfulCount: 45),
+    ProductReview(id: 'r15', userName: 'Tara S.', rating: 4.5, title: 'Really pleased', comment: "Couldn't ask for more. Quality exceeded my expectations and it arrived before my training session started. Brilliant service.", date: '2 weeks ago', helpfulCount: 19),
+  ];
+
+  static List<ProductReview> reviewsByProductId(String productId) {
+    final hash = productId.codeUnits.reduce((a, b) => a + b);
+    final offset = hash % (_reviewPool.length - 4);
+    return _reviewPool.sublist(offset, offset + 4);
+  }
+
+  // ── Addresses ────────────────────────────────────────────────
+
+  static final List<DeliveryAddress> addresses = [
+    const DeliveryAddress(
+      id: 'addr1', label: 'HOME', name: 'Shrujal Srinath',
+      phone: '+91 98765 43210', street: '14, 5th Cross, 8th Main',
+      area: 'Koramangala 4th Block', city: 'Bengaluru', pincode: '560034',
+      isDefault: true,
+    ),
+    const DeliveryAddress(
+      id: 'addr2', label: 'COLLEGE', name: 'Shrujal Srinath',
+      phone: '+91 98765 43210', street: 'Bull Temple Road, BMSCE Campus',
+      area: 'Basavanagudi', city: 'Bengaluru', pincode: '560004',
+      isDefault: false,
+    ),
+  ];
+
+  // ── Order history ─────────────────────────────────────────────
+
+  static final List<ShopOrder> shopOrderHistory = [
+    const ShopOrder(
+      id: 'ORD-7842', status: OrderStatus.delivered,
+      placedDate: '14 Apr 2026', deliveryDate: '14 Apr 2026',
+      address: '14, 5th Cross, Koramangala, Bengaluru - 560034',
+      total: 1627, trackingId: 'CS-TRK-78421',
+      items: [
+        OrderLineItem(name: 'NIVIA Basketball Size 7', quantity: 1, price: 899, category: 'Equipment'),
+        OrderLineItem(name: 'Fast&Up Reload Electrolyte (20 tabs)', quantity: 2, price: 349, category: 'Hydration'),
+      ],
+    ),
+    const ShopOrder(
+      id: 'ORD-7103', status: OrderStatus.delivered,
+      placedDate: '8 Apr 2026', deliveryDate: '8 Apr 2026',
+      address: '14, 5th Cross, Koramangala, Bengaluru - 560034',
+      total: 559, trackingId: 'CS-TRK-78103',
+      items: [
+        OrderLineItem(name: 'Gatorade Blue Bolt 500ml', quantity: 3, price: 120, category: 'Hydration'),
+        OrderLineItem(name: 'Decathlon Sports Socks (3 pack)', quantity: 1, price: 199, category: 'Footwear'),
+      ],
+    ),
+    const ShopOrder(
+      id: 'ORD-6891', status: OrderStatus.delivered,
+      placedDate: '28 Mar 2026', deliveryDate: '29 Mar 2026',
+      address: '14, 5th Cross, Koramangala, Bengaluru - 560034',
+      total: 4998, trackingId: 'CS-TRK-76891',
+      items: [
+        OrderLineItem(name: 'Yonex Arcsaber 7 Play Racket', quantity: 1, price: 2999, category: 'Equipment'),
+        OrderLineItem(name: 'Yonex Mavis 350 Shuttlecocks (6 pack)', quantity: 2, price: 799, category: 'Equipment'),
+        OrderLineItem(name: 'Wilson Pro Grip Tape (3 pack)', quantity: 1, price: 299, category: 'Equipment'),
+      ],
+    ),
+  ];
 
   static DateTime? parseBookingTime(String dateStr, String timeSlot) {
     try {
@@ -951,24 +1255,31 @@ const shopItems = <ShopItem>[
 const hardwareOptions = <HardwareOption>[
   HardwareOption(
     id: 'hw1',
-    name: 'Courtside Scorer',
+    name: 'THE BOX Scorer Pro',
     pricePerGame: 99,
-    description: 'Wireless scoreboard synced to the app. Live score updates for all players.',
+    description: 'Tabletop scoring device with live stats sync. Delivers player heat maps, shot charts, and full performance analysis after the game.',
     icon: '📟',
     isPopular: true,
   ),
   HardwareOption(
+    id: 'hw4',
+    name: 'CCTV Highlight Clip',
+    pricePerGame: 49,
+    description: 'Court-mounted camera captures your full game. Get a 5-minute edited highlight reel delivered to your profile post-match.',
+    icon: '📷',
+  ),
+  HardwareOption(
     id: 'hw2',
-    name: 'Camera Mount + Recording',
+    name: '1080p Camera Mount',
     pricePerGame: 149,
-    description: 'Clip-on 1080p camera with post-game highlight reel in your stats.',
+    description: 'Clip-on 1080p camera with automatic post-game highlight reel synced to your stats.',
     icon: '📹',
   ),
   HardwareOption(
     id: 'hw3',
     name: 'Scorer + Camera Bundle',
     pricePerGame: 199,
-    description: 'Both hardware units. Best value — save ₹49 vs individual rental.',
+    description: 'THE BOX Scorer Pro + 1080p Camera Mount. Best value — save ₹49 vs individual rental.',
     icon: '🎬',
   ),
 ];

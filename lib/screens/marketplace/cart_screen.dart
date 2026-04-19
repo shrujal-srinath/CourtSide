@@ -218,13 +218,9 @@ class _CartItemTile extends ConsumerWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: isBooking 
-                ? Icon(Icons.event_available_rounded, color: colors.colorAccentPrimary, size: 24)
-                : Image.network(
-                    item.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Icon(_getCategoryIcon(item.imageUrl), color: colors.colorTextSecondary, size: 24),
-                  ),
+              child: isBooking
+                  ? Icon(Icons.event_available_rounded, color: colors.colorAccentPrimary, size: 24)
+                  : Icon(_getCategoryIcon(item.imageUrl), color: colors.colorTextSecondary, size: 24),
             ),
           ),
           const SizedBox(width: 12),
@@ -281,11 +277,15 @@ class _CartItemTile extends ConsumerWidget {
   }
 
   IconData _getCategoryIcon(String category) {
-    if (category.toLowerCase().contains('football')) return Icons.sports_soccer_rounded;
-    if (category.toLowerCase().contains('basketball')) return Icons.sports_basketball_rounded;
-    if (category.toLowerCase().contains('badminton')) return Icons.sports_tennis_rounded;
-    if (category.toLowerCase().contains('nutrition')) return Icons.bolt_rounded;
-    return Icons.shopping_bag_outlined;
+    switch (category.toLowerCase()) {
+      case 'hydration': return Icons.water_drop_rounded;
+      case 'nutrition': return Icons.fitness_center_rounded;
+      case 'equipment': return Icons.sports_basketball_rounded;
+      case 'footwear': return Icons.directions_run_rounded;
+      case 'apparel': return Icons.checkroom_rounded;
+      case 'protection': return Icons.shield_rounded;
+      default: return Icons.shopping_bag_outlined;
+    }
   }
 }
 

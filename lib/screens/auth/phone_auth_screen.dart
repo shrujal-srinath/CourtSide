@@ -118,7 +118,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
                       _error = null;
                     });
                   } else {
-                    context.go(AppRoutes.landing);
+                    context.go(AppRoutes.login);
                   }
                 },
                 child: Icon(Icons.arrow_back_rounded,

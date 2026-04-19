@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../models/fake_data.dart';
 import '../providers/auth_provider.dart';
 import '../screens/splash/splash_screen.dart';
-import '../screens/auth/landing_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/phone_auth_screen.dart';
 import '../onboarding/onboarding_screen.dart';
@@ -32,6 +31,7 @@ import '../screens/marketplace/marketplace_screen.dart';
 import '../screens/marketplace/product_detail_screen.dart';
 import '../screens/marketplace/cart_screen.dart';
 import '../screens/marketplace/checkout_screen.dart';
+import '../screens/marketplace/order_history_screen.dart';
 import '../screens/mode_gate/mode_gate_screen.dart';
 import '../screens/host_game/host_game_screen.dart';
 import '../widgets/common/app_shell.dart';
@@ -52,7 +52,6 @@ class _RouterNotifier extends ChangeNotifier {
   final Ref _ref;
 
   static const _publicRoutes = [
-    AppRoutes.landing,
     AppRoutes.login,
     AppRoutes.phoneAuth,
     AppRoutes.splash,
@@ -77,7 +76,7 @@ class _RouterNotifier extends ChangeNotifier {
       if (isLoggedIn) return AppRoutes.modeGate;
       return null;
     }
-    if (!isLoggedIn) return AppRoutes.landing;
+    if (!isLoggedIn) return AppRoutes.login;
     return null;
   }
 }
@@ -97,10 +96,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.splash,
         builder: (c, s) => const SplashScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.landing,
-        builder: (c, s) => const LandingScreen(),
       ),
       GoRoute(
         path: AppRoutes.login,
@@ -306,10 +301,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/product/:productId',
         pageBuilder: (context, state) {
-          final id = state.pathParameters['productId'] ?? '';
+          final id    = state.pathParameters['productId'] ?? '';
+          final extra = state.extra as Map<String, dynamic>?;
+          final fromBooking = extra?['fromBooking'] as String?;
           return slideUpPage(
             key: state.pageKey,
-            child: ProductDetailScreen(productId: id),
+            child: ProductDetailScreen(
+              productId:          id,
+              fromBookingVenueId: fromBooking,
+            ),
           );
         },
       ),
@@ -325,6 +325,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => slideUpPage(
           key: state.pageKey,
           child: const CheckoutScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.orderHistory,
+        pageBuilder: (context, state) => slideUpPage(
+          key: state.pageKey,
+          child: const OrderHistoryScreen(),
         ),
       ),
 
