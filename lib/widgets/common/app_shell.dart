@@ -3,7 +3,7 @@
 // AppShell — persistent scaffold with floating pill nav + center FAB.
 //
 // Nav active indicator: accentPrimary dot BELOW icon (not filled pill bg).
-// Tab label: overline style, appears ONLY on active tab.
+// Tab label: labelS style, appears on all tabs.
 // FAB: 52px circle, accentPrimary, AppShadow.fab glow.
 
 import 'dart:ui';
@@ -15,7 +15,7 @@ import 'cs_bottom_sheet.dart';
 
 
 // ═══════════════════════════════════════════════════════════════
-//  APP SHELL — Floating nav + center FAB (Light UI)
+//  APP SHELL — Floating nav + center FAB
 // ═══════════════════════════════════════════════════════════════
 
 class AppShell extends StatelessWidget {
@@ -141,17 +141,17 @@ class _FloatingNavBar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: colors.colorBorderSubtle,
-                    width: 1,
+                    width: 0.5,
                   ),
                   boxShadow: AppShadow.navFor(context),
                 ),
                 child: Row(
                   children: [
-                    _buildTab(context, 0),
-                    _buildTab(context, 1),
+                    _TabButton(tab: tabs[0], selected: currentIndex == 0, onTap: () => onTap(0)),
+                    _TabButton(tab: tabs[1], selected: currentIndex == 1, onTap: () => onTap(1)),
                     const SizedBox(width: 56), // FAB gap
-                    _buildTab(context, 2),
-                    _buildTab(context, 3),
+                    _TabButton(tab: tabs[2], selected: currentIndex == 2, onTap: () => onTap(2)),
+                    _TabButton(tab: tabs[3], selected: currentIndex == 3, onTap: () => onTap(3)),
                   ],
                 ),
               ),
@@ -162,23 +162,7 @@ class _FloatingNavBar extends StatelessWidget {
               left: 0,
               right: 0,
               child: Center(
-                child: GestureDetector(
-                  onTap: onFabTap,
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: colors.colorAccentPrimary,
-                      shape: BoxShape.circle,
-                      boxShadow: AppShadow.fab,
-                    ),
-                    child: const Icon(
-                      Icons.add_rounded,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                ),
+                child: _FabButton(onTap: onFabTap),
               ),
             ),
           ],
@@ -186,45 +170,109 @@ class _FloatingNavBar extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildTab(BuildContext context, int index) {
+// ── Tab Button with press animation ───────────────────────────
+
+class _TabButton extends StatefulWidget {
+  const _TabButton({
+    required this.tab,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _TabItem tab;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  State<_TabButton> createState() => _TabButtonState();
+}
+
+class _TabButtonState extends State<_TabButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
     final colors = context.colors;
-    final selected = index == currentIndex;
-    final tab = tabs[index];
     final accent = colors.colorAccentPrimary;
     final inactive = colors.colorTextTertiary;
+    final color = widget.selected ? accent : inactive;
 
     return Expanded(
       child: GestureDetector(
-        onTap: () => onTap(index),
+        onTap: widget.onTap,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
         behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              tab.icon,
-              size: 20,
-              color: selected ? accent : inactive,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              tab.label.toUpperCase(),
-              style: AppTextStyles.overline(selected ? accent : inactive).copyWith(fontSize: 8, letterSpacing: 0.5),
-            ),
-
-            const SizedBox(height: 3),
-
-            // Dot indicator
-            AnimatedContainer(
-              duration: AppDuration.fast,
-              width: selected ? 4 : 0,
-              height: selected ? 4 : 0,
-              decoration: BoxDecoration(
-                color: accent,
-                shape: BoxShape.circle,
+        child: AnimatedScale(
+          scale: _pressed ? 0.94 : 1.0,
+          duration: const Duration(milliseconds: 80),
+          curve: Curves.easeIn,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                widget.tab.icon,
+                size: 22,
+                color: color,
               ),
-            ),
-          ],
+              const SizedBox(height: 3),
+              Text(
+                widget.tab.label.toUpperCase(),
+                style: AppTextStyles.labelS(color).copyWith(
+                  fontWeight:
+                      widget.selected ? FontWeight.w700 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── FAB Button with press animation ───────────────────────────
+
+class _FabButton extends StatefulWidget {
+  const _FabButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  State<_FabButton> createState() => _FabButtonState();
+}
+
+class _FabButtonState extends State<_FabButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 80),
+        curve: Curves.easeIn,
+        child: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: colors.colorAccentPrimary,
+            shape: BoxShape.circle,
+            boxShadow: AppShadow.fab,
+          ),
+          child: const Icon(
+            Icons.add_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
         ),
       ),
     );

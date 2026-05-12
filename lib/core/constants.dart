@@ -24,6 +24,12 @@ class AppConstants {
     return key;
   }
 
+  static String get razorpayKeyId {
+    final key = dotenv.env['RAZORPAY_KEY_ID'] ?? '';
+    if (key.isEmpty) throw Exception('RAZORPAY_KEY_ID not set in .env file');
+    return key;
+  }
+
   static const String redirectUrl = 'com.courtside.app://login-callback';
 
   static const String sportBasketball = 'basketball';

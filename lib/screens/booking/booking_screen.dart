@@ -13,6 +13,8 @@ import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../models/fake_data.dart';
 import '../../providers/booking_flow_provider.dart';
+import '../../providers/booking_provider.dart';
+import '../../providers/venue_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────
 class BookingScreen extends ConsumerStatefulWidget {
@@ -37,22 +39,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   Court?   _selectedCourt;     // null = "All courts" active in filter
   int      _durationMin = 60;
 
-  List<Court> get _courts =>
-      FakeData.courtsByVenueAndSport(widget.venueId, widget.sport);
-
-  // Slots for the currently focused court (or first court when All selected)
-  List<Slot> get _allSlots {
-    final courts = _courts;
-    if (courts.isEmpty) return [];
-    final court = _selectedCourt ?? courts.first;
-    return FakeData.slotsByCourtId(court.id);
-  }
-
-  // How many courts have a given slot available
-  int _availableCourtCount(Slot slot) {
+  // How many courts have a given slot available (approximation: all courts
+  // at this venue share the same time grid, so show total court count)
+  int _availableCourtCount(Slot slot, int totalCourts) {
     if (slot.status == SlotStatus.booked ||
         slot.status == SlotStatus.blocked) { return 0; }
-    return _courts.length;
+    return totalCourts;
   }
 
   static const _weekdays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -89,26 +81,25 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     }
   }
 
-  // Called when user taps an available slot chip
-  void _onSlotTapped(Slot slot) {
+  // Called when user taps an available slot chip.
+  // courts is passed from build() so this method stays pure.
+  void _onSlotTapped(Slot slot, List<Court> courts) {
     if (_selectedCourt != null) {
-      // Court already chosen → immediately confirm
       setState(() => _selectedSlot = slot);
     } else {
-      // "All courts" mode → ask user to pick a court first
       setState(() => _selectedSlot = slot);
-      _showCourtPicker(slot);
+      _showCourtPicker(slot, courts);
     }
   }
 
-  void _showCourtPicker(Slot slot) {
+  void _showCourtPicker(Slot slot, List<Court> courts) {
     final colors = context.colors;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _CourtPickerSheet(
-        courts:   _courts,
+        courts:   courts,
         slot:     slot,
         colors:   colors,
         onSelect: (court) {
@@ -141,11 +132,34 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors  = context.colors;
-    final botPad  = MediaQuery.of(context).padding.bottom;
-    final courts  = _courts;
-    final slots   = _allSlots;
-    final canBook = _selectedSlot != null && _selectedCourt != null;
+    final colors = context.colors;
+    final botPad = MediaQuery.of(context).padding.bottom;
+
+    // ── Load courts from Supabase ──────────────────────────────
+    final courtsAsync = ref.watch(venueCourtsProvider(
+      VenueCourtsParams(widget.venueId,
+          sport: widget.sport.isEmpty ? null : widget.sport),
+    ));
+    final courts = courtsAsync.valueOrNull ?? const <Court>[];
+
+    // ── Load slots for the active court + selected date ────────
+    final activeCourt = _selectedCourt ?? (courts.isNotEmpty ? courts.first : null);
+    final slotsAsync  = activeCourt != null
+        ? ref.watch(slotsProvider(SlotsParams(activeCourt.id, _selectedDate)))
+        : const AsyncValue<List<Slot>>.data([]);
+    final slots    = slotsAsync.valueOrNull ?? const <Slot>[];
+    final canBook  = _selectedSlot != null && _selectedCourt != null;
+    final courtCount = courts.length;
+
+    // Loading state — courts not yet fetched
+    if (courtsAsync is AsyncLoading) {
+      return Scaffold(
+        backgroundColor: colors.colorBackgroundPrimary,
+        body: Center(
+          child: CircularProgressIndicator(color: colors.colorAccentPrimary),
+        ),
+      );
+    }
 
     if (courts.isEmpty) {
       return Scaffold(
@@ -174,10 +188,10 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               // ── Date strip ───────────────────────────────────────
               SliverToBoxAdapter(
                 child: _DateStrip(
-                  selectedDate:    _selectedDate,
-                  onDateSelected:  (d) => setState(() {
-                    _selectedDate  = d;
-                    _selectedSlot  = null;
+                  selectedDate:   _selectedDate,
+                  onDateSelected: (d) => setState(() {
+                    _selectedDate = d;
+                    _selectedSlot = null;
                   }),
                   months:   _months,
                   weekdays: _weekdays,
@@ -230,36 +244,56 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (morningSlots.isNotEmpty) ...[
-                        _SlotGroupLabel('MORNING', colors),
-                        const SizedBox(height: AppSpacing.sm),
-                        _SlotGrid(
-                          slots:       morningSlots,
-                          selectedId:  _selectedSlot?.id,
-                          price:       courts.first.pricePerSlot,
-                          colors:      colors,
-                          courtCount:  _availableCourtCount,
-                          onSelect:    _onSlotTapped,
+                  child: slotsAsync is AsyncLoading
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.xxxl),
+                            child: CircularProgressIndicator(
+                                color: colors.colorAccentPrimary),
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (morningSlots.isNotEmpty) ...[
+                              _SlotGroupLabel('MORNING', colors),
+                              const SizedBox(height: AppSpacing.sm),
+                              _SlotGrid(
+                                slots:      morningSlots,
+                                selectedId: _selectedSlot?.id,
+                                price:      courts.first.pricePerSlot,
+                                colors:     colors,
+                                courtCount: (s) => _availableCourtCount(s, courtCount),
+                                onSelect:   (s) => _onSlotTapped(s, courts),
+                              ),
+                              const SizedBox(height: AppSpacing.xl),
+                            ],
+                            if (eveningSlots.isNotEmpty) ...[
+                              _SlotGroupLabel('EVENING', colors),
+                              const SizedBox(height: AppSpacing.sm),
+                              _SlotGrid(
+                                slots:      eveningSlots,
+                                selectedId: _selectedSlot?.id,
+                                price:      courts.first.pricePerSlot,
+                                colors:     colors,
+                                courtCount: (s) => _availableCourtCount(s, courtCount),
+                                onSelect:   (s) => _onSlotTapped(s, courts),
+                              ),
+                            ],
+                            if (slots.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: AppSpacing.xxxl),
+                                child: Center(
+                                  child: Text(
+                                    'No slots available for this date.',
+                                    style: AppTextStyles.bodyM(
+                                        colors.colorTextTertiary),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                        const SizedBox(height: AppSpacing.xl),
-                      ],
-                      if (eveningSlots.isNotEmpty) ...[
-                        _SlotGroupLabel('EVENING', colors),
-                        const SizedBox(height: AppSpacing.sm),
-                        _SlotGrid(
-                          slots:       eveningSlots,
-                          selectedId:  _selectedSlot?.id,
-                          price:       courts.first.pricePerSlot,
-                          colors:      colors,
-                          courtCount:  _availableCourtCount,
-                          onSelect:    _onSlotTapped,
-                        ),
-                      ],
-                    ],
-                  ),
                 ),
               ),
 

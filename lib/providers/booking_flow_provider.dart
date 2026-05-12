@@ -42,6 +42,7 @@ class BookingFlowState {
     this.isPublicGame = false,
     this.playerLimit = 10,
     this.skillLevel = SkillLevel.all,
+    this.phoneScoringEnabled = false,
   });
 
   final String venueId;
@@ -56,11 +57,15 @@ class BookingFlowState {
   final bool isPublicGame;
   final int playerLimit;
   final SkillLevel skillLevel;
+  final bool phoneScoringEnabled;
+
+  static const int phoneScoringFee = 9;
 
   int get courtTotal => court?.pricePerSlot ?? 0;
   int get shopTotal  => cartItems.fold(0, (s, i) => s + i.subtotal);
   int get hwTotal    => hardware?.pricePerGame ?? 0;
-  int get grandTotal => courtTotal + shopTotal + hwTotal;
+  int get grandTotal =>
+      courtTotal + shopTotal + hwTotal + (phoneScoringEnabled ? phoneScoringFee : 0);
 
   BookingFlowState copyWith({
     String? venueId,
@@ -76,20 +81,22 @@ class BookingFlowState {
     bool? isPublicGame,
     int? playerLimit,
     SkillLevel? skillLevel,
+    bool? phoneScoringEnabled,
   }) {
     return BookingFlowState(
-      venueId:          venueId          ?? this.venueId,
-      sport:            sport            ?? this.sport,
-      venue:            venue            ?? this.venue,
-      court:            court            ?? this.court,
-      slot:             slot             ?? this.slot,
-      date:             date             ?? this.date,
-      invitedFriendIds: invitedFriendIds ?? this.invitedFriendIds,
-      cartItems:        cartItems        ?? this.cartItems,
-      hardware:         clearHardware ? null : (hardware ?? this.hardware),
-      isPublicGame:     isPublicGame     ?? this.isPublicGame,
-      playerLimit:      playerLimit      ?? this.playerLimit,
-      skillLevel:       skillLevel       ?? this.skillLevel,
+      venueId:              venueId              ?? this.venueId,
+      sport:                sport                ?? this.sport,
+      venue:                venue                ?? this.venue,
+      court:                court                ?? this.court,
+      slot:                 slot                 ?? this.slot,
+      date:                 date                 ?? this.date,
+      invitedFriendIds:     invitedFriendIds     ?? this.invitedFriendIds,
+      cartItems:            cartItems            ?? this.cartItems,
+      hardware:             clearHardware ? null : (hardware ?? this.hardware),
+      isPublicGame:         isPublicGame         ?? this.isPublicGame,
+      playerLimit:          playerLimit          ?? this.playerLimit,
+      skillLevel:           skillLevel           ?? this.skillLevel,
+      phoneScoringEnabled:  phoneScoringEnabled  ?? this.phoneScoringEnabled,
     );
   }
 }
@@ -173,6 +180,11 @@ class BookingFlowNotifier extends Notifier<BookingFlowState> {
     }
     return 0;
   }
+
+  // ── Phone scoring upsell ─────────────────────────────────────
+
+  void setPhoneScoring(bool enabled) =>
+      state = state.copyWith(phoneScoringEnabled: enabled);
 
   // ── Step 3: Hardware ─────────────────────────────────────────
 

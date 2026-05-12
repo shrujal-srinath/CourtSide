@@ -1,4 +1,4 @@
-# COURTSIDE — CLAUDE.md
+# COURTSIDE — AGENTS.md
 
 > **Read this top to bottom before your first response in any new chat.**
 > The product sections (1–5) matter more than the rules (6–12).
@@ -56,7 +56,7 @@ The scoring surfaces are not a feature — they are the **wedge**. Everything el
 
 # 2. GLOSSARY — words that mean specific things here
 
-**Always interpret these words using these definitions.** Most of Claude's worst mistakes on this codebase have been from pattern-matching generic meanings. The real example that triggered this file: Claude was asked to "design the court booking screen that lets the user select the court" and drew a basketball court graphic. "Court" in this product is a bookable sub-unit, not a sport surface.
+**Always interpret these words using these definitions.** Most of Codex's worst mistakes on this codebase have been from pattern-matching generic meanings. The real example that triggered this file: Codex was asked to "design the court booking screen that lets the user select the court" and drew a basketball court graphic. "Court" in this product is a bookable sub-unit, not a sport surface.
 
 | Word | Means in Courtside | Does NOT mean |
 |---|---|---|
@@ -150,7 +150,7 @@ These are the non-negotiables. If a prompt or idea conflicts with one of these, 
 
 ## About me (Shrujal)
 
-I'm a student at BMSCE, Bengaluru. I'm the product owner and solo builder of Courtside. **I am not an experienced software developer.** I'm a product person using Claude Code as my engineering and design team.
+I'm a student at BMSCE, Bengaluru. I'm the product owner and solo builder of Courtside. **I am not an experienced software developer.** I'm a product person using Codex as my engineering and design team.
 
 ## How I prompt
 
@@ -195,7 +195,7 @@ When you assume, state the assumption in one line at the top of your response ("
 
 ## The #9 failure mode — don't repeat this
 
-Real example: I asked for "the court booking screen that lets the user select the court." Claude drew a basketball court graphic with zones and lines. What I meant: a UI for selecting Court 1 vs Court 2 inside a venue — a list, cards, or picker.
+Real example: I asked for "the court booking screen that lets the user select the court." Codex drew a basketball court graphic with zones and lines. What I meant: a UI for selecting Court 1 vs Court 2 inside a venue — a list, cards, or picker.
 
 **Prevention:** before drawing anything, check the glossary (section 2). If the request touches a glossary term, re-read the definition. If still unsure, ask.
 

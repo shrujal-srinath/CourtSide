@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../models/fake_data.dart';
 import '../../providers/booking_flow_provider.dart' show bookingFlowProvider, SkillLevel;
 import '../../providers/cart_provider.dart';
 import '../../providers/confirmed_bookings_provider.dart';
+import '../../services/booking_service.dart';
 import 'booking_step_widgets.dart';
 
 class BookingCartScreen extends ConsumerStatefulWidget {
@@ -23,10 +25,7 @@ class BookingCartScreen extends ConsumerStatefulWidget {
 
 class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
   bool _loading = false;
-  bool _phoneScoring = false; // ₹9 upsell
   late final Razorpay _razorpay;
-
-  static const _razorpayKey = 'rzp_test_Sbka87EhdmeNsc';
 
   static const _months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -38,7 +37,7 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
     super.initState();
     _razorpay = Razorpay();
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _onPaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _onPaymentError);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR,   _onPaymentError);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _onExternalWallet);
   }
 
@@ -57,29 +56,86 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
     }
   }
 
+  // ── Payment handlers ────────────────────────────────────────
+
   void _onPaymentSuccess(PaymentSuccessResponse response) {
     if (!mounted) return;
-    final flow = ref.read(bookingFlowProvider);
-    final date = flow.date;
-    final slot = flow.slot;
-    final venue = flow.venue;
+    setState(() => _loading = true);
+    _handlePostPayment(response);
+  }
 
-    // Add to confirmed bookings so My Bookings reflects it
-    ref.read(confirmedBookingsProvider.notifier).add(BookingRecord(
-      id: response.paymentId ?? 'rzp_${DateTime.now().millisecondsSinceEpoch}',
-      venueName: venue?.name ?? 'Venue',
-      sport: flow.sport,
-      date: date != null ? '${date.day} ${_months[date.month - 1]}' : 'Today',
-      timeSlot: slot?.startTime ?? '',
-      amount: flow.grandTotal,
-      status: BookingStatus.upcoming,
-      hasStats: false,
-    ));
+  Future<void> _handlePostPayment(PaymentSuccessResponse response) async {
+    final flow   = ref.read(bookingFlowProvider);
+    final slot   = flow.slot;
+    final court  = flow.court;
+    final venue  = flow.venue;
+    final date   = flow.date;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+
+    BookingRecord? confirmedRecord;
+
+    if (userId != null && slot != null && court != null && venue != null && date != null) {
+      final timeSlot = '${slot.startTime}–${slot.endTime}';
+
+      final result = await BookingService().createBooking(
+        slotId:               slot.id,
+        courtId:              court.id,
+        venueId:              venue.id,
+        venueName:            venue.name,
+        sport:                flow.sport,
+        amountPaid:           flow.grandTotal,
+        paymentId:            response.paymentId ?? '',
+        userId:               userId,
+        timeSlot:             timeSlot,
+        phoneScoringEnabled:  flow.phoneScoringEnabled,
+        hardwareOptionId:     flow.hardware?.id,
+        isPublicGame:         flow.isPublicGame,
+        playerLimit:          flow.playerLimit,
+      );
+
+      if (!mounted) return;
+
+      if (result is BookingSuccess) {
+        confirmedRecord = BookingRecord(
+          id:        result.bookingId,
+          venueName: venue.name,
+          sport:     flow.sport,
+          date:      '${date.day} ${_months[date.month - 1]}',
+          timeSlot:  timeSlot,
+          amount:    flow.grandTotal,
+          status:    BookingStatus.upcoming,
+          hasStats:  false,
+        );
+      } else {
+        final failure = result as BookingFailure;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            failure.isSlotTaken
+                ? failure.message
+                : 'Payment received, but booking failed.\n'
+                  'Save your payment ID: ${response.paymentId ?? ''}.\n'
+                  'Contact support — you will not be charged.',
+          ),
+          backgroundColor: context.colors.colorError,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 8),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md)),
+        ));
+      }
+    }
+
+    if (!mounted) return;
+
+    if (confirmedRecord != null) {
+      ref.read(confirmedBookingsProvider.notifier).add(confirmedRecord);
+    }
 
     ref.read(bookingFlowProvider.notifier).reset();
     context.go(AppRoutes.home);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+
+    if (confirmedRecord != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
           'Booking confirmed! See you on the court.',
           style: AppTextStyles.bodyM(context.colors.colorTextPrimary),
@@ -89,26 +145,25 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md)),
         duration: const Duration(seconds: 4),
-      ),
-    );
-    setState(() => _loading = false);
+      ));
+    }
+
+    if (mounted) setState(() => _loading = false);
   }
 
   void _onPaymentError(PaymentFailureResponse response) {
     if (!mounted) return;
     setState(() => _loading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Payment failed: ${response.message ?? 'Please try again.'}',
-          style: AppTextStyles.bodyM(context.colors.colorTextPrimary),
-        ),
-        backgroundColor: context.colors.colorError,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md)),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        'Payment failed: ${response.message ?? 'Please try again.'}',
+        style: AppTextStyles.bodyM(context.colors.colorTextPrimary),
       ),
-    );
+      backgroundColor: context.colors.colorError,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md)),
+    ));
   }
 
   void _onExternalWallet(ExternalWalletResponse response) {
@@ -117,34 +172,31 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
   }
 
   void _confirmBooking() {
-    final flow = ref.read(bookingFlowProvider);
+    final flow  = ref.read(bookingFlowProvider);
     final venue = flow.venue;
     setState(() => _loading = true);
 
     final options = <String, dynamic>{
-      'key': _razorpayKey,
-      'amount': flow.grandTotal * 100, // Razorpay expects paise
-      'name': 'Courtside',
+      'key':         AppConstants.razorpayKeyId,
+      'amount':      flow.grandTotal * 100, // Razorpay expects paise
+      'name':        'Courtside',
       'description': '${venue?.name ?? 'Court'} · ${flow.slot?.startTime ?? ''}',
-      'prefill': {
-        'contact': '',
-        'email': '',
-      },
-      'theme': {'color': '#E8112D'},
+      'prefill':     {'contact': '', 'email': ''},
+      'theme':       {'color': '#E8112D'},
     };
     _razorpay.open(options);
   }
 
   @override
   Widget build(BuildContext context) {
-    final flow      = ref.watch(bookingFlowProvider);
-    final shopCart  = ref.watch(cartProvider);
-    final colors    = context.colors;
-    final botPad    = MediaQuery.of(context).padding.bottom;
-    final date   = flow.date;
-    final slot   = flow.slot;
-    final court  = flow.court;
-    final venue  = flow.venue;
+    final flow     = ref.watch(bookingFlowProvider);
+    final shopCart = ref.watch(cartProvider);
+    final colors   = context.colors;
+    final botPad   = MediaQuery.of(context).padding.bottom;
+    final date     = flow.date;
+    final slot     = flow.slot;
+    final court    = flow.court;
+    final venue    = flow.venue;
 
     return Scaffold(
       backgroundColor: colors.colorBackgroundPrimary,
@@ -162,32 +214,33 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
                   AppSpacing.lg, AppSpacing.sm, AppSpacing.lg,
                   botPad + AppSpacing.xxl + 80),
               children: [
-                // ── Court booking ──────────────────────────────────
+
+                // ── Court booking ────────────────────────────────
                 _SectionLabel(label: 'COURT BOOKING', colors: colors),
                 _CartSection(colors: colors, child: Column(
                   children: [
                     if (venue != null)
                       _CartRow(
-                        icon: Icons.location_on_rounded,
+                        icon:  Icons.location_on_rounded,
                         label: venue.name,
-                        sub: venue.area,
+                        sub:   venue.area,
                         colors: colors,
                       ),
                     if (court != null) ...[
                       const _Divider(),
                       _CartRow(
-                        icon: Icons.sports_basketball_rounded,
+                        icon:  Icons.sports_basketball_rounded,
                         label: court.name,
-                        sub: '${court.surface} · ${court.isIndoor ? "Indoor" : "Outdoor"}',
+                        sub:   '${court.surface} · ${court.isIndoor ? "Indoor" : "Outdoor"}',
                         colors: colors,
                       ),
                     ],
                     if (date != null && slot != null) ...[
                       const _Divider(),
                       _CartRow(
-                        icon: Icons.calendar_today_rounded,
+                        icon:  Icons.calendar_today_rounded,
                         label: '${date.day} ${_months[date.month - 1]} · ${slot.startTime} – ${slot.endTime}',
-                        sub: '${court?.slotDurationMin ?? 45} min session',
+                        sub:   '${court?.slotDurationMin ?? 45} min session',
                         colors: colors,
                         trailing: '₹${flow.courtTotal}',
                         trailingStyle: AppTextStyles.headingS(colors.colorTextPrimary),
@@ -197,16 +250,16 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
                 )),
                 const SizedBox(height: AppSpacing.md),
 
-                // ── Game settings ──────────────────────────────────
+                // ── Game settings ────────────────────────────────
                 _SectionLabel(label: 'GAME SETTINGS', colors: colors),
                 _CartSection(colors: colors, child: Column(
                   children: [
                     _CartRow(
-                      icon: flow.isPublicGame
+                      icon:  flow.isPublicGame
                           ? Icons.public_rounded
                           : Icons.lock_rounded,
                       label: flow.isPublicGame ? 'Public Game' : 'Private Game',
-                      sub: flow.isPublicGame
+                      sub:   flow.isPublicGame
                           ? 'Up to ${flow.playerLimit} players · ${_skillLabel(flow.skillLevel)}'
                           : 'Invite-only',
                       colors: colors,
@@ -214,9 +267,9 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
                     if (flow.invitedFriendIds.isNotEmpty) ...[
                       const _Divider(),
                       _CartRow(
-                        icon: Icons.group_rounded,
+                        icon:  Icons.group_rounded,
                         label: '${flow.invitedFriendIds.length} friend${flow.invitedFriendIds.length == 1 ? '' : 's'} invited',
-                        sub: flow.invitedFriendIds.map((id) {
+                        sub:   flow.invitedFriendIds.map((id) {
                           final f = fakeFriends.where((f) => f.id == id).firstOrNull;
                           return f?.name.split(' ').first ?? '';
                         }).where((n) => n.isNotEmpty).join(', '),
@@ -227,78 +280,75 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
                 )),
                 const SizedBox(height: AppSpacing.md),
 
-                // ── Friends detailed list ──────────────────────────
+                // ── Players ──────────────────────────────────────
                 if (flow.invitedFriendIds.isNotEmpty) ...[
                   _SectionLabel(label: 'PLAYERS', colors: colors),
                   _CartSection(colors: colors, child: Column(
                     children: flow.invitedFriendIds.asMap().entries.map((e) {
-                      final idx = e.key;
-                      final id  = e.value;
+                      final idx    = e.key;
+                      final id     = e.value;
                       final friend = fakeFriends.where((f) => f.id == id).firstOrNull;
                       if (friend == null) return const SizedBox.shrink();
-                      return Column(
-                        children: [
-                          if (idx > 0) const _Divider(),
-                          _CartRow(
-                            label: friend.name,
-                            sub: friend.username,
-                            colors: colors,
-                            avatarText: friend.avatarInitials,
-                          ),
-                        ],
-                      );
+                      return Column(children: [
+                        if (idx > 0) const _Divider(),
+                        _CartRow(
+                          label:      friend.name,
+                          sub:        friend.username,
+                          colors:     colors,
+                          avatarText: friend.avatarInitials,
+                        ),
+                      ]);
                     }).toList(),
                   )),
                   const SizedBox(height: AppSpacing.md),
                 ],
 
-                // ── Shop items ─────────────────────────────────────
+                // ── Shop items ───────────────────────────────────
                 if (shopCart.productCount > 0) ...[
                   _SectionLabel(label: 'ITEMS', colors: colors),
                   _CartSection(colors: colors, child: Column(
                     children: shopCart.products.asMap().entries.map((e) {
                       final idx  = e.key;
                       final item = e.value;
-                      return Column(
-                        children: [
-                          if (idx > 0) const _Divider(),
-                          _CartRow(
-                            label: '${item.name} ×${item.quantity}',
-                            sub: item.imageUrl,
-                            colors: colors,
-                            trailing: '₹${item.total}',
-                            trailingStyle: AppTextStyles.bodyM(colors.colorTextSecondary),
-                          ),
-                        ],
-                      );
+                      return Column(children: [
+                        if (idx > 0) const _Divider(),
+                        _CartRow(
+                          label:         '${item.name} ×${item.quantity}',
+                          sub:           item.imageUrl,
+                          colors:        colors,
+                          trailing:      '₹${item.total}',
+                          trailingStyle: AppTextStyles.bodyM(colors.colorTextSecondary),
+                        ),
+                      ]);
                     }).toList(),
                   )),
                   const SizedBox(height: AppSpacing.md),
                 ],
 
-                // ── Hardware ───────────────────────────────────────
+                // ── Hardware ─────────────────────────────────────
                 if (flow.hardware != null) ...[
                   _SectionLabel(label: 'HARDWARE RENTAL', colors: colors),
                   _CartSection(colors: colors, child: _CartRow(
-                    label: flow.hardware!.name,
-                    sub: 'For this game',
-                    colors: colors,
-                    iconEmoji: flow.hardware!.icon,
-                    trailing: '₹${flow.hwTotal}',
+                    label:         flow.hardware!.name,
+                    sub:           'For this game',
+                    colors:        colors,
+                    iconEmoji:     flow.hardware!.icon,
+                    trailing:      '₹${flow.hwTotal}',
                     trailingStyle: AppTextStyles.bodyM(colors.colorTextSecondary),
                   )),
                   const SizedBox(height: AppSpacing.md),
                 ],
 
-                // ── Phone scoring upsell ──────────────────────────
+                // ── Phone scoring upsell ─────────────────────────
                 _PhoneScoringUpsell(
-                  isAdded: _phoneScoring,
-                  colors:  colors,
-                  onToggle: (v) => setState(() => _phoneScoring = v),
+                  isAdded:  flow.phoneScoringEnabled,
+                  colors:   colors,
+                  onToggle: (v) =>
+                      ref.read(bookingFlowProvider.notifier).setPhoneScoring(v),
                 ),
                 const SizedBox(height: AppSpacing.md),
 
-                // ── Total ──────────────────────────────────────────
+                // ── Total ────────────────────────────────────────
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
@@ -314,7 +364,7 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
                     children: [
                       Text('Total to pay',
                           style: AppTextStyles.headingM(colors.colorTextPrimary)),
-                      Text('₹${flow.courtTotal + flow.hwTotal + shopCart.products.fold(0, (s, i) => s + i.total) + (_phoneScoring ? 9 : 0)}',
+                      Text('₹${flow.grandTotal}',
                           style: AppTextStyles.displayS(colors.colorAccentPrimary)),
                     ],
                   ),
@@ -325,11 +375,11 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
         ],
       ),
       bottomNavigationBar: BookingStepFooter(
-        label: _loading ? '' : 'Confirm & Pay · ₹${flow.courtTotal + flow.hwTotal + shopCart.products.fold(0, (s, i) => s + i.total) + (_phoneScoring ? 9 : 0)}',
-        colors: colors,
-        botPad: botPad,
+        label:     _loading ? '' : 'Confirm & Pay · ₹${flow.grandTotal}',
+        colors:    colors,
+        botPad:    botPad,
         isLoading: _loading,
-        onTap: _confirmBooking,
+        onTap:     _confirmBooking,
       ),
     );
   }
@@ -346,7 +396,7 @@ class _CartSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: colors.colorSurfacePrimary,
+        color:        colors.colorSurfacePrimary,
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
       ),
@@ -361,10 +411,10 @@ class _Divider extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Divider(
-      height: 1,
+      height:    1,
       thickness: 0.5,
-      color: colors.colorBorderSubtle,
-      indent: AppSpacing.lg,
+      color:     colors.colorBorderSubtle,
+      indent:    AppSpacing.lg,
       endIndent: AppSpacing.lg,
     );
   }
@@ -396,22 +446,21 @@ class _CartRow extends StatelessWidget {
     this.trailingStyle,
   });
 
-  final String label;
-  final String sub;
+  final String         label;
+  final String         sub;
   final AppColorScheme colors;
-  final IconData? icon;
-  final String? iconEmoji;
-  final String? avatarText;
-  final String? trailing;
-  final TextStyle? trailingStyle;
+  final IconData?      icon;
+  final String?        iconEmoji;
+  final String?        avatarText;
+  final String?        trailing;
+  final TextStyle?     trailingStyle;
 
   @override
   Widget build(BuildContext context) {
     Widget leading;
     if (avatarText != null) {
       leading = Container(
-        width: 36,
-        height: 36,
+        width: 36, height: 36,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: colors.colorSurfaceElevated,
@@ -424,7 +473,8 @@ class _CartRow extends StatelessWidget {
     } else if (iconEmoji != null) {
       leading = Text(iconEmoji!, style: const TextStyle(fontSize: 20));
     } else {
-      leading = Icon(icon ?? Icons.circle, color: colors.colorTextTertiary, size: 18);
+      leading = Icon(icon ?? Icons.circle,
+          color: colors.colorTextTertiary, size: 18);
     }
 
     return Padding(
@@ -455,7 +505,6 @@ class _CartRow extends StatelessWidget {
   }
 }
 
-// Extension for null-safe firstOrNull without collection package
 extension _ListX<T> on Iterable<T> {
   T? get firstOrNull {
     final it = iterator;
@@ -464,7 +513,7 @@ extension _ListX<T> on Iterable<T> {
 }
 
 // ─────────────────────────────────────────────────────────────────
-//  PHONE SCORING UPSELL — Zomato-style opt-in widget
+//  PHONE SCORING UPSELL
 // ─────────────────────────────────────────────────────────────────
 
 class _PhoneScoringUpsell extends StatelessWidget {
@@ -474,8 +523,8 @@ class _PhoneScoringUpsell extends StatelessWidget {
     required this.onToggle,
   });
 
-  final bool             isAdded;
-  final AppColorScheme   colors;
+  final bool               isAdded;
+  final AppColorScheme     colors;
   final ValueChanged<bool> onToggle;
 
   @override
@@ -503,14 +552,11 @@ class _PhoneScoringUpsell extends StatelessWidget {
           Container(
             width: 42, height: 42,
             decoration: BoxDecoration(
-              color: colors.colorInfo.withValues(alpha: 0.12),
+              color:        colors.colorInfo.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: Icon(
-              Icons.scoreboard_outlined,
-              size: 20,
-              color: colors.colorInfo,
-            ),
+            child: Icon(Icons.scoreboard_outlined,
+                size: 20, color: colors.colorInfo),
           ),
           const SizedBox(width: AppSpacing.md),
 
@@ -519,26 +565,25 @@ class _PhoneScoringUpsell extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text('Phone Scoring',
-                        style: AppTextStyles.headingS(colors.colorTextPrimary)),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: colors.colorInfo.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                        border: Border.all(
-                            color: colors.colorInfo.withValues(alpha: 0.25),
-                            width: 0.5),
-                      ),
-                      child: Text('₹9',
-                          style: AppTextStyles.labelS(colors.colorInfo)
-                              .copyWith(fontSize: 9)),
+                Row(children: [
+                  Text('Phone Scoring',
+                      style: AppTextStyles.headingS(colors.colorTextPrimary)),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color:        colors.colorInfo.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(
+                          color: colors.colorInfo.withValues(alpha: 0.25),
+                          width: 0.5),
                     ),
-                  ],
-                ),
+                    child: Text('₹9',
+                        style: AppTextStyles.labelS(colors.colorInfo)
+                            .copyWith(fontSize: 9)),
+                  ),
+                ]),
                 const SizedBox(height: 2),
                 Text(
                   'Track live scores, stats & highlights\ndirectly on your phone during the game.',

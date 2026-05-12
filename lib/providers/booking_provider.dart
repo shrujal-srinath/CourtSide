@@ -1,13 +1,14 @@
 // lib/providers/booking_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/fake_data.dart';
-import '../services/courtside_booking_service.dart';
+import '../models/court.dart';
+import '../models/booking_record.dart';
+import '../services/booking_service.dart';
 
 // ── Service singleton ──────────────────────────────────────────
 
-final _bookingServiceProvider =
-    Provider<CourtsideBookingService>((_) => CourtsideBookingService());
+final bookingServiceProvider =
+    Provider<BookingService>((_) => BookingService());
 
 // ── Slots for a court on a date ────────────────────────────────
 
@@ -30,12 +31,22 @@ class SlotsParams {
 
 final slotsProvider = FutureProvider.family<List<Slot>, SlotsParams>(
   (ref, params) => ref
-      .read(_bookingServiceProvider)
+      .read(bookingServiceProvider)
       .getSlotsByCourtAndDate(params.courtId, params.date),
 );
 
 // ── My bookings ────────────────────────────────────────────────
 
 final myBookingsProvider = FutureProvider<List<BookingRecord>>(
-  (ref) => ref.read(_bookingServiceProvider).getMyBookings(),
+  (ref) => ref.read(bookingServiceProvider).getMyBookings(),
+);
+
+// ── Upcoming bookings (for home Next Game card) ────────────────
+
+final upcomingBookingsProvider = FutureProvider<List<BookingRecord>>(
+  (ref) => ref.read(bookingServiceProvider).getUpcomingBookings(),
+);
+
+final nextUpcomingBookingProvider = FutureProvider<BookingRecord?>(
+  (ref) => ref.read(bookingServiceProvider).getNextUpcomingBooking(),
 );

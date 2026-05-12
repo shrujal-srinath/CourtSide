@@ -1,6 +1,7 @@
 // lib/providers/venue_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/fake_data.dart';
 import '../services/venue_service.dart';
 
@@ -110,4 +111,19 @@ final exploreVenuesProvider = FutureProvider<List<Venue>>((ref) async {
   final all = await service.getNearbyVenues(12.9716, 77.5946, 50.0,
       sport: state.sport);
   return all;
+});
+
+// ── Court counts grouped by sport (for home sport chips) ──────
+
+final sportCourtCountsProvider = FutureProvider<Map<String, int>>((ref) async {
+  final rows = await Supabase.instance.client
+      .from('courts')
+      .select('sport')
+      .eq('is_active', true);
+  final counts = <String, int>{};
+  for (final row in rows) {
+    final sport = row['sport'] as String;
+    counts[sport] = (counts[sport] ?? 0) + 1;
+  }
+  return counts;
 });

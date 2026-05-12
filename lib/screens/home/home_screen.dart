@@ -11,11 +11,15 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
+import '../../core/time_utils.dart';
 import '../../models/fake_data.dart';
+import '../../models/pickup_game.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/booking_provider.dart';
+import '../../providers/pickup_provider.dart';
+import '../../providers/stats_provider.dart';
 import '../../providers/venue_provider.dart';
 import '../../widgets/common/cs_shimmer.dart';
-import '../../../app.dart' show themeModeProvider;
 
 // ── Sport config ────────────────────────────────────────────────
 
@@ -62,6 +66,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Venue? _displayedVenue;
   String _locationLabel = 'Koramangala, Bengaluru';
 
+  List<BookingRecord> _upcomingBookings = [];
+  List<PickupGame> _pickupGames = [];
+  List<Venue> _cachedVenues = [];
+
   static const _bengaluru = LatLng(12.9716, 77.5946);
 
   static const _neighborhoods = [
@@ -79,6 +87,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _initLocation();
+    _loadHomeData();
+  }
+
+  Future<void> _loadHomeData() async {
+    try {
+      final results = await Future.wait([
+        ref.read(upcomingBookingsProvider.future),
+        ref.read(allPickupGamesProvider.future),
+        ref.read(nearbyVenuesProvider(
+          const NearbyVenuesParams(12.9716, 77.5946, radiusKm: 50.0),
+        ).future),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _upcomingBookings = List<BookingRecord>.from(results[0] as List);
+        _pickupGames      = List<PickupGame>.from(results[1] as List);
+        _cachedVenues     = List<Venue>.from(results[2] as List);
+      });
+      _buildMarkersFiltered(_mapFilter);
+    } catch (_) {}
   }
 
   @override
@@ -178,9 +206,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     List<Venue> candidates;
     if (filter == 'pickup' || filter == 'community') {
-      candidates = FakeData.pickupGames
+      candidates = _pickupGames
           .map((g) {
-            try { return FakeData.venues.firstWhere((v) => v.id == g.venueId); }
+            try { return _cachedVenues.firstWhere((v) => v.id == g.venueId); }
             catch (_) { return null; }
           })
           .whereType<Venue>()
@@ -188,8 +216,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .toList();
     } else {
       candidates = filter == 'all'
-          ? FakeData.venues
-          : FakeData.venuesBySport(filter);
+          ? _cachedVenues
+          : _cachedVenues.where((v) => v.sports.contains(filter)).toList();
     }
 
     final inRadius = hasRadius
@@ -198,7 +226,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         : candidates.toSet();
 
     if (filter == 'pickup' || filter == 'community') {
-      for (final g in FakeData.pickupGames) {
+      for (final g in _pickupGames) {
         final venue = inRadius.where((v) => v.id == g.venueId).firstOrNull;
         if (venue == null) continue;
         markers.add(Marker(
@@ -260,14 +288,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _selectSport(String sport) => context.push(AppRoutes.sportById(sport));
 
+  BookingRecord? _nextBooking() => _upcomingBookings.firstOrNull;
+
   Widget _buildScoringBanner(BuildContext context) {
     final colors = context.colors;
     final now = DateTime.now();
     
     // Find upcoming booking within 1h before or 3h after
-    final windowBooking = FakeData.bookingHistory.where((b) {
-      if (b.status != BookingStatus.upcoming) return false;
-      final time = FakeData.parseBookingTime(b.date, b.timeSlot);
+    final windowBooking = _upcomingBookings.where((b) {
+      final time = TimeUtils.parseBookingTime(b.date, b.timeSlot);
       if (time == null) return false;
       final diff = time.difference(now);
       return diff.inHours <= 1 && diff.inHours >= -3;
@@ -385,28 +414,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       ),
 
+                      // Your Next Game — most important home primitive
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg, AppSpacing.sm,
+                            AppSpacing.lg, AppSpacing.xs),
+                        child: _NextGameCard(booking: _nextBooking()),
+                      ),
+
                       _buildScoringBanner(context),
 
-                      const SizedBox(height: AppSpacing.md),
-
                       _SectionHeader(
-                        title: 'LIVE NOW',
+                        title: 'Live now',
                         onSeeAll: () {},
+                        showSeeAll: false,
                       ),
 
                       _HomeCarousel(
                         userLocation: _userLocation,
                         markers: _markers,
                         mapStyle: _mapStyle,
+                        upcomingBookings: _upcomingBookings,
                         onExpandMap: () =>
                             setState(() => _mapExpanded = true),
                       ),
 
-                      const SizedBox(height: AppSpacing.xl),
-
                       _SectionHeader(
-                        title: 'EXPLORE SPORTS',
+                        title: 'Find by sport',
                         onSeeAll: () {},
+                        showSeeAll: false,
                       ),
 
                       _SportChipRow(
@@ -414,19 +450,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         onSelect: _selectSport,
                       ),
 
-                      const SizedBox(height: AppSpacing.xl),
-
                       _SectionHeader(
-                        title: 'SHOP ESSENTIALS',
-                        onSeeAll: () => context.push(AppRoutes.marketplace),
-                      ),
-
-                      _ShopEssentialsRow(),
-
-                      const SizedBox(height: AppSpacing.xl),
-
-                      _SectionHeader(
-                        title: 'POPULAR NEAR YOU',
+                        title: 'Popular near you',
                         onSeeAll: () => context.go(AppRoutes.explore),
                       ),
 
@@ -437,16 +462,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         onSeeAll: () => context.go(AppRoutes.explore),
                       ),
 
-                      const SizedBox(height: AppSpacing.lg),
-                      _HostGameBanner(),
                       const SizedBox(height: AppSpacing.xl),
+                      _HostGameBanner(),
 
                       _SectionHeader(
-                        title: 'LATEST ACTIVITY',
+                        title: 'Latest activity',
                         onSeeAll: () {},
+                        showSeeAll: false,
                       ),
                       _CommunityFeed(
-                        bookings: FakeData.bookingHistory
+                        bookings: _upcomingBookings
                             .where((b) => b.hasStats)
                             .toList(),
                       ),
@@ -591,10 +616,8 @@ class _HomeHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors    = context.colors;
-    final themeMode = ref.watch(themeModeProvider);
-    final isDark    = themeMode == ThemeMode.dark;
-    final initials  = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'P';
+    final colors   = context.colors;
+    final initials = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'P';
     final locLabel  = locationLabel.length > 18
         ? '${locationLabel.substring(0, 15)}…'
         : locationLabel;
@@ -677,34 +700,9 @@ class _HomeHeader extends ConsumerWidget {
                 ],
               ),
 
-              // ── Right: theme toggle + bell ───────────────────────
+              // ── Right: bell ──────────────────────────────────────
               Row(
                 children: [
-                  // Theme toggle
-                  GestureDetector(
-                    onTap: () => ref
-                        .read(themeModeProvider.notifier)
-                        .setMode(isDark ? ThemeMode.light : ThemeMode.dark),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: colors.colorSurfacePrimary,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: colors.colorBorderSubtle, width: 0.5),
-                      ),
-                      child: Icon(
-                        isDark
-                            ? Icons.light_mode_rounded
-                            : Icons.dark_mode_rounded,
-                        color: colors.colorTextSecondary,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  // Notification bell
                   GestureDetector(
                     onTap: () => _showNotificationsSheet(context),
                     child: Container(
@@ -892,12 +890,14 @@ class _HomeCarousel extends StatefulWidget {
     required this.userLocation,
     required this.markers,
     required this.mapStyle,
+    required this.upcomingBookings,
     required this.onExpandMap,
   });
 
   final LatLng? userLocation;
   final Set<Marker> markers;
   final String? mapStyle;
+  final List<BookingRecord> upcomingBookings;
   final VoidCallback onExpandMap;
 
   @override
@@ -950,21 +950,16 @@ class _HomeCarouselState extends State<_HomeCarousel> {
   List<_CarouselPanel> _buildPanels() {
     final panels = <_CarouselPanel>[_CarouselPanel.map];
 
-    // Upcoming basketball booking → treat as "your game is happening"
-    final hasOngoingGame = FakeData.bookingHistory.any(
-      (b) => b.status == BookingStatus.upcoming && b.sport == 'basketball',
+    final hasOngoingGame = widget.upcomingBookings.any(
+      (b) => b.sport == 'basketball',
     );
     if (hasOngoingGame) panels.add(_CarouselPanel.ongoingGame);
 
-    // Hardcoded friend playing flag for now
-    const hasFriendPlaying = true;
-    if (hasFriendPlaying) panels.add(_CarouselPanel.friendGame);
+    // Friend panel is always shown (Phase 2 will wire real friend activity)
+    panels.add(_CarouselPanel.friendGame);
 
-    // Any completed booking → last game panel
-    final hasLastGame = FakeData.bookingHistory.any(
-      (b) => b.status == BookingStatus.completed,
-    );
-    if (hasLastGame) panels.add(_CarouselPanel.lastGame);
+    // Last game panel shown when stats are available
+    panels.add(_CarouselPanel.lastGame);
 
     return panels;
   }
@@ -1603,20 +1598,18 @@ class _FriendGamePanel extends StatelessWidget {
 //  LAST GAME PANEL
 // ═══════════════════════════════════════════════════════════════
 
-class _LastGamePanel extends StatelessWidget {
+class _LastGamePanel extends ConsumerWidget {
   const _LastGamePanel();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
 
-    // Pull PTS from FakeData basketball stats if available
-    final stat = FakeData.playerStats
-        .where((s) => s.sport == 'basketball')
-        .firstOrNull;
+    final statsAsync = ref.watch(myStatsBySportProvider('basketball'));
+    final stat = statsAsync.value;
     final pts = stat != null
-        ? '${(stat.stats['ppg'] as double).round()}'
-        : '24';
+        ? '${((stat.stats['ppg'] as num?)?.toDouble() ?? 0.0).round()}'
+        : '–';
 
     return Container(
       color: colors.colorSurfacePrimary,
@@ -1776,7 +1769,7 @@ class _StatDivider extends StatelessWidget {
 //  SPORT CHIP ROW  (2×2 dramatic sport grid)
 // ═══════════════════════════════════════════════════════════════
 
-class _SportChipRow extends StatelessWidget {
+class _SportChipRow extends ConsumerWidget {
   const _SportChipRow({
     required this.activeSport,
     required this.onSelect,
@@ -1793,20 +1786,13 @@ class _SportChipRow extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final countsAsync = ref.watch(sportCourtCountsProvider);
+    final counts = countsAsync.value ?? {};
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
-          child: Text(
-            'PICK A SPORT',
-            style: AppTextStyles.overline(colors.colorTextTertiary),
-          ),
-        ),
         SizedBox(
           height: 80,
           child: ListView.separated(
@@ -1818,9 +1804,7 @@ class _SportChipRow extends StatelessWidget {
             itemBuilder: (context, i) {
               final sport = _gridSports[i];
               final isActive = sport.id == activeSport;
-              final courtCount = FakeData.courts
-                  .where((c) => c.sport == sport.id)
-                  .length;
+              final courtCount = counts[sport.id] ?? 0;
               return _SportGridCard(
                 sport: sport,
                 isActive: isActive,
@@ -1974,7 +1958,7 @@ class _SportGridCardState extends State<_SportGridCard>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${widget.courtCount} courts',
+                        '${widget.courtCount} ${widget.courtCount == 1 ? 'court' : 'courts'}',
                         style: AppTextStyles.labelS(
                           isActive
                               ? sportColor.withValues(alpha: 0.80)
@@ -2013,43 +1997,24 @@ class _CourtsNearYouLive extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final loc = userLocation;
     if (loc == null) {
-      return _CourtsNearYou(
-        // FakeData fallback while location is loading
-        venues: FakeData.venues.take(6).toList(),
-        onVenueTap: onVenueTap,
-        onSeeAll: onSeeAll,
-      );
+      return const SizedBox(height: 230, child: _CourtsShimmer());
     }
 
     final params = NearbyVenuesParams(loc.latitude, loc.longitude, radiusKm: 15.0);
     final venuesAsync = ref.watch(nearbyVenuesProvider(params));
 
     return venuesAsync.when(
-      loading: () => const SizedBox(
-        height: 230,
-        child: _CourtsShimmer(),
-      ),
+      loading: () => const SizedBox(height: 230, child: _CourtsShimmer()),
       error: (e, _) => _CourtsNearYou(
-        // FakeData fallback on error — keep browsing working
-        venues: FakeData.venues.take(6).toList(),
+        venues: const [],
         onVenueTap: onVenueTap,
         onSeeAll: onSeeAll,
       ),
-      data: (venues) {
-        if (venues.isEmpty) {
-          return _CourtsNearYou(
-            // FakeData fallback when no live venues seeded nearby
-            venues: FakeData.venues.take(6).toList(),
-            onVenueTap: onVenueTap,
-            onSeeAll: onSeeAll,
-          );
-        }
-        return _CourtsNearYou(
-          venues: venues,
-          onVenueTap: onVenueTap,
-          onSeeAll: onSeeAll,
-        );
-      },
+      data: (venues) => _CourtsNearYou(
+        venues: venues,
+        onVenueTap: onVenueTap,
+        onSeeAll: onSeeAll,
+      ),
     );
   }
 }
@@ -2092,22 +2057,28 @@ class _CourtsNearYou extends StatelessWidget {
   final ValueChanged<Venue> onVenueTap;
   final VoidCallback onSeeAll;
 
+  int _availabilityScore(Venue v) => v.reviewCount; // sort by popularity until slot counts are embedded on Venue
+
   @override
   Widget build(BuildContext context) {
+    // Available venues first, Full ones last. Stable within each bucket.
+    final sorted = [...venues]..sort(
+        (a, b) => _availabilityScore(b).compareTo(_availabilityScore(a)),
+      );
     return SizedBox(
       height: 230,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        itemCount: venues.length + 1, // +1 for "See all" card
+        itemCount: sorted.length + 1, // +1 for "See all" card
         separatorBuilder: (ctx, i) => const SizedBox(width: AppSpacing.md),
         itemBuilder: (ctx, i) {
-          if (i == venues.length) {
+          if (i == sorted.length) {
             return _SeeAllCard(onTap: onSeeAll);
           }
           return _VenueCard(
-            venue: venues[i],
-            onTap: () => onVenueTap(venues[i]),
+            venue: sorted[i],
+            onTap: () => onVenueTap(sorted[i]),
           );
         },
       ),
@@ -2182,9 +2153,8 @@ class _VenueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final court  = FakeData.courts.where((c) => c.venueId == venue.id).firstOrNull;
-    final slots  = court?.slotsAvailableToday ?? 0;
-    final price  = court?.pricePerSlot ?? 0;
+    const slots  = 0; // loaded per-venue in Phase 2 via VenueService.getSlotsAvailableToday
+    const price  = 0;
     final primarySport = venue.sports.isNotEmpty ? venue.sports.first : 'basketball';
     final sportColor = _sportColor(primarySport);
 
@@ -2344,70 +2314,6 @@ class _VenueCard extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  SHOP ESSENTIALS
-// ═══════════════════════════════════════════════════════════════
-
-class _ShopEssentialsRow extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final products = FakeData.products.take(4).toList();
-
-    return SizedBox(
-      height: 140,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        scrollDirection: Axis.horizontal,
-        itemCount: products.length,
-        separatorBuilder: (c, i) => const SizedBox(width: AppSpacing.md),
-        itemBuilder: (context, index) {
-          final p = products[index];
-          return GestureDetector(
-            onTap: () => context.push(AppRoutes.productDetail(p.id)),
-            child: Container(
-              width: 120,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: colors.colorSurfacePrimary,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: colors.colorBorderSubtle, width: 1),
-                boxShadow: AppShadow.card,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: colors.colorBackgroundPrimary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(_getCategoryIcon(p.category), color: colors.colorAccentPrimary, size: 24),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(p.name, style: AppTextStyles.labelM(colors.colorTextPrimary), maxLines: 1),
-                  Text('₹${p.price}', style: AppTextStyles.headingS(colors.colorAccentPrimary)),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Football': return Icons.sports_soccer_rounded;
-      case 'Basketball': return Icons.sports_basketball_rounded;
-      case 'Badminton': return Icons.sports_tennis_rounded;
-      case 'Nutrition': return Icons.bolt_rounded;
-      default: return Icons.shopping_bag_outlined;
-    }
-  }
-}
 
 // ═══════════════════════════════════════════════════════════════
 //  COMMUNITY FEED
@@ -2862,30 +2768,54 @@ class _SportIconBadge extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, required this.onSeeAll});
+  const _SectionHeader({
+    required this.title,
+    required this.onSeeAll,
+    this.showSeeAll = true,
+  });
   final String title;
   final VoidCallback onSeeAll;
+  final bool showSeeAll;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
+          AppSpacing.lg, AppSpacing.xxl, AppSpacing.lg, AppSpacing.md),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            title.toUpperCase(),
-            style: AppTextStyles.overline(colors.colorTextSecondary),
+          Row(
+            children: [
+              Container(
+                width: 3,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: colors.colorAccentPrimary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                title,
+                style: AppTextStyles.headingM(colors.colorTextPrimary),
+              ),
+            ],
           ),
-          GestureDetector(
-            onTap: onSeeAll,
-            child: Text(
-              'See All',
-              style: AppTextStyles.labelS(colors.colorAccentPrimary),
+          if (showSeeAll)
+            GestureDetector(
+              onTap: onSeeAll,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  'See all',
+                  style: AppTextStyles.labelM(colors.colorTextSecondary),
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -3388,7 +3318,7 @@ class _NoCourtsChip extends StatelessWidget {
 //  VENUE QUICK CARD
 // ═══════════════════════════════════════════════════════════════
 
-class _VenueQuickCard extends StatelessWidget {
+class _VenueQuickCard extends ConsumerWidget {
   const _VenueQuickCard({
     required this.venue,
     required this.bottomPad,
@@ -3426,8 +3356,9 @@ class _VenueQuickCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final courts = FakeData.courtsByVenue(venue.id);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final courtsAsync = ref.watch(venueCourtsProvider(VenueCourtsParams(venue.id)));
+    final courts = courtsAsync.value ?? const [];
     final colors = context.colors;
 
     return Container(
@@ -3671,6 +3602,255 @@ class _VenueQuickCard extends StatelessWidget {
           ),
           SizedBox(height: bottomPad + AppSpacing.lg),
         ],
+      ),
+    );
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+//  NEXT GAME CARD
+//  The most important home primitive: surfaces the user's next
+//  booking, or a book-now CTA when none exists.
+// ═══════════════════════════════════════════════════════════════
+
+class _NextGameCard extends StatelessWidget {
+  const _NextGameCard({required this.booking});
+  final BookingRecord? booking;
+
+  IconData _sportIcon(String id) {
+    switch (id) {
+      case 'basketball': return Icons.sports_basketball_rounded;
+      case 'cricket':    return Icons.sports_cricket_rounded;
+      case 'badminton':  return Icons.sports_tennis_rounded;
+      default:           return Icons.sports_soccer_rounded;
+    }
+  }
+
+  String _countdownLabel(DateTime? time) {
+    if (time == null) return '';
+    final diff = time.difference(DateTime.now());
+    if (diff.isNegative) return 'Live';
+    if (diff.inMinutes < 60) return 'In ${diff.inMinutes}m';
+    if (diff.inHours < 24) {
+      final h = diff.inHours;
+      final m = diff.inMinutes - (h * 60);
+      return m == 0 ? 'In ${h}h' : 'In ${h}h ${m}m';
+    }
+    return 'In ${diff.inDays}d';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (booking == null) return _EmptyNextGame();
+
+    final colors = context.colors;
+    final b = booking!;
+    final sportColor = _sportColor(b.sport);
+    final startTime = TimeUtils.parseBookingTime(b.date, b.timeSlot);
+    final countdown = _countdownLabel(startTime);
+
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.bookings),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.md, AppSpacing.md, AppSpacing.md),
+        decoration: BoxDecoration(
+          color: colors.colorSurfaceElevated,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: colors.colorAccentPrimary.withValues(alpha: 0.35),
+            width: 0.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colors.colorAccentPrimary.withValues(alpha: 0.12),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+              spreadRadius: -8,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Eyebrow row — label + countdown chip
+            Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: colors.colorAccentPrimary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'YOUR NEXT GAME',
+                  style: AppTextStyles.labelS(colors.colorTextSecondary)
+                      .copyWith(letterSpacing: 1.2),
+                ),
+                const Spacer(),
+                if (countdown.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: colors.colorAccentSubtle,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    child: Text(
+                      countdown,
+                      style: AppTextStyles.labelS(colors.colorAccentPrimary),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            // Main row — sport icon + venue + arrow
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: sportColor.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Icon(
+                    _sportIcon(b.sport),
+                    color: sportColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        b.venueName,
+                        style: AppTextStyles.headingL(colors.colorTextPrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${b.date} · ${b.timeSlot}'
+                        '${b.courtName != null ? ' · ${b.courtName}' : ''}',
+                        style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: colors.colorTextTertiary,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              height: 0.5,
+              color: colors.colorBorderSubtle,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            // Footer — wedge reinforcement
+            Row(
+              children: [
+                Icon(
+                  Icons.verified_rounded,
+                  size: 14,
+                  color: colors.colorSuccess,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Stats unlock 15 min before tip-off',
+                    style: AppTextStyles.bodyS(colors.colorTextTertiary),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyNextGame extends StatelessWidget {
+  const _EmptyNextGame();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return GestureDetector(
+      onTap: () => context.go(AppRoutes.playHome),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.md, AppSpacing.md, AppSpacing.md),
+        decoration: BoxDecoration(
+          color: colors.colorSurfaceElevated,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+              color: colors.colorBorderSubtle, width: 0.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: colors.colorAccentSubtle,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Icon(
+                Icons.add_rounded,
+                color: colors.colorAccentPrimary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ready to play?',
+                    style: AppTextStyles.headingM(colors.colorTextPrimary),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Book a court and claim your next stats',
+                    style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: 8),
+              decoration: BoxDecoration(
+                color: colors.colorAccentPrimary,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+              child: Text(
+                'Book',
+                style: AppTextStyles.labelM(colors.colorTextOnAccent),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

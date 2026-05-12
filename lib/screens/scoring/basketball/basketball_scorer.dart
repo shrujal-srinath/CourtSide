@@ -557,7 +557,7 @@ class _BasketballScorerScreenState
       body: SafeArea(
         child: state.isGameOver
             ? _GameOverPanel(state: state, onBack: () {
-                FakeData.completeBooking(null);
+                // TODO(phase-2): call record_game_result RPC to persist stats
                 context.go(AppRoutes.home);
               })
             : Row(

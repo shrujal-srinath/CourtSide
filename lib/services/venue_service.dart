@@ -68,6 +68,23 @@ class VenueService {
     return rows.map(_rowToVenue).toList();
   }
 
+  /// Returns the count of available slots today for a given court.
+  /// Used by court cards to show "X slots available" without fetching the full list.
+  Future<int> getSlotsAvailableToday(String courtId) async {
+    final today = DateTime.now();
+    final dateStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+    final rows = await _client
+        .from('slots')
+        .select('id')
+        .eq('venue_court_id', courtId)
+        .eq('date', dateStr)
+        .eq('status', 'available');
+
+    return rows.length;
+  }
+
   /// Returns courts for a given venue, optionally filtered by sport.
   Future<List<Court>> getCourtsForVenue(String venueId, {String? sport}) async {
     var query = _client

@@ -1,8 +1,12 @@
+// lib/providers/address_provider.dart
+// Phase 1: stubbed — marketplace checkout is disabled.
+// Phase 4: wire to delivery_addresses table via Supabase.
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/fake_data.dart';
+import '../models/address.dart';
 
 class AddressNotifier extends StateNotifier<List<DeliveryAddress>> {
-  AddressNotifier() : super(List.of(FakeData.addresses));
+  AddressNotifier() : super(const []);
 
   void addAddress(DeliveryAddress address) {
     state = [...state, address];
@@ -16,6 +20,7 @@ class AddressNotifier extends StateNotifier<List<DeliveryAddress>> {
       state.where((a) => a.isDefault).firstOrNull ?? state.firstOrNull;
 }
 
-final addressProvider = StateNotifierProvider<AddressNotifier, List<DeliveryAddress>>(
+final addressProvider =
+    StateNotifierProvider<AddressNotifier, List<DeliveryAddress>>(
   (_) => AddressNotifier(),
 );
