@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
-import '../../models/fake_data.dart';
-import '../../providers/confirmed_bookings_provider.dart';
+import '../../core/time_utils.dart';
+import '../../models/booking_record.dart';
+import '../../providers/booking_provider.dart';
+import '../scoring/basketball/models/basketball_models.dart' show GameOrigin;
 
 class MyBookingsScreen extends ConsumerStatefulWidget {
   const MyBookingsScreen({super.key});
@@ -32,19 +34,16 @@ class _BookingsScreenState extends ConsumerState<MyBookingsScreen>
     super.dispose();
   }
 
-  List<BookingRecord> _upcoming(List<BookingRecord> confirmed) {
-    final all = [...confirmed, ...FakeData.bookingHistory];
-    return all.where((b) => b.status == BookingStatus.upcoming).toList();
-  }
+  List<BookingRecord> _upcoming(List<BookingRecord> all) =>
+      all.where((b) => b.status == BookingStatus.upcoming).toList();
 
-  List<BookingRecord> _past(List<BookingRecord> confirmed) {
-    final all = [...confirmed, ...FakeData.bookingHistory];
-    return all.where((b) => b.status != BookingStatus.upcoming).toList();
-  }
+  List<BookingRecord> _past(List<BookingRecord> all) =>
+      all.where((b) => b.status != BookingStatus.upcoming).toList();
 
   @override
   Widget build(BuildContext context) {
-    final confirmed = ref.watch(confirmedBookingsProvider);
+    final confirmed =
+        ref.watch(myBookingsProvider).valueOrNull ?? const <BookingRecord>[];
     final colors = context.colors;
     final topPad = MediaQuery.of(context).padding.top;
 
@@ -472,7 +471,7 @@ class _ScoringButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final bookingTime = FakeData.parseBookingTime(booking.date, booking.timeSlot);
+    final bookingTime = TimeUtils.parseBookingTime(booking.date, booking.timeSlot);
     final now = DateTime.now();
     
     // Default to true for demo if parsing fails
@@ -495,7 +494,13 @@ class _ScoringButton extends StatelessWidget {
         }
         
         if (booking.sport.toLowerCase().contains('basketball')) {
-          context.push(AppRoutes.bballMode);
+          context.push(
+            AppRoutes.bballMode,
+            extra: GameOrigin.booking(
+              bookingId: booking.id,
+              venueName: booking.venueName,
+            ),
+          );
         } else {
           context.push('/score/${booking.sport}');
         }

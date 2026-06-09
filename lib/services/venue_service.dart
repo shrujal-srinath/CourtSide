@@ -98,8 +98,30 @@ class VenueService {
     }
 
     final rows = await query;
-    return rows.map(_rowToCourt).toList();
+    final courts = rows.map(_rowToCourt).toList();
+
+    // Populate today's availability count per court (UI uses it as a hint;
+    // real per-slot availability is resolved on the booking screen).
+    final counts =
+        await Future.wait(courts.map((c) => getSlotsAvailableToday(c.id)));
+    return [
+      for (var i = 0; i < courts.length; i++)
+        _withAvailability(courts[i], counts[i]),
+    ];
   }
+
+  Court _withAvailability(Court c, int slotsToday) => Court(
+        id: c.id,
+        venueId: c.venueId,
+        sport: c.sport,
+        name: c.name,
+        surface: c.surface,
+        isIndoor: c.isIndoor,
+        pricePerSlot: c.pricePerSlot,
+        slotDurationMin: c.slotDurationMin,
+        hasTheBox: c.hasTheBox,
+        slotsAvailableToday: slotsToday,
+      );
 
   // ── Converters ─────────────────────────────────────────────────
 

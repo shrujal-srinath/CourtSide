@@ -213,15 +213,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.bballMode,
         pageBuilder: (_, state) => slideUpPage(
           key: state.pageKey,
-          child: const BasketballModeScreen(),
+          child: BasketballModeScreen(
+            origin: state.extra as GameOrigin? ?? GameOrigin.freePlay,
+          ),
         ),
       ),
       GoRoute(
         path: AppRoutes.bballSetup,
-        pageBuilder: (_, state) => slideUpPage(
-          key: state.pageKey,
-          child: BasketballSetupScreen(mode: state.extra as BballMode),
-        ),
+        pageBuilder: (_, state) {
+          final (mode, origin) = state.extra as (BballMode, GameOrigin);
+          return slideUpPage(
+            key: state.pageKey,
+            child: BasketballSetupScreen(mode: mode, origin: origin),
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.bballPlayers,

@@ -11,6 +11,7 @@ import '../../core/constants.dart';
 import '../../core/theme.dart';
 
 import '../../models/fake_data.dart';
+import '../../providers/venue_provider.dart';
 
 class VenueScreen extends ConsumerStatefulWidget {
   const VenueScreen({super.key});
@@ -24,6 +25,9 @@ class _VenueScreenState extends ConsumerState<VenueScreen> {
   String _search = '';
   String _activeSport = 'all';
   String _activeTab = 'venues';
+
+  // Mode-aware venue source (demo=FakeData, live=Supabase). Populated in build.
+  List<Venue> _src = const [];
 
   LatLng? _userLocation;
   String? _mapStyle;
@@ -133,7 +137,7 @@ class _VenueScreenState extends ConsumerState<VenueScreen> {
   }
 
   Future<void> _prepareMarkers() async {
-    for (var v in FakeData.venues) {
+    for (var v in _src) {
       _normalMarkers[v.id] = await _createCustomMarkerBitmap(v.name, false);
       _selectedMarkers[v.id] = await _createCustomMarkerBitmap(v.name, true);
     }
@@ -191,7 +195,7 @@ class _VenueScreenState extends ConsumerState<VenueScreen> {
   }
 
   List<Venue> get _filtered {
-    var venues = List<Venue>.from(FakeData.venues);
+    var venues = List<Venue>.from(_src);
     if (_search.isNotEmpty) {
       final q = _search.toLowerCase();
       venues = venues.where((v) => v.name.toLowerCase().contains(q) || v.area.toLowerCase().contains(q)).toList();
@@ -256,7 +260,21 @@ class _VenueScreenState extends ConsumerState<VenueScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    
+
+    // Mode-aware venue source: demo→FakeData, live→Supabase (real venues only).
+    final loc = _userLocation ?? _bengaluru;
+    final newSrc = ref
+            .watch(nearbyVenuesProvider(
+                NearbyVenuesParams(loc.latitude, loc.longitude, radiusKm: 50)))
+            .valueOrNull ??
+        const <Venue>[];
+    if (newSrc.length != _src.length) {
+      _src = newSrc;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _prepareMarkers();
+      });
+    }
+
     return Scaffold(
       backgroundColor: colors.colorBackgroundPrimary,
       body: _isMapMode ? _buildMapMode(colors) : _buildListMode(colors),

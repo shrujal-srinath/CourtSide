@@ -4,10 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/fake_data.dart';
 import '../services/venue_service.dart';
+import 'app_mode_provider.dart';
 
 // ── Service singleton ──────────────────────────────────────────
 
 final _venueServiceProvider = Provider<VenueService>((_) => VenueService());
+
+bool _isDemo(Ref ref) => ref.watch(appModeProvider) == AppMode.demo;
 
 // ── Nearby venues ──────────────────────────────────────────────
 
@@ -32,16 +35,33 @@ class NearbyVenuesParams {
 
 final nearbyVenuesProvider =
     FutureProvider.family<List<Venue>, NearbyVenuesParams>(
-  (ref, params) => ref
-      .read(_venueServiceProvider)
-      .getNearbyVenues(params.lat, params.lng, params.radiusKm,
-          sport: params.sport),
+  (ref, params) async {
+    if (_isDemo(ref)) {
+      return FakeData.venues
+          .where((v) =>
+              params.sport == null || v.sports.contains(params.sport))
+          .toList();
+    }
+    return ref
+        .read(_venueServiceProvider)
+        .getNearbyVenues(params.lat, params.lng, params.radiusKm,
+            sport: params.sport);
+  },
 );
 
 // ── Venue detail ───────────────────────────────────────────────
 
 final venueDetailProvider = FutureProvider.family<Venue?, String>(
-  (ref, id) => ref.read(_venueServiceProvider).getVenueById(id),
+  (ref, id) async {
+    if (_isDemo(ref)) {
+      try {
+        return FakeData.venues.firstWhere((v) => v.id == id);
+      } catch (_) {
+        return null;
+      }
+    }
+    return ref.read(_venueServiceProvider).getVenueById(id);
+  },
 );
 
 // ── Venue courts ───────────────────────────────────────────────
@@ -60,9 +80,18 @@ class VenueCourtsParams {
 }
 
 final venueCourtsProvider = FutureProvider.family<List<Court>, VenueCourtsParams>(
-  (ref, params) => ref
-      .read(_venueServiceProvider)
-      .getCourtsForVenue(params.venueId, sport: params.sport),
+  (ref, params) async {
+    if (_isDemo(ref)) {
+      return FakeData.courts
+          .where((c) =>
+              c.venueId == params.venueId &&
+              (params.sport == null || c.sport == params.sport))
+          .toList();
+    }
+    return ref
+        .read(_venueServiceProvider)
+        .getCourtsForVenue(params.venueId, sport: params.sport);
+  },
 );
 
 // ── Explore (search + sport filter) ───────────────────────────
@@ -97,6 +126,23 @@ final exploreStateProvider =
 
 final exploreVenuesProvider = FutureProvider<List<Venue>>((ref) async {
   final state = ref.watch(exploreStateProvider);
+
+  if (_isDemo(ref)) {
+    var venues = FakeData.venues.toList();
+    if (state.sport != null) {
+      venues = venues.where((v) => v.sports.contains(state.sport)).toList();
+    }
+    if (state.query.isNotEmpty) {
+      final q = state.query.toLowerCase();
+      venues = venues
+          .where((v) =>
+              v.name.toLowerCase().contains(q) ||
+              v.area.toLowerCase().contains(q))
+          .toList();
+    }
+    return venues;
+  }
+
   final service = ref.read(_venueServiceProvider);
 
   if (state.query.isNotEmpty) {
@@ -116,11 +162,17 @@ final exploreVenuesProvider = FutureProvider<List<Venue>>((ref) async {
 // ── Court counts grouped by sport (for home sport chips) ──────
 
 final sportCourtCountsProvider = FutureProvider<Map<String, int>>((ref) async {
+  final counts = <String, int>{};
+  if (_isDemo(ref)) {
+    for (final c in FakeData.courts) {
+      counts[c.sport] = (counts[c.sport] ?? 0) + 1;
+    }
+    return counts;
+  }
   final rows = await Supabase.instance.client
       .from('courts')
       .select('sport')
       .eq('is_active', true);
-  final counts = <String, int>{};
   for (final row in rows) {
     final sport = row['sport'] as String;
     counts[sport] = (counts[sport] ?? 0) + 1;

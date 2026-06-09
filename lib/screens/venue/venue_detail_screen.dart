@@ -1,26 +1,37 @@
 // lib/screens/venue/venue_detail_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../models/fake_data.dart';
+import '../../providers/venue_provider.dart';
 import '../../widgets/common/cs_button.dart';
+import '../../widgets/common/cs_empty_state.dart';
 
-class VenueDetailScreen extends StatefulWidget {
+class VenueDetailScreen extends ConsumerStatefulWidget {
   const VenueDetailScreen({super.key, required this.venueId});
   final String venueId;
 
   @override
-  State<VenueDetailScreen> createState() => _VenueDetailScreenState();
+  ConsumerState<VenueDetailScreen> createState() => _VenueDetailScreenState();
 }
 
-class _VenueDetailScreenState extends State<VenueDetailScreen> {
+class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
   late Venue _venue;
+  List<Court> _courts = const [];
   String _activeSport = '';
   late ScrollController _scrollController;
   bool _isCollapsed = false;
+
+  Court? _courtFor(String sport) {
+    for (final c in _courts) {
+      if (c.sport == sport) return c;
+    }
+    return null;
+  }
 
   static const _sportLabels = {
     'basketball': 'Basketball',
@@ -90,10 +101,6 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _venue = FakeData.venues.firstWhere(
-      (v) => v.id == widget.venueId,
-      orElse: () => FakeData.venues.first,
-    );
     _scrollController = ScrollController()
       ..addListener(() {
         final collapsed = _scrollController.offset > 220;
@@ -107,9 +114,8 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
     super.dispose();
   }
 
-  Court? get _activeCourt => _activeSport.isEmpty
-      ? null
-      : FakeData.courtByVenueAndSport(_venue.id, _activeSport);
+  Court? get _activeCourt =>
+      _activeSport.isEmpty ? null : _courtFor(_activeSport);
 
   Future<void> _openInMaps() async {
     final uri = Uri.parse(
@@ -162,7 +168,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
             Text('PICK A SPORT', style: AppTextStyles.overline(colors.colorTextTertiary)),
             const SizedBox(height: AppSpacing.md),
             ..._venue.sports.map((sport) {
-              final court = FakeData.courtByVenueAndSport(_venue.id, sport);
+              final court = _courtFor(sport);
               final sc = _sportColor(sport, colors);
               final priceLabel = court != null
                   ? '₹${court.pricePerSlot} / ${court.slotDurationMin} min'
@@ -232,6 +238,38 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+
+    // Mode-aware load: demo→FakeData, live→Supabase. Guard until the venue
+    // resolves; a bad/unknown id (e.g. a stale link) shows not-found.
+    final venueAsync = ref.watch(venueDetailProvider(widget.venueId));
+    final resolved = venueAsync.valueOrNull;
+    if (resolved == null) {
+      return Scaffold(
+        backgroundColor: colors.colorBackgroundPrimary,
+        body: Center(
+          child: venueAsync.hasError
+              ? CsErrorState(
+                  message: "Couldn't load this venue.",
+                  onRetry: () =>
+                      ref.invalidate(venueDetailProvider(widget.venueId)),
+                )
+              : venueAsync.isLoading
+                  ? CircularProgressIndicator(
+                      color: colors.colorAccentPrimary, strokeWidth: 2.5)
+                  : const CsEmptyState(
+                      icon: Icons.location_off_rounded,
+                      title: 'Venue not found',
+                      subtitle: 'This venue is no longer available.',
+                    ),
+        ),
+      );
+    }
+    _venue = resolved;
+    _courts = ref
+            .watch(venueCourtsProvider(VenueCourtsParams(_venue.id)))
+            .valueOrNull ??
+        const [];
+
     final botPad = MediaQuery.of(context).padding.bottom;
     final court = _activeCourt;
 
@@ -333,7 +371,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   child: _SportGrid(
                     sports: _venue.sports,
-                    venueId: _venue.id,
+                    courts: _courts,
                     activeSport: _activeSport,
                     onSelect: (sport) => setState(() => _activeSport = sport),
                     sportColor: _sportColor,
@@ -945,7 +983,7 @@ class _SectionHeader extends StatelessWidget {
 class _SportGrid extends StatelessWidget {
   const _SportGrid({
     required this.sports,
-    required this.venueId,
+    required this.courts,
     required this.activeSport,
     required this.onSelect,
     required this.sportColor,
@@ -955,7 +993,7 @@ class _SportGrid extends StatelessWidget {
   });
 
   final List<String> sports;
-  final String venueId;
+  final List<Court> courts;
   final String activeSport;
   final Function(String) onSelect;
   final Color Function(String, AppColorScheme) sportColor;
@@ -979,7 +1017,10 @@ class _SportGrid extends StatelessWidget {
         final sport = sports[i];
         final selected = activeSport == sport;
         final color = sportColor(sport, colors);
-        final court = FakeData.courtByVenueAndSport(venueId, sport);
+        Court? court;
+        for (final c in courts) {
+          if (c.sport == sport) court = c;
+        }
         return GestureDetector(
           onTap: () => onSelect(sport),
           child: Container(

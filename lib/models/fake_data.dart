@@ -232,6 +232,44 @@ class FakeData {
     }),
   ];
 
+  // ── Products ───────────────────────────────────────────────────
+
+  static const products = <Product>[
+    Product(id: 'p1',  name: 'Hydro Flask 32 oz',              price: 1499, originalPrice: 1999, rating: 4.8, image: '', category: 'Hydration',  description: 'Insulated stainless steel water bottle. Keeps cold 24h, hot 12h.',          brand: 'Hydro Flask',   reviewCount: 312, tags: ['hydration', 'insulated']),
+    Product(id: 'p2',  name: 'Nalgene 1L Tritan Bottle',       price: 699,  originalPrice: 899,  rating: 4.6, image: '', category: 'Hydration',  description: 'BPA-free wide-mouth bottle. Dishwasher safe.',                              brand: 'Nalgene',       reviewCount: 188, tags: ['hydration']),
+    Product(id: 'p3',  name: 'Electrolyte Drink Mix (30 pk)',  price: 999,  originalPrice: 1299, rating: 4.5, image: '', category: 'Nutrition',  description: 'Zero sugar electrolyte powder with sodium, potassium & magnesium.',         brand: 'LMNT',          reviewCount: 240, tags: ['nutrition', 'electrolytes']),
+    Product(id: 'p4',  name: 'Whey Protein 2kg — Chocolate',   price: 2499, originalPrice: 3199, rating: 4.7, image: '', category: 'Nutrition',  description: '24g protein per scoop. Ideal post-game recovery.',                         brand: 'MuscleBlaze',   reviewCount: 567, tags: ['nutrition', 'protein']),
+    Product(id: 'p5',  name: 'Energy Bar Box (12 pack)',        price: 699,  originalPrice: 799,  rating: 4.3, image: '', category: 'Nutrition',  description: 'Real fruit + oats energy bars. No added sugar.',                           brand: 'RiteBite',      reviewCount: 94,  tags: ['nutrition', 'snack']),
+    Product(id: 'p6',  name: 'Spalding TF-1000 Basketball',    price: 2999, originalPrice: 3499, rating: 4.9, image: '', category: 'Equipment',  description: 'Official indoor game ball. Full-grain leather. Size 7.',                   brand: 'Spalding',      reviewCount: 421, tags: ['basketball', 'equipment']),
+    Product(id: 'p7',  name: 'Molten GG7X Basketball',         price: 1899, originalPrice: 2299, rating: 4.7, image: '', category: 'Equipment',  description: 'Premium rubber outdoor basketball. Size 7.',                               brand: 'Molten',        reviewCount: 284, tags: ['basketball', 'equipment']),
+    Product(id: 'p8',  name: 'SG Club Cricket Ball (6-pack)',   price: 1299, originalPrice: 1599, rating: 4.5, image: '', category: 'Equipment',  description: 'Leather practice balls. Used in club-level matches.',                     brand: 'SG',            reviewCount: 152, tags: ['cricket', 'equipment']),
+    Product(id: 'p9',  name: 'Nike Air Zoom BB NXT',            price: 9999, originalPrice: 12999,rating: 4.8, image: '', category: 'Footwear',   description: 'React foam + Zoom Air cushioning. Designed for guards.',                  brand: 'Nike',          reviewCount: 637, tags: ['basketball', 'shoes']),
+    Product(id: 'p10', name: 'Adidas Harden Vol. 7',            price: 7499, originalPrice: 8999, rating: 4.6, image: '', category: 'Footwear',   description: 'Boost midsole with Lightstrike upper. All-position shoe.',               brand: 'Adidas',        reviewCount: 318, tags: ['basketball', 'shoes']),
+    Product(id: 'p11', name: 'Nike Dri-FIT Basketball Jersey',  price: 1499, originalPrice: 1999, rating: 4.5, image: '', category: 'Apparel',    description: 'Sweat-wicking Dri-FIT fabric. Relaxed game fit.',                        brand: 'Nike',          reviewCount: 209, tags: ['basketball', 'apparel']),
+    Product(id: 'p12', name: 'UA Compression Shorts',           price: 1299, originalPrice: 1599, rating: 4.4, image: '', category: 'Apparel',    description: 'HeatGear compression. 4-way stretch fabric.',                            brand: 'Under Armour',  reviewCount: 176, tags: ['apparel', 'compression']),
+    Product(id: 'p13', name: 'McDavid Knee Sleeve (pair)',      price: 1199, originalPrice: 1499, rating: 4.7, image: '', category: 'Protection', description: 'Level 1 compression sleeve. 4-way stretch neoprene.',                    brand: 'McDavid',       reviewCount: 343, tags: ['protection', 'knee']),
+    Product(id: 'p14', name: 'Shock Doctor Ankle Brace',        price: 1599, originalPrice: 1999, rating: 4.6, image: '', category: 'Protection', description: 'Figure-8 strapping. Fits most shoe sizes.',                              brand: 'Shock Doctor',  reviewCount: 218, tags: ['protection', 'ankle']),
+    Product(id: 'p15', name: 'Grip Tape Roll',                  price: 199,  originalPrice: 249,  rating: 4.3, image: '', category: 'Accessories',description: 'Anti-slip grip tape for rackets and bats.',                              brand: 'Yonex',         reviewCount: 88,  tags: ['accessories']),
+    Product(id: 'p16', name: 'Sports Wristband Pair',           price: 149,  originalPrice: 199,  rating: 4.2, image: '', category: 'Accessories',description: 'Cotton sweat-absorbing wristbands.',                                    reviewCount: 64,  tags: ['accessories']),
+    Product(id: 'p17', name: 'Mesh Training Bib Set (10)',      price: 599,  originalPrice: 799,  rating: 4.4, image: '', category: 'Accessories',description: '10 lightweight mesh bibs in 2 colors. One size fits all.',              reviewCount: 112, tags: ['accessories', 'training']),
+  ];
+
+  static const _reviews = <ProductReview>[
+    ProductReview(id: 'r1', userName: 'Arjun M.',  rating: 5.0, title: 'Best I\'ve owned',     comment: 'Perfect grip, great feel on court. Holds air well after 3 months.', date: 'Apr 2025', helpfulCount: 24, verified: true),
+    ProductReview(id: 'r2', userName: 'Priya S.',  rating: 4.5, title: 'Worth every rupee',    comment: 'Great quality. Delivery was fast through Courtside. Will buy again.', date: 'Mar 2025', helpfulCount: 17, verified: true),
+    ProductReview(id: 'r3', userName: 'Karan N.',  rating: 4.0, title: 'Solid product',        comment: 'Does exactly what it claims. No complaints.',                       date: 'Feb 2025', helpfulCount: 9,  verified: true),
+    ProductReview(id: 'r4', userName: 'Rohan K.',  rating: 5.0, title: 'Game changer',         comment: 'Used at Game Theory Koramangala — amazing feel on hardwood.',       date: 'Apr 2025', helpfulCount: 31, verified: true),
+    ProductReview(id: 'r5', userName: 'Sneha P.',  rating: 3.5, title: 'Good but pricey',      comment: 'Quality is there but slightly overpriced for casual players.',      date: 'Jan 2025', helpfulCount: 6,  verified: true),
+  ];
+
+  static Product? productById(String id) =>
+      products.where((p) => p.id == id).firstOrNull;
+
+  static List<ProductReview> reviewsByProductId(String productId) => _reviews;
+
+  static List<Product> productsByCategory(String category) =>
+      products.where((p) => p.category.toLowerCase() == category.toLowerCase()).toList();
+
   // ── Helpers ────────────────────────────────────────────────────
 
   static List<Venue> venuesBySport(String sport) =>

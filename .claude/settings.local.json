@@ -45,7 +45,14 @@
       "Bash(pkill -f \"flutter run\")",
       "Bash(pkill -9 -f \"flutter run\")",
       "Bash(grep -l \"class.*Screen extends\" /Users/shrujalsrinath/Desktop/courtside/lib/screens/**/*.dart)",
-      "Bash(find /Users/shrujalsrinath/Desktop/courtside/lib/services -name \"*.dart\" -exec grep -l \"class.*Service\" {} \\\\;)"
+      "Bash(find /Users/shrujalsrinath/Desktop/courtside/lib/services -name \"*.dart\" -exec grep -l \"class.*Service\" {} \\\\;)",
+      "Bash(gh pr *)",
+      "Bash(echo \"Flutter web started in background with PID $!\")",
+      "Bash(curl -s http://localhost:8080)",
+      "Bash(git commit *)",
+      "mcp__claude_ai_Supabase__deploy_edge_function",
+      "Bash(supabase secrets *)",
+      "Bash(brew install *)"
     ]
   },
   "enabledMcpjsonServers": [

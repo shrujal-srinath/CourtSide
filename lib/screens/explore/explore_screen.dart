@@ -18,6 +18,7 @@ import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../core/tokens/spacing_tokens.dart';
 import '../../models/fake_data.dart';
+import '../../providers/venue_provider.dart';
 import '../../widgets/common/cs_chip.dart';
 import '../../widgets/common/cs_empty_state.dart';
 
@@ -62,8 +63,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     super.dispose();
   }
 
+  // Mode-aware venue source (demo=FakeData, live=Supabase). Set in build.
+  List<Venue> _src = const [];
+
   List<Venue> get _filtered {
-    var list = List<Venue>.from(FakeData.venues);
+    var list = List<Venue>.from(_src);
 
     // Sport filter
     if (_sport != 'All') {
@@ -91,6 +95,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    _src = ref
+            .watch(nearbyVenuesProvider(
+                const NearbyVenuesParams(12.9716, 77.5946, radiusKm: 50)))
+            .valueOrNull ??
+        const <Venue>[];
     final venues = _filtered;
 
     return Scaffold(

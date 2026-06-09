@@ -6,7 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
 import '../../models/fake_data.dart';
+import '../../models/completed_game.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/stats_provider.dart';
+import '../../widgets/common/cs_empty_state.dart';
 
 class StatsScreen extends ConsumerStatefulWidget {
   const StatsScreen({super.key});
@@ -20,8 +23,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   int _activeSportIdx = 0;
   late AnimationController _ringController;
   late Animation<double> _ringAnimation;
-
-  final _sportStats = FakeData.playerStats;
 
   @override
   void initState() {
@@ -50,33 +51,104 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final colors   = context.colors;
-    final topPad   = MediaQuery.of(context).padding.top;
-    final user     = ref.watch(currentUserProvider);
-    final name     = user?.userMetadata?['full_name'] as String? ?? 'Player';
-    final activeStat = _sportStats[_activeSportIdx];
+    final colors     = context.colors;
+    final topPad     = MediaQuery.of(context).padding.top;
+    final user       = ref.watch(currentUserProvider);
+    final name       = user?.userMetadata?['full_name'] as String? ?? 'Player';
+    final statsAsync = ref.watch(myStatsProvider);
 
     return Scaffold(
       backgroundColor: colors.colorBackgroundPrimary,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () =>
-            context.push('/stats/share', extra: activeStat),
-        backgroundColor: colors.colorAccentPrimary,
-        icon: Icon(Icons.ios_share_rounded,
-            color: colors.colorTextOnAccent, size: 18),
-        label: Text(
-          'Share Stats',
-          style: AppTextStyles.labelM(colors.colorTextOnAccent),
-        ),
-        elevation: 0,
+      floatingActionButton: statsAsync.maybeWhen(
+        data: (stats) {
+          if (stats.isEmpty) return null;
+          final activeStat = stats[_activeSportIdx.clamp(0, stats.length - 1)];
+          return FloatingActionButton.extended(
+            onPressed: () => context.push('/stats/share', extra: activeStat),
+            backgroundColor: colors.colorAccentPrimary,
+            icon: Icon(Icons.ios_share_rounded,
+                color: colors.colorTextOnAccent, size: 18),
+            label: Text(
+              'Share Stats',
+              style: AppTextStyles.labelM(colors.colorTextOnAccent),
+            ),
+            elevation: 0,
+          );
+        },
+        orElse: () => null,
       ),
-      body: CustomScrollView(
+      body: statsAsync.when(
+        loading: () => _StatsStateScaffold(
+          topPad: topPad,
+          child: Center(
+            child: CircularProgressIndicator(
+                color: colors.colorAccentPrimary, strokeWidth: 2.5),
+          ),
+        ),
+        error: (_, _) => _StatsStateScaffold(
+          topPad: topPad,
+          child: CsErrorState(
+            message: "Couldn't load your stats.",
+            onRetry: () => ref.invalidate(myStatsProvider),
+          ),
+        ),
+        data: (stats) {
+          if (stats.isEmpty) {
+            return _StatsStateScaffold(
+              topPad: topPad,
+              child: const CsEmptyState(
+                icon: Icons.sports_basketball_rounded,
+                title: 'No verified stats yet',
+                subtitle:
+                    'Play a phone-scored game during a booking and your stats land here automatically.',
+              ),
+            );
+          }
+          final idx        = _activeSportIdx.clamp(0, stats.length - 1);
+          final activeStat = stats[idx];
+          final games = (ref.watch(myGamesProvider).valueOrNull ?? const [])
+              .where((g) => g.sport == activeStat.sport)
+              .toList();
+          final streak = _winStreak(games);
+
+          return _buildContent(
+            context, colors, topPad, name, stats, idx, activeStat, games, streak);
+        },
+      ),
+    );
+  }
+
+  /// Consecutive wins counting back from the most recent game.
+  int _winStreak(List<CompletedGame> games) {
+    var n = 0;
+    for (final g in games) {
+      if (g.won) {
+        n++;
+      } else {
+        break;
+      }
+    }
+    return n;
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    AppColorScheme colors,
+    double topPad,
+    String name,
+    List<PlayerGameStat> stats,
+    int idx,
+    PlayerGameStat activeStat,
+    List<CompletedGame> games,
+    int streak,
+  ) {
+    return CustomScrollView(
         slivers: [
           SliverToBoxAdapter(child: SizedBox(height: topPad + AppSpacing.sm)),
 
           // ── Profile Hero Banner ──────────────────────────────
           SliverToBoxAdapter(
-            child: _ProfileHeroBanner(name: name, stats: _sportStats),
+            child: _ProfileHeroBanner(name: name, stats: stats),
           ),
 
           // ── Win Rate Ring ────────────────────────────────────
@@ -99,8 +171,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                   AppSpacing.lg, AppSpacing.xl,
                   AppSpacing.lg, 0),
               child: _SportSegmentedControl(
-                stats: _sportStats,
-                activeIdx: _activeSportIdx,
+                stats: stats,
+                activeIdx: idx,
                 onChanged: _changeSport,
               ),
             ),
@@ -160,7 +232,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                   ),
                 ),
                 _CareerTimeline(
-                  games: _recentGames(activeStat.sport),
+                  games: games,
                   sport: activeStat.sport,
                 ),
               ],
@@ -170,17 +242,18 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           const SliverToBoxAdapter(
               child: SizedBox(height: AppSpacing.xl)),
 
-          // ── Streak Card ──────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg),
-              child: const _StreakCard(),
+          // ── Streak Card (hidden until a real win streak exists) ──
+          if (streak >= 2)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg),
+                child: _StreakCard(streak: streak),
+              ),
             ),
-          ),
-
-          const SliverToBoxAdapter(
-              child: SizedBox(height: AppSpacing.xl)),
+          if (streak >= 2)
+            const SliverToBoxAdapter(
+                child: SizedBox(height: AppSpacing.xl)),
 
           // ── Recent Games header ──────────────────────────────
           SliverToBoxAdapter(
@@ -195,38 +268,39 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           ),
 
           // ── Recent Games list ────────────────────────────────
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, i) {
-                final games = _recentGames(activeStat.sport);
-                if (i >= games.length) return null;
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm + 2),
-                  child: _RecentGameCard(
-                    booking: games[i],
-                    onShare: () => context.push(
-                        '/stats/share',
-                        extra: activeStat),
-                  ),
-                );
-              },
-              childCount: _recentGames(activeStat.sport).length,
+          if (games.isEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+                child: Text('No games yet',
+                    style: AppTextStyles.bodyM(colors.colorTextSecondary)),
+              ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, i) {
+                  if (i >= games.length) return null;
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm + 2),
+                    child: _RecentGameCard(
+                      game: games[i],
+                      onShare: () => context.push(
+                          '/stats/share',
+                          extra: activeStat),
+                    ),
+                  );
+                },
+                childCount: games.length,
+              ),
             ),
-          ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
-      ),
-    );
+      );
   }
-
-  List<BookingRecord> _recentGames(String sport) =>
-      FakeData.bookingHistory
-          .where((b) =>
-              b.sport == sport &&
-              b.status == BookingStatus.completed)
-          .toList();
 }
 
 // ── Profile Hero Banner ────────────────────────────────────────
@@ -758,24 +832,26 @@ class _PerformanceStatsCard extends StatelessWidget {
   }
 
   List<MapEntry<String, String>> _buildRows(PlayerGameStat s) {
+    // player_stats.stats holds cumulative TOTALS; derive per-game averages.
+    final gp = s.gamesPlayed;
+    String avg(String key) {
+      final total = (s.stats[key] as num?)?.toDouble() ?? 0;
+      return gp == 0 ? '0.0' : (total / gp).toStringAsFixed(1);
+    }
+
     if (s.sport == 'basketball') {
       return [
-        MapEntry('Points / game', '${s.stats['ppg']}'),
-        MapEntry('Rebounds / game', '${s.stats['rpg']}'),
-        MapEntry('Assists / game', '${s.stats['apg']}'),
-        MapEntry('Steals / game', '${s.stats['spg']}'),
-        MapEntry('FG %',
-            '${((s.stats['fg_pct'] as double) * 100).toStringAsFixed(1)}%'),
-        MapEntry('3PT %',
-            '${((s.stats['three_pct'] as double) * 100).toStringAsFixed(1)}%'),
+        MapEntry('Points / game', avg('points')),
+        MapEntry('Rebounds / game', avg('rebounds')),
+        MapEntry('Assists / game', avg('assists')),
+        MapEntry('Steals / game', avg('steals')),
+        MapEntry('Blocks / game', avg('blocks')),
+        MapEntry('Turnovers / game', avg('turnovers')),
       ];
     } else if (s.sport == 'cricket') {
       return [
-        MapEntry('Batting avg', '${s.stats['batting_avg']}'),
-        MapEntry('Highest score', '${s.stats['highest_score']}'),
-        MapEntry('Wickets', '${s.stats['wickets']}'),
-        MapEntry('Economy', '${s.stats['economy']}'),
-        MapEntry('Strike rate', '${s.stats['strike_rate']}'),
+        MapEntry('Runs / game', avg('runs')),
+        MapEntry('Wickets / game', avg('wickets')),
       ];
     }
     return [];
@@ -786,7 +862,7 @@ class _PerformanceStatsCard extends StatelessWidget {
 
 class _CareerTimeline extends StatelessWidget {
   const _CareerTimeline({required this.games, required this.sport});
-  final List<BookingRecord> games;
+  final List<CompletedGame> games;
   final String sport;
 
   @override
@@ -800,17 +876,19 @@ class _CareerTimeline extends StatelessWidget {
             style: AppTextStyles.bodyM(colors.colorTextSecondary)),
       );
     }
+    // Timeline reads oldest → newest left-to-right (games arrive newest first).
+    final ordered = games.reversed.toList();
     return SizedBox(
       height: 100,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        itemCount: games.length,
+        itemCount: ordered.length,
         separatorBuilder: (_, _) =>
             const SizedBox(width: AppSpacing.sm + 2),
         itemBuilder: (_, i) {
-          final b    = games[i];
-          final isWin = i % 2 == 0;
+          final b    = ordered[i];
+          final isWin = b.won;
           return Container(
             width: 80,
             decoration: BoxDecoration(
@@ -843,7 +921,7 @@ class _CareerTimeline extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  b.date.split(' ').take(2).join(' '),
+                  _shortDate(b.playedAt),
                   style: AppTextStyles.overline(
                       colors.colorTextTertiary),
                   textAlign: TextAlign.center,
@@ -860,12 +938,12 @@ class _CareerTimeline extends StatelessWidget {
 // ── Streak Card ────────────────────────────────────────────────
 
 class _StreakCard extends StatelessWidget {
-  const _StreakCard();
+  const _StreakCard({required this.streak});
+  final int streak;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    const heights = [0.4, 0.7, 0.5, 1.0, 0.8, 0.6, 0.9];
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -885,24 +963,23 @@ class _StreakCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '7 Week Streak',
+                  '$streak-Game Win Streak',
                   style: AppTextStyles.displayS(colors.colorTextPrimary),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Played every week for 7 weeks.',
+                  'Won your last $streak games. Keep it alive.',
                   style: AppTextStyles.bodyS(colors.colorTextSecondary),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Row(
-                  children: List.generate(7, (i) {
+                  children: List.generate(streak.clamp(0, 10), (i) {
                     return Expanded(
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 2),
-                        height: 24 * heights[i],
+                        height: 24,
                         decoration: BoxDecoration(
-                          color: colors.colorWarning.withValues(
-                              alpha: 0.3 + heights[i] * 0.5),
+                          color: colors.colorWarning.withValues(alpha: 0.7),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -921,14 +998,15 @@ class _StreakCard extends StatelessWidget {
 // ── Recent Game Card ───────────────────────────────────────────
 
 class _RecentGameCard extends StatelessWidget {
-  const _RecentGameCard({required this.booking, required this.onShare});
-  final BookingRecord booking;
+  const _RecentGameCard({required this.game, required this.onShare});
+  final CompletedGame game;
   final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final color  = _sportColor(booking.sport, colors);
+    final color  = _sportColor(game.sport, colors);
+    final resultColor = game.won ? colors.colorSuccess : colors.colorError;
 
     return Container(
       decoration: BoxDecoration(
@@ -965,7 +1043,7 @@ class _RecentGameCard extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  booking.sport == 'basketball' ? '🏀' : '🏏',
+                  game.sport == 'basketball' ? '🏀' : '🏏',
                   style: const TextStyle(fontSize: 18),
                 ),
               ),
@@ -979,26 +1057,46 @@ class _RecentGameCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      booking.venueName,
-                      style: AppTextStyles.headingS(
-                          colors.colorTextPrimary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        // W / L badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: resultColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
+                          child: Text(
+                            game.won ? 'W' : 'L',
+                            style: AppTextStyles.labelS(resultColor),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          game.scoreline,
+                          style: AppTextStyles.headingS(colors.colorTextPrimary)
+                              .copyWith(
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      booking.date,
-                      style: AppTextStyles.bodyS(
-                          colors.colorTextSecondary),
+                      game.venueName == null
+                          ? _shortDate(game.playedAt)
+                          : '${game.venueName} · ${_shortDate(game.playedAt)}',
+                      style: AppTextStyles.bodyS(colors.colorTextSecondary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
             ),
-            // Share button
-            if (booking.hasStats)
-              GestureDetector(
+            // Share button — verified games are always shareable
+            GestureDetector(
                 onTap: onShare,
                 child: Container(
                   margin: const EdgeInsets.all(AppSpacing.md),
@@ -1039,3 +1137,30 @@ class _RecentGameCard extends StatelessWidget {
     }
   }
 }
+
+// ── Stats screen state wrapper (loading / error / empty) ───────────
+
+/// Full-bleed scaffold body that centres a single state widget below the
+/// status-bar inset — used for the loading, error and empty states.
+class _StatsStateScaffold extends StatelessWidget {
+  const _StatsStateScaffold({required this.topPad, required this.child});
+  final double topPad;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: topPad),
+      child: Center(child: child),
+    );
+  }
+}
+
+// ── Date helper ────────────────────────────────────────────────────
+
+const _monthAbbr = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+String _shortDate(DateTime d) => '${d.day} ${_monthAbbr[d.month - 1]}';

@@ -7,7 +7,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme.dart';
 import '../../../core/constants.dart';
 import 'models/basketball_models.dart';
-import '../../../models/fake_data.dart';
+import '../../../providers/game_provider.dart';
+import '../../../services/game_service.dart';
+import 'game_result.dart';
 
 export 'models/basketball_models.dart';
 
@@ -556,10 +558,10 @@ class _BasketballScorerScreenState
       backgroundColor: context.colors.colorBackgroundPrimary,
       body: SafeArea(
         child: state.isGameOver
-            ? _GameOverPanel(state: state, onBack: () {
-                // TODO(phase-2): call record_game_result RPC to persist stats
-                context.go(AppRoutes.home);
-              })
+            ? _GameOverPanel(
+                state: state,
+                onBack: () => context.go(AppRoutes.home),
+              )
             : Row(
                 children: [
                   // Team A panel
@@ -1396,13 +1398,39 @@ class _CompactEventLog extends StatelessWidget {
 //  GAME OVER PANEL
 // ═══════════════════════════════════════════════════════════════
 
-class _GameOverPanel extends StatelessWidget {
+class _GameOverPanel extends ConsumerStatefulWidget {
   const _GameOverPanel({required this.state, required this.onBack});
   final BasketballGameState state;
   final VoidCallback onBack;
 
   @override
+  ConsumerState<_GameOverPanel> createState() => _GameOverPanelState();
+}
+
+class _GameOverPanelState extends ConsumerState<_GameOverPanel> {
+  late final BballGameResult _result;
+  GameSubmitResult? _outcome;
+  bool _saving = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _result = BballGameResult.fromState(widget.state);
+    _record();
+  }
+
+  Future<void> _record() async {
+    final outcome = await ref.read(recordGameProvider)(_result);
+    if (!mounted) return;
+    setState(() {
+      _outcome = outcome;
+      _saving = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = widget.state;
     final aWon = state.scoreA > state.scoreB;
     final tied = state.scoreA == state.scoreB;
     final winnerName = tied
@@ -1451,9 +1479,13 @@ class _GameOverPanel extends StatelessWidget {
                 ]),
               ],
             ),
+            const SizedBox(height: AppSpacing.xl),
+            _SaveStatusChip(saving: _saving, outcome: _outcome),
             const SizedBox(height: AppSpacing.xxxl),
+
+            // Primary CTA — go to the shareable stat card.
             GestureDetector(
-              onTap: onBack,
+              onTap: () => context.push('/stats/share', extra: _result.toStatCard()),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.xxxl, vertical: AppSpacing.lg),
@@ -1462,13 +1494,77 @@ class _GameOverPanel extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
                 child: Text(
-                  'DONE',
+                  'SEE YOUR STATS',
                   style: AppTextStyles.headingM(AppColors.white),
                 ),
               ),
             ),
+            const SizedBox(height: AppSpacing.md),
+            TextButton(
+              onPressed: widget.onBack,
+              child: Text(
+                'Done',
+                style: AppTextStyles.headingS(context.colors.colorTextSecondary),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Tells the player whether this game became a verified stat or was saved
+/// to the device only (free-play, or a verified submit the server rejected).
+class _SaveStatusChip extends StatelessWidget {
+  const _SaveStatusChip({required this.saving, required this.outcome});
+  final bool saving;
+  final GameSubmitResult? outcome;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    late final Color color;
+    late final IconData icon;
+    late final String label;
+
+    if (saving) {
+      color = colors.colorTextSecondary;
+      icon = Icons.cloud_upload_outlined;
+      label = 'SAVING…';
+    } else if (outcome is GameSubmitVerified) {
+      color = colors.colorSuccess;
+      icon = Icons.verified_rounded;
+      label = 'VERIFIED · ADDED TO YOUR STATS';
+    } else {
+      color = colors.colorWarning;
+      icon = Icons.smartphone_rounded;
+      label = 'SAVED ON DEVICE · UNVERIFIED';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (saving)
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(strokeWidth: 1.5, color: color),
+            )
+          else
+            Icon(icon, size: 14, color: color),
+          const SizedBox(width: AppSpacing.sm),
+          Text(label, style: AppTextStyles.overline(color)),
+        ],
       ),
     );
   }

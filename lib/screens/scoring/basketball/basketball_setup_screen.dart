@@ -9,8 +9,13 @@ import '../../../core/constants.dart';
 import 'models/basketball_models.dart';
 
 class BasketballSetupScreen extends ConsumerStatefulWidget {
-  const BasketballSetupScreen({super.key, required this.mode});
+  const BasketballSetupScreen({
+    super.key,
+    required this.mode,
+    this.origin = GameOrigin.freePlay,
+  });
   final BballMode mode;
+  final GameOrigin origin;
 
   @override
   ConsumerState<BasketballSetupScreen> createState() =>
@@ -82,6 +87,9 @@ class _BasketballSetupScreenState
       timeoutsPerTeam: _timeoutsPerTeam,
       shotClockDuration: _shotClockDuration,
       autoResetShotClock: _autoResetShotClock,
+      bookingId: widget.origin.bookingId,
+      venueName: widget.origin.venueName,
+      isVerified: widget.origin.isVerified,
       teamA: BballTeamConfig(
         name: _teamACtrl.text.trim().isEmpty
             ? 'Team A'

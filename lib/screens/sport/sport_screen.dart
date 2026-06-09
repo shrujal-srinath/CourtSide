@@ -113,15 +113,20 @@ class _SportScreenState extends ConsumerState<SportScreen> {
   SportFilter _filter = SportFilter.all;
   final _searchCtrl = TextEditingController();
 
+  // Mode-aware venue source (demo=FakeData, live=Supabase). Set in build.
+  List<fd.Venue> _src = const [];
+
   SportConfig get _sport =>
       _sportConfigs[widget.sportId] ??
       const SportConfig(
           id: 'basketball', label: 'Basketball', emoji: '🏀');
 
   List<VenueItem> get _filteredVenues {
-    final fdVenues = fd.FakeData.venuesBySport(widget.sportId);
-    var venues = fdVenues.map((v) {
-      final court = fd.FakeData.courtByVenueAndSport(v.id, widget.sportId);
+    final isDemo = ref.read(isDemoProvider);
+    var venues = _src.map((v) {
+      final court = isDemo
+          ? fd.FakeData.courtByVenueAndSport(v.id, widget.sportId)
+          : null;
       return VenueItem(
         id: v.id,
         name: v.name,
@@ -148,8 +153,9 @@ class _SportScreenState extends ConsumerState<SportScreen> {
     return venues;
   }
 
-  List<fd.PickupGame> get _pickupGames =>
-      fd.FakeData.pickupGamesBySport(widget.sportId);
+  List<fd.PickupGame> get _pickupGames => ref.read(isDemoProvider)
+      ? fd.FakeData.pickupGamesBySport(widget.sportId)
+      : const [];
 
   @override
   void dispose() {

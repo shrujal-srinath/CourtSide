@@ -20,6 +20,7 @@ import '../../providers/pickup_provider.dart';
 import '../../providers/stats_provider.dart';
 import '../../providers/venue_provider.dart';
 import '../../widgets/common/cs_shimmer.dart';
+import '../scoring/basketball/models/basketball_models.dart' show GameOrigin;
 
 // ── Sport config ────────────────────────────────────────────────
 
@@ -307,7 +308,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return GestureDetector(
       onTap: () {
         if (windowBooking.sport.toLowerCase().contains('basketball')) {
-          context.push(AppRoutes.bballMode);
+          context.push(
+            AppRoutes.bballMode,
+            extra: GameOrigin.booking(
+              bookingId: windowBooking.id,
+              venueName: windowBooking.venueName,
+            ),
+          );
         } else {
           context.push('/score/${windowBooking.sport}');
         }

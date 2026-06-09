@@ -12,7 +12,9 @@ import '../../core/constants.dart';
 import '../../models/fake_data.dart';
 import '../../providers/booking_flow_provider.dart' show bookingFlowProvider, SkillLevel;
 import '../../providers/cart_provider.dart';
-import '../../providers/confirmed_bookings_provider.dart';
+import '../../providers/app_mode_provider.dart';
+import '../../providers/demo_store_provider.dart';
+import '../../providers/booking_provider.dart';
 import '../../services/booking_service.dart';
 import 'booking_step_widgets.dart';
 
@@ -25,6 +27,7 @@ class BookingCartScreen extends ConsumerStatefulWidget {
 
 class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
   bool _loading = false;
+  String? _pendingOrderId;
   late final Razorpay _razorpay;
 
   static const _months = [
@@ -56,12 +59,95 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
     }
   }
 
-  // ── Payment handlers ────────────────────────────────────────
+  // ── Payment helpers ──────────────────────────────────────────
+
+  /// Step 1: Create a Razorpay order via Edge Function.
+  /// Returns the order_id on success, null on failure.
+  Future<String?> _createRazorpayOrder(int amountInPaise) async {
+    try {
+      final res = await Supabase.instance.client.functions.invoke(
+        'create-razorpay-order',
+        body: {'amount': amountInPaise, 'currency': 'INR'},
+      );
+      return res.data['order_id'] as String?;
+    } catch (e) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          'Could not initiate payment. Please try again.',
+          style: AppTextStyles.bodyM(context.colors.colorTextPrimary),
+        ),
+        backgroundColor: context.colors.colorError,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md)),
+      ));
+      return null;
+    }
+  }
+
+  /// Step 3: Verify signature via Edge Function.
+  /// Returns true only if Razorpay confirms the signature is authentic.
+  Future<bool> _verifyPaymentSignature({
+    required String orderId,
+    required String paymentId,
+    required String signature,
+  }) async {
+    try {
+      final res = await Supabase.instance.client.functions.invoke(
+        'verify-razorpay-payment',
+        body: {
+          'razorpay_order_id':   orderId,
+          'razorpay_payment_id': paymentId,
+          'razorpay_signature':  signature,
+        },
+      );
+      return res.data['verified'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ── Payment handlers ─────────────────────────────────────────
 
   void _onPaymentSuccess(PaymentSuccessResponse response) {
     if (!mounted) return;
     setState(() => _loading = true);
-    _handlePostPayment(response);
+    _verifyThenBook(response);
+  }
+
+  Future<void> _verifyThenBook(PaymentSuccessResponse response) async {
+    final orderId   = response.orderId   ?? _pendingOrderId ?? '';
+    final paymentId = response.paymentId ?? '';
+    final signature = response.signature ?? '';
+
+    if (orderId.isNotEmpty && paymentId.isNotEmpty && signature.isNotEmpty) {
+      final verified = await _verifyPaymentSignature(
+        orderId:   orderId,
+        paymentId: paymentId,
+        signature: signature,
+      );
+
+      if (!verified) {
+        if (!mounted) return;
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            'Payment verification failed. Save your payment ID: $paymentId'
+            ' and contact support — you will not be charged.',
+            style: AppTextStyles.bodyM(context.colors.colorTextPrimary),
+          ),
+          backgroundColor: context.colors.colorError,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 8),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md)),
+        ));
+        return;
+      }
+    }
+
+    await _handlePostPayment(response);
   }
 
   Future<void> _handlePostPayment(PaymentSuccessResponse response) async {
@@ -73,6 +159,41 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
     final userId = Supabase.instance.client.auth.currentUser?.id;
 
     BookingRecord? confirmedRecord;
+
+    // ── DEMO mode: skip Supabase, write the booking to the local sandbox ──
+    if (ref.read(isDemoProvider)) {
+      if (slot != null && court != null && venue != null && date != null) {
+        final timeSlot = '${slot.startTime}–${slot.endTime}';
+        confirmedRecord = BookingRecord(
+          id:        'demo_${DateTime.now().millisecondsSinceEpoch}',
+          venueName: venue.name,
+          courtName: court.name,
+          sport:     flow.sport,
+          date:      '${date.day} ${_months[date.month - 1]}',
+          timeSlot:  timeSlot,
+          amount:    flow.grandTotal,
+          status:    BookingStatus.upcoming,
+          hasStats:  false,
+        );
+        ref.read(demoStoreProvider.notifier).addBooking(confirmedRecord);
+      }
+      if (!mounted) return;
+      ref.read(bookingFlowProvider.notifier).reset();
+      context.go(AppRoutes.home);
+      if (confirmedRecord != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            'Booking confirmed! See you on the court.',
+            style: AppTextStyles.bodyM(context.colors.colorTextPrimary),
+          ),
+          backgroundColor: context.colors.colorSurfaceOverlay,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md)),
+        ));
+      }
+      return;
+    }
 
     if (userId != null && slot != null && court != null && venue != null && date != null) {
       final timeSlot = '${slot.startTime}–${slot.endTime}';
@@ -128,7 +249,10 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
     if (!mounted) return;
 
     if (confirmedRecord != null) {
-      ref.read(confirmedBookingsProvider.notifier).add(confirmedRecord);
+      // Refresh the live booking lists (home Next Game + My Bookings).
+      ref.invalidate(myBookingsProvider);
+      ref.invalidate(upcomingBookingsProvider);
+      ref.invalidate(nextUpcomingBookingProvider);
     }
 
     ref.read(bookingFlowProvider.notifier).reset();
@@ -171,14 +295,26 @@ class _BookingCartScreenState extends ConsumerState<BookingCartScreen> {
     setState(() => _loading = false);
   }
 
-  void _confirmBooking() {
+  Future<void> _confirmBooking() async {
     final flow  = ref.read(bookingFlowProvider);
     final venue = flow.venue;
+    final amountInPaise = flow.grandTotal * 100;
     setState(() => _loading = true);
 
+    // Step 1: Create order server-side to get a verified order_id
+    final orderId = await _createRazorpayOrder(amountInPaise);
+    if (orderId == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+    _pendingOrderId = orderId;
+
+    // Step 2: Open native Razorpay sheet with order_id
     final options = <String, dynamic>{
       'key':         AppConstants.razorpayKeyId,
-      'amount':      flow.grandTotal * 100, // Razorpay expects paise
+      'amount':      amountInPaise,
+      'order_id':    orderId,
+      'currency':    'INR',
       'name':        'Courtside',
       'description': '${venue?.name ?? 'Court'} · ${flow.slot?.startTime ?? ''}',
       'prefill':     {'contact': '', 'email': ''},

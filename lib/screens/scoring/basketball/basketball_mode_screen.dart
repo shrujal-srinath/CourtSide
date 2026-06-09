@@ -7,7 +7,10 @@ import '../../../core/constants.dart';
 import 'models/basketball_models.dart';
 
 class BasketballModeScreen extends StatelessWidget {
-  const BasketballModeScreen({super.key});
+  const BasketballModeScreen({super.key, this.origin = GameOrigin.freePlay});
+
+  /// Booking context carried from the launch point (verified vs free-play).
+  final GameOrigin origin;
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +95,7 @@ class BasketballModeScreen extends StatelessWidget {
                       accentColor: AppColors.basketball,
                       onTap: () => context.push(
                         AppRoutes.bballSetup,
-                        extra: BballMode.quick,
+                        extra: (BballMode.quick, origin),
                       ),
                     ),
                   ),
@@ -113,7 +116,7 @@ class BasketballModeScreen extends StatelessWidget {
                       accentColor: AppColors.info,
                       onTap: () => context.push(
                         AppRoutes.bballSetup,
-                        extra: BballMode.detailed,
+                        extra: (BballMode.detailed, origin),
                       ),
                     ),
                   ),

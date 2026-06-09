@@ -5,6 +5,7 @@
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/fake_data.dart';
+import '../models/completed_game.dart';
 
 class StatsService {
   StatsService() : _client = Supabase.instance.client;
@@ -38,6 +39,22 @@ class StatsService {
         .order('updated_at', ascending: false);
 
     return rows.map(_rowToStat).toList();
+  }
+
+  /// Returns the current user's completed games (verified), newest first.
+  /// Joins the originating booking for its venue name.
+  Future<List<CompletedGame>> getMyGames() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return [];
+
+    final rows = await _client
+        .from('courtside_games')
+        .select(
+            'id, sport, won, score_for, score_against, is_verified, played_at, bookings(venue_name)')
+        .eq('user_id', userId)
+        .order('played_at', ascending: false);
+
+    return rows.map(CompletedGame.fromRow).toList();
   }
 
   // ── Converter ──────────────────────────────────────────────────

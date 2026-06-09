@@ -67,6 +67,26 @@ extension BballEventLabel on BballEvent {
       this == BballEvent.freeThrow;
 }
 
+/// Where a game was launched from. Carried from the launch point through the
+/// setup flow into BballGameConfig. A booking-backed, in-window launch is what
+/// makes the resulting stats VERIFIED; everything else is free-play.
+class GameOrigin {
+  const GameOrigin({this.bookingId, this.venueName, this.isVerified = false});
+
+  final String? bookingId;
+  final String? venueName;
+  final bool isVerified;
+
+  /// Untracked free-play — produces device-local, unverified stats only.
+  static const freePlay = GameOrigin();
+
+  /// Launched from a specific booking. The server re-checks the time-gate, so
+  /// isVerified is a request, not a guarantee — an out-of-window submit is
+  /// rejected and falls back to local.
+  factory GameOrigin.booking({required String bookingId, String? venueName}) =>
+      GameOrigin(bookingId: bookingId, venueName: venueName, isVerified: true);
+}
+
 enum BballFormat { threeVsThree, fiveVsFive }
 
 enum BballMode { quick, detailed }
@@ -184,6 +204,9 @@ class BballGameConfig {
     this.timeoutsPerTeam = 2,
     this.shotClockDuration = 24,
     this.autoResetShotClock = true,
+    this.bookingId,
+    this.venueName,
+    this.isVerified = false,
   });
 
   final BballMode mode;
@@ -200,6 +223,18 @@ class BballGameConfig {
   /// Auto-reset the shot clock when a scoring event is recorded.
   /// Default true; can be toggled from in-game settings.
   final bool autoResetShotClock;
+
+  /// The booking this game was launched from, if any. Present only when
+  /// scoring was unlocked by a paid, time-gated booking — that is what
+  /// makes the resulting stats VERIFIED. Null for free-play games.
+  final String? bookingId;
+
+  /// Venue label for the stat card. Null for free-play games.
+  final String? venueName;
+
+  /// True only when launched from an in-window booking. Verified games are
+  /// submitted to Supabase (player_stats); unverified games stay device-local.
+  final bool isVerified;
 
   int get totalPeriods {
     switch (clockFormat) {
@@ -236,6 +271,9 @@ class BballGameConfig {
     int? timeoutsPerTeam,
     int? shotClockDuration,
     bool? autoResetShotClock,
+    String? bookingId,
+    String? venueName,
+    bool? isVerified,
   }) =>
       BballGameConfig(
         mode: mode ?? this.mode,
@@ -249,6 +287,9 @@ class BballGameConfig {
         timeoutsPerTeam: timeoutsPerTeam ?? this.timeoutsPerTeam,
         shotClockDuration: shotClockDuration ?? this.shotClockDuration,
         autoResetShotClock: autoResetShotClock ?? this.autoResetShotClock,
+        bookingId: bookingId ?? this.bookingId,
+        venueName: venueName ?? this.venueName,
+        isVerified: isVerified ?? this.isVerified,
       );
 }
 
