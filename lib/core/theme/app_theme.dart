@@ -139,12 +139,12 @@ class AppTheme {
 
   static TextTheme _buildTextTheme(Color primary, Color secondary) {
     return TextTheme(
-      displayLarge:   GoogleFonts.inter(fontSize: 48, fontWeight: FontWeight.w800, color: primary, letterSpacing: -1.5),
-      displayMedium:  GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.w800, color: primary, letterSpacing: -1.0),
-      displaySmall:   GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w700, color: primary, letterSpacing: -0.6),
-      headlineLarge:  GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: primary, letterSpacing: -0.2),
-      headlineMedium: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: primary),
-      headlineSmall:  GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: primary),
+      displayLarge:   GoogleFonts.spaceGrotesk(fontSize: 48, fontWeight: FontWeight.w700, color: primary, letterSpacing: -1.6),
+      displayMedium:  GoogleFonts.spaceGrotesk(fontSize: 32, fontWeight: FontWeight.w700, color: primary, letterSpacing: -1.0),
+      displaySmall:   GoogleFonts.spaceGrotesk(fontSize: 24, fontWeight: FontWeight.w700, color: primary, letterSpacing: -0.6),
+      headlineLarge:  GoogleFonts.spaceGrotesk(fontSize: 18, fontWeight: FontWeight.w700, color: primary, letterSpacing: -0.3),
+      headlineMedium: GoogleFonts.spaceGrotesk(fontSize: 15, fontWeight: FontWeight.w600, color: primary, letterSpacing: -0.1),
+      headlineSmall:  GoogleFonts.spaceGrotesk(fontSize: 13, fontWeight: FontWeight.w600, color: primary),
       bodyLarge:      GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w400, color: primary),
       bodyMedium:     GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w400, color: secondary),
       bodySmall:      GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w400, color: secondary),
