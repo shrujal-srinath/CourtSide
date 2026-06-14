@@ -51,9 +51,12 @@ class AppColors {
   static const Color white        = Color(0xFFF8F9FA);
 
   // ── Brand ─────────────────────────────────────────────────────
-  static const Color red          = Color(0xFFFF3B3B);
-  static const Color redGlow      = Color(0xFFFF1F3D);
-  static const Color redDark      = Color(0xFFE52E2E);
+  // Synced with AppColorScheme accent (Void Fire). Legacy values were an
+  // off-brand orange-red (0xFFFF3B3B); these now match the token red so any
+  // screen still on AppColors renders the correct brand hue.
+  static const Color red          = Color(0xFFE8112D); // = colorAccentPrimary
+  static const Color redGlow      = Color(0xFFE8112D); // accent glow
+  static const Color redDark      = Color(0xFFB50022); // = colorAccentPressed
 
   // ── Sport (theme-invariant) ───────────────────────────────────
   static const Color basketball   = Color(0xFFFF6B35);
