@@ -13,6 +13,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/common/cs_pressable.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -60,7 +61,9 @@ class ModeGateScreen extends ConsumerWidget {
 
             // ── PLAY CARD ─────────────────────────────────────────
             Expanded(
-              child: _PressScaleWrapper(
+              child: CsPressable(
+                scale: 0.985,
+                curve: Curves.elasticOut,
                 onTap: () => context.go(AppRoutes.playHome),
                 child: _GateCard(
                   eyebrow:     'GET ON THE COURT',
@@ -81,7 +84,9 @@ class ModeGateScreen extends ConsumerWidget {
 
             // ── EXPLORE CARD ──────────────────────────────────────
             Expanded(
-              child: _PressScaleWrapper(
+              child: CsPressable(
+                scale: 0.985,
+                curve: Curves.elasticOut,
                 onTap: () => context.go(AppRoutes.home),
                 child: _GateCard(
                   eyebrow:     'BROWSE THE APP',
@@ -362,39 +367,3 @@ class _ArrowButton extends StatelessWidget {
   }
 }
 
-// ── Press scale wrapper ───────────────────────────────────────────
-
-class _PressScaleWrapper extends StatefulWidget {
-  const _PressScaleWrapper({
-    required this.child,
-    required this.onTap,
-  });
-
-  final Widget child;
-  final VoidCallback onTap;
-
-  @override
-  State<_PressScaleWrapper> createState() => _PressScaleWrapperState();
-}
-
-class _PressScaleWrapperState extends State<_PressScaleWrapper> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.985 : 1.0,
-        duration: AppDuration.fast,
-        curve: Curves.elasticOut,
-        child: widget.child,
-      ),
-    );
-  }
-}

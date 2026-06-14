@@ -12,6 +12,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../core/time_utils.dart';
+import '../../widgets/common/cs_section_header.dart';
 import '../../models/fake_data.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/booking_provider.dart';
@@ -430,11 +431,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                       _buildScoringBanner(context),
 
-                      _SectionHeader(
-                        title: 'Live now',
-                        onSeeAll: () {},
-                        showSeeAll: false,
-                      ),
+                      const CsSectionHeader(title: 'Live now'),
 
                       _HomeCarousel(
                         userLocation: _userLocation,
@@ -445,18 +442,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             setState(() => _mapExpanded = true),
                       ),
 
-                      _SectionHeader(
-                        title: 'Find by sport',
-                        onSeeAll: () {},
-                        showSeeAll: false,
-                      ),
+                      const CsSectionHeader(title: 'Find by sport'),
 
                       _SportChipRow(
                         activeSport: _activeSport,
                         onSelect: _selectSport,
                       ),
 
-                      _SectionHeader(
+                      CsSectionHeader(
                         title: 'Popular near you',
                         onSeeAll: () => context.go(AppRoutes.explore),
                       ),
@@ -471,11 +464,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: AppSpacing.xl),
                       _HostGameBanner(),
 
-                      _SectionHeader(
-                        title: 'Latest activity',
-                        onSeeAll: () {},
-                        showSeeAll: false,
-                      ),
+                      const CsSectionHeader(title: 'Latest activity'),
                       _CommunityFeed(
                         bookings: _upcomingBookings
                             .where((b) => b.hasStats)
@@ -2772,61 +2761,6 @@ class _SportIconBadge extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════
 //  SECTION HEADER — overline style, textTertiary. NEVER red.
 // ═══════════════════════════════════════════════════════════════
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.title,
-    required this.onSeeAll,
-    this.showSeeAll = true,
-  });
-  final String title;
-  final VoidCallback onSeeAll;
-  final bool showSeeAll;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.xxl, AppSpacing.lg, AppSpacing.md),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 3,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: colors.colorAccentPrimary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                title,
-                style: AppTextStyles.headingM(colors.colorTextPrimary),
-              ),
-            ],
-          ),
-          if (showSeeAll)
-            GestureDetector(
-              onTap: onSeeAll,
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Text(
-                  'See all',
-                  style: AppTextStyles.labelM(colors.colorTextSecondary),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
 
 // ═══════════════════════════════════════════════════════════════
 //  EXPANDED MAP OVERLAY
