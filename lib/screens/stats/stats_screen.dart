@@ -2,6 +2,7 @@
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../core/sport_visuals.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
@@ -326,33 +327,12 @@ class _ProfileHeroBanner extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       height: 200,
       decoration: BoxDecoration(
-        color: colors.colorSurfacePrimary,
+        color: colors.colorSurfaceElevated,
         borderRadius: BorderRadius.circular(AppRadius.xl),
         border: Border.all(color: colors.colorBorderSubtle, width: 0.5),
         boxShadow: AppShadow.card,
       ),
-      child: Stack(
-        children: [
-          // Subtle red glow at bottom-left
-          Positioned(
-            bottom: -30,
-            left: -30,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    colors.colorAccentSubtle,
-                    colors.colorAccentSubtle.withValues(alpha: 0)
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Content
-          Padding(
+      child: Padding(
             padding: const EdgeInsets.all(AppSpacing.xl),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,10 +385,19 @@ class _ProfileHeroBanner extends StatelessWidget {
                                       .withValues(alpha: 0.4),
                                   width: 0.5),
                             ),
-                            child: Text(
-                              'THE BOX VERIFIED',
-                              style: AppTextStyles.overline(
-                                  colors.colorAccentPrimary),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.verified_rounded,
+                                    size: 12,
+                                    color: colors.colorAccentPrimary),
+                                const SizedBox(width: AppSpacing.xs),
+                                Text(
+                                  'THE BOX VERIFIED',
+                                  style: AppTextStyles.overline(
+                                      colors.colorAccentPrimary),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -437,9 +426,16 @@ class _ProfileHeroBanner extends StatelessWidget {
                               color: color.withValues(alpha: 0.3),
                               width: 0.5),
                         ),
-                        child: Text(
-                          '${_sportEmoji(s.sport)} ${_capitalize(s.sport)}',
-                          style: AppTextStyles.labelS(color),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(sportIcon(s.sport), size: 13, color: color),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              _capitalize(s.sport),
+                              style: AppTextStyles.labelS(color),
+                            ),
+                          ],
                         ),
                       );
                     }).toList(),
@@ -448,8 +444,6 @@ class _ProfileHeroBanner extends StatelessWidget {
               ],
             ),
           ),
-        ],
-      ),
     );
   }
 
@@ -459,15 +453,6 @@ class _ProfileHeroBanner extends StatelessWidget {
       case 'cricket':    return colors.colorSportCricket;
       case 'badminton':  return colors.colorSportBadminton;
       default:           return colors.colorSportFootball;
-    }
-  }
-
-  String _sportEmoji(String sport) {
-    switch (sport) {
-      case 'basketball': return '🏀';
-      case 'cricket':    return '🏏';
-      case 'badminton':  return '🏸';
-      default:           return '⚽';
     }
   }
 
@@ -625,12 +610,6 @@ class _SportSegmentedControl extends StatelessWidget {
   final int activeIdx;
   final ValueChanged<int> onChanged;
 
-  static const _icons = {
-    'basketball': '🏀',
-    'cricket':    '🏏',
-    'badminton':  '🏸',
-    'football':   '⚽',
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -674,13 +653,24 @@ class _SportSegmentedControl extends StatelessWidget {
                   onTap: () => onChanged(i),
                   behavior: HitTestBehavior.opaque,
                   child: Center(
-                    child: Text(
-                      '${_icons[s.sport] ?? ''} ${_capitalize(s.sport)}',
-                      style: AppTextStyles.labelM(
-                        active
-                            ? colors.colorTextOnAccent
-                            : colors.colorTextSecondary,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(sportIcon(s.sport),
+                            size: 15,
+                            color: active
+                                ? colors.colorTextOnAccent
+                                : colors.colorTextSecondary),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          _capitalize(s.sport),
+                          style: AppTextStyles.labelM(
+                            active
+                                ? colors.colorTextOnAccent
+                                : colors.colorTextSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -904,10 +894,8 @@ class _CareerTimeline extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  sport == 'basketball' ? '🏀' : '🏏',
-                  style: const TextStyle(fontSize: 22),
-                ),
+                Icon(sportIcon(sport),
+                    size: 20, color: sportColor(colors, sport)),
                 const SizedBox(height: AppSpacing.sm),
                 Container(
                   width: 8,
@@ -956,7 +944,8 @@ class _StreakCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Text('🔥', style: TextStyle(fontSize: 32)),
+          Icon(Icons.local_fire_department_rounded,
+              size: 30, color: colors.colorWarning),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -1042,10 +1031,7 @@ class _RecentGameCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Center(
-                child: Text(
-                  game.sport == 'basketball' ? '🏀' : '🏏',
-                  style: const TextStyle(fontSize: 18),
-                ),
+                child: Icon(sportIcon(game.sport), size: 18, color: color),
               ),
             ),
             const SizedBox(width: AppSpacing.md),
