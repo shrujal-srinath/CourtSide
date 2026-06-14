@@ -1,24 +1,41 @@
-// This is a basic Flutter widget test.
+// Smoke test: the app boots and shows the splash screen.
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// CourtsideApp is a ConsumerWidget that watches routerProvider, so it must be
+// wrapped in a ProviderScope. The router redirect reads auth state, which needs
+// dotenv + Supabase initialized — mirror main()'s bootstrap with dummy values.
 
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:courtside/app.dart';
 import 'package:courtside/screens/splash/splash_screen.dart';
 
 void main() {
-  testWidgets('App launches splash screen', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const CourtsideApp());
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+    dotenv.testLoad(mergeWith: {
+      'SUPABASE_URL': 'http://localhost',
+      'SUPABASE_ANON_KEY': 'test-anon-key',
+      'RAZORPAY_KEY_ID': 'test',
+    });
+    await Supabase.initialize(
+      url: 'http://localhost',
+      anonKey: 'test-anon-key',
+    );
+  });
 
-    // Verify that the splash screen appears.
+  testWidgets('App launches splash screen', (WidgetTester tester) async {
+    await tester.pumpWidget(const ProviderScope(child: CourtsideApp()));
+
+    // Splash is the first route.
     expect(find.byType(SplashScreen), findsOneWidget);
 
-    // Verify splash screen is visible before the end of the animation timer.
+    // Still visible before the animation timer completes.
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(SplashScreen), findsOneWidget);
   });

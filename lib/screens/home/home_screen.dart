@@ -13,7 +13,6 @@ import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../core/time_utils.dart';
 import '../../models/fake_data.dart';
-import '../../models/pickup_game.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/booking_provider.dart';
 import '../../providers/pickup_provider.dart';

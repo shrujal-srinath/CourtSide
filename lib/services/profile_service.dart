@@ -72,15 +72,14 @@ class ProfileService {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) throw Exception('Not authenticated');
 
-    // ignore: prefer_null_aware_elements — 'key'?: syntax not supported in this SDK
     final updates = <String, dynamic>{
       'updated_at': DateTime.now().toIso8601String(),
-      if (username != null)        'username':         username,
-      if (fullName != null)        'full_name':        fullName,
-      if (bio != null)             'bio':              bio,
-      if (avatarUrl != null)       'avatar_url':       avatarUrl,
-      if (preferredSports != null) 'preferred_sports': preferredSports,
-      if (phone != null)           'phone':            phone,
+      'username': ?username,
+      'full_name': ?fullName,
+      'bio': ?bio,
+      'avatar_url': ?avatarUrl,
+      'preferred_sports': ?preferredSports,
+      'phone': ?phone,
     };
 
     await _client

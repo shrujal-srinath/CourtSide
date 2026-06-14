@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../models/fake_data.dart' as fd;
+import '../../providers/app_mode_provider.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  MODELS — temporary until Supabase is wired
@@ -114,7 +115,7 @@ class _SportScreenState extends ConsumerState<SportScreen> {
   final _searchCtrl = TextEditingController();
 
   // Mode-aware venue source (demo=FakeData, live=Supabase). Set in build.
-  List<fd.Venue> _src = const [];
+  final List<fd.Venue> _src = const [];
 
   SportConfig get _sport =>
       _sportConfigs[widget.sportId] ??
