@@ -13,6 +13,7 @@ import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../core/time_utils.dart';
 import '../../widgets/common/cs_section_header.dart';
+import '../../widgets/common/cs_pressable.dart';
 import '../../models/fake_data.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/booking_provider.dart';
@@ -305,63 +306,87 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (windowBooking == null) return const SizedBox.shrink();
 
-    return GestureDetector(
-      onTap: () {
-        if (windowBooking.sport.toLowerCase().contains('basketball')) {
-          context.push(
-            AppRoutes.bballMode,
-            extra: GameOrigin.booking(
-              bookingId: windowBooking.id,
-              venueName: windowBooking.venueName,
-            ),
-          );
-        } else {
-          context.push('/score/${windowBooking.sport}');
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [colors.colorAccentPrimary, colors.colorAccentPrimary.withValues(alpha: 0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    final onAccent = colors.colorTextOnAccent;
+
+    void startScoring() {
+      if (windowBooking.sport.toLowerCase().contains('basketball')) {
+        context.push(
+          AppRoutes.bballMode,
+          extra: GameOrigin.booking(
+            bookingId: windowBooking.id,
+            venueName: windowBooking.venueName,
           ),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          boxShadow: [
-            BoxShadow(
-              color: colors.colorAccentPrimary.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48, height: 48,
-              decoration: BoxDecoration(
-                color: colors.colorTextOnAccent.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
+        );
+      } else {
+        context.push('/score/${windowBooking.sport}');
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      child: CsPressable(
+        onTap: startScoring,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md, AppSpacing.md, AppSpacing.sm, AppSpacing.md),
+          decoration: BoxDecoration(
+            // Solid brand accent — confident, not a gimmicky gradient.
+            color: colors.colorAccentPrimary,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            boxShadow: [
+              // Tight lift, not a halo glow (matches Next Game card).
+              BoxShadow(
+                color: colors.colorAccentPrimary.withValues(alpha: 0.28),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+                spreadRadius: -6,
               ),
-              child: Icon(Icons.scoreboard_rounded, color: colors.colorTextOnAccent, size: 24),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('READY TO SCORE?', style: AppTextStyles.overline(colors.colorTextOnAccent.withValues(alpha: 0.7))),
-                  Text(
-                    'Start scoring for your ${windowBooking.sport} match at ${windowBooking.venueName}',
-                    style: AppTextStyles.bodyS(colors.colorTextOnAccent).copyWith(fontWeight: FontWeight.w600),
-                  ),
-                ],
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: onAccent.withValues(alpha: 0.16),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.sports_score_rounded,
+                    color: onAccent, size: 24),
               ),
-            ),
-            Icon(Icons.arrow_forward_ios_rounded, color: colors.colorTextOnAccent.withValues(alpha: 0.7), size: 14),
-          ],
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('SCORING UNLOCKED',
+                        style: AppTextStyles.overline(
+                            onAccent.withValues(alpha: 0.75))),
+                    const SizedBox(height: 2),
+                    Text(
+                      windowBooking.venueName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.headingS(onAccent),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: onAccent.withValues(alpha: 0.16),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.arrow_forward_rounded,
+                    color: onAccent, size: 18),
+              ),
+            ],
+          ),
         ),
       ),
     );
