@@ -4,6 +4,11 @@
 > The product sections (1–5) matter more than the rules (6–12).
 > If a prompt is ambiguous, fall back on the product principles —
 > not on what "a Flutter sports app usually does."
+>
+> **Also read `readme/future_plans.md`** before your first response — it holds
+> the app's current direction + planned new features (living doc). This CLAUDE.md
+> remains the authority on spec, tokens, and rules; `future_plans.md` is where
+> direction and roadmap evolve.
 
 ---
 
