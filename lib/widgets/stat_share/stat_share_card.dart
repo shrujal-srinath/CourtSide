@@ -3,6 +3,7 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/sport_visuals.dart';
 
 class StatShareCard extends StatelessWidget {
   const StatShareCard({
@@ -29,15 +30,6 @@ class StatShareCard extends StatelessWidget {
       case 'basketball': return AppColors.basketball;
       case 'cricket': return AppColors.cricket;
       default: return AppColors.red;
-    }
-  }
-
-  String get _sportEmoji {
-    switch (sport.toLowerCase()) {
-      case 'basketball': return '🏀';
-      case 'cricket': return '🏏';
-      case 'badminton': return '🏸';
-      default: return '⚽';
     }
   }
 
@@ -145,8 +137,7 @@ class StatShareCard extends StatelessWidget {
                   _wrap(
                     Row(
                       children: [
-                        Text(_sportEmoji,
-                            style: const TextStyle(fontSize: 16)),
+                        Icon(sportIcon(sport), size: 16, color: _sportColor),
                         const SizedBox(width: 8),
                         Text(
                           sport[0].toUpperCase() + sport.substring(1),

@@ -500,7 +500,17 @@ class _CricketScoreboard extends StatelessWidget {
                 child: Center(
                   child: Column(
                     children: [
-                      Text('🏏 BOX CRICKET', style: AppTextStyles.overline(colors.colorTextSecondary)),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.sports_cricket_rounded,
+                              size: 13, color: colors.colorTextSecondary),
+                          const SizedBox(width: 4),
+                          Text('BOX CRICKET',
+                              style: AppTextStyles.overline(
+                                  colors.colorTextSecondary)),
+                        ],
+                      ),
                       const SizedBox(height: 2),
                       Text('${curr.battingTeam} batting', style: AppTextStyles.bodyS(colors.colorTextSecondary)),
                     ],
@@ -570,7 +580,16 @@ class _CricketScoreboard extends StatelessWidget {
                 color: colors.colorSuccess.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: Text('🏆 ${state.winner} wins!', style: AppTextStyles.headingM(colors.colorSuccess)),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.emoji_events_rounded,
+                      size: 16, color: colors.colorSuccess),
+                  const SizedBox(width: 6),
+                  Text('${state.winner} wins!',
+                      style: AppTextStyles.headingM(colors.colorSuccess)),
+                ],
+              ),
             ),
           ],
         ],
@@ -741,7 +760,8 @@ class _GameOverSheet extends StatelessWidget {
             decoration: BoxDecoration(color: colors.colorBorderSubtle, borderRadius: BorderRadius.circular(AppRadius.pill)),
           ),
           const SizedBox(height: 24),
-          const Text('🏆', style: TextStyle(fontSize: 48)),
+          Icon(Icons.emoji_events_rounded,
+              size: 48, color: colors.colorWarning),
           const SizedBox(height: 12),
           Text('${state.winner} Wins!', style: AppTextStyles.displayS(colors.colorTextPrimary)),
           const SizedBox(height: 8),

@@ -1002,11 +1002,23 @@ class _CenterPanel extends StatelessWidget {
                     onTap: onBack),
                 const Spacer(),
                 Flexible(
-                  child: Text(
-                    '🏀  BASKETBALL',
-                    style: AppTextStyles.overline(context.colors.colorTextSecondary),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.sports_basketball_rounded,
+                          size: 13,
+                          color: context.colors.colorTextSecondary),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'BASKETBALL',
+                          style: AppTextStyles.overline(
+                              context.colors.colorTextSecondary),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const Spacer(),
